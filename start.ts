@@ -66,6 +66,7 @@ export async function startServer(): Promise<RawServerBase> {
 
     // شروع وب سرور
     const app = await startWebServer(knexInstance)
+    // گرفتن آدرس سرور
     const addressInfo = app.server.address() as AddressInfo
     logger.info(`plan-service: Started on port ${addressInfo.port}`)
 
