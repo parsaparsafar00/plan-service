@@ -1,0 +1,32 @@
+{
+  "name": "plan-service",
+  "type": "module",
+  "version": "1.0.0",
+  "main": "../../.dist/services/plan-service/start.js",
+  "scripts": {
+    "start": "cross-env NODE_ENV=production && nx run plan-service:start",
+    "start-dev": "node ../../.dist/services/plan-service/start.js",
+    "start-watch": "nodemon --config ../../../nodemon.json",
+    "build": "nx run plan-service:build",
+    "build-dev": "nx run plan-service:build-dev",
+    "build-watch": "nx run plan-service:build-watch"
+  },
+  "dependencies": {
+    "@amard/access-control": "workspace:*",
+    "@amard/auto-query": "workspace:*",
+    "@amard/config-manager": "workspace:*",
+    "@amard/error-handling": "workspace:*",
+    "@amard/health-check": "workspace:*",
+    "@amard/logger": "workspace:*",
+    "@amard/postgresql-connection": "workspace:*",
+    "@amard/requests-context": "workspace:*",
+    "@amard/validation": "workspace:*",
+    "@fastify/swagger": "^9.4.1",
+    "@fastify/swagger-ui": "^5.2.1",
+    "@sinclair/typebox": "0.34.13",
+    "fastify": "^5.2.1",
+    "knex": "^3.1.0",
+    "luxon": "^3.5.0",
+    "uuid": "^11.0.5"
+  }
+}

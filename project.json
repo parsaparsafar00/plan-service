@@ -1,0 +1,48 @@
+{
+  "name": "plan-service",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bash -c 'esbuild $(find . -type f -name \"*.ts\") --platform=node --minify --outdir=../../.dist/services/plan-service'",
+        "cwd": "services/plan-service"
+      }
+    },
+    "build-dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bash -c 'esbuild $(find . -type f -name \"*.ts\") --platform=node --sourcemap --outdir=../../.dist/services/plan-service'",
+        "cwd": "services/plan-service"
+      }
+    },
+    "build-watch": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "bash -c 'esbuild $(find . -type f -name \"*.ts\") --platform=node --sourcemap --watch --outdir=../../.dist/services/plan-service'",
+        "cwd": "services/plan-service"
+      }
+    },
+    "start": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cross-env NODE_ENV=production && node ../../.dist/services/plan-service/start.js",
+        "cwd": "services/plan-service"
+      }
+    },
+    "start-dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node ../../.dist/services/plan-service/start.js",
+        "cwd": "services/plan-service"
+      }
+    },
+    "start-watch": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "nodemon --config ../../../nodemon.json",
+        "cwd": "services/plan-service"
+      }
+    }
+  }
+}
