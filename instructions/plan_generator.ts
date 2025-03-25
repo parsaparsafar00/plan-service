@@ -4,11 +4,6 @@ import { getExerciseInstructions } from './exercise_instructions.js'
 import { getPlanInstructions } from './plan_instructions.js'
 import { getSessionInstructions } from './session_instructions.js'
 
-/**
- * در اینترفیس زیر باید توجه داشته باشی که در دیتابیس exercises
- * ستون‌های age_ground, age_ceiling, weight_ground, weight_ceiling, gender, target وجود دارد
- * تا بتوانیم عیناً مثل کوئری بالا فیلتر کنیم.
- */
 export interface WeekInput {
   week: number
   sessionsPerWeek: number
@@ -35,12 +30,12 @@ export interface GeneratedExercise {
   id: string
   name: string
   mechanics: string | null
-  difficulty_level: string | null
-  body_region: string | null
-  // فیلدهای احتمالی دیگر از ExerciseEntity...
+  difficultyLevel: string | null
+  bodyRegion: string | null
+  // ... بقیه ستون‌ها در صورت نیاز
   restBetweenSets: number
-  exercise_weight: number
-  number_of_sets: number
+  exerciseWeight: number
+  numberOfSets: number
   repsPerSet: number
 }
 
@@ -53,10 +48,10 @@ export interface GeneratedSession {
   targetMuscles: string[]
   cooldownActivities: string[]
   warmupActivities: string[]
-  cooldownDuration_ground: number
-  cooldownDuration_ceiling: number
-  warmupDuration_ground: number
-  warmupDuration_ceiling: number
+  cooldownDurationGround: number
+  cooldownDurationCeiling: number
+  warmupDurationGround: number
+  warmupDurationCeiling: number
   recoveryTime: number
   sessionDuration: number
   exercises: GeneratedExercise[]
@@ -73,36 +68,28 @@ export interface GeneratedWeek {
 }
 
 /**
- * تابع جدید که جایگزین plan_generator.js شده و فقط منطق ساخت برنامه را انجام می‌دهد.
- * در بخش فیلترکردن آرایه‌ی تمرین‌ها، همان شرایط کوئری قدیمی لحاظ می‌شود تا خروجی منطبق باشد.
+ * تولید برنامه تمرینی بر اساس داده‌های داخل inMemoryExercises
  */
 export function generatePlan(input: PlanGeneratorInput): GeneratedWeek[] {
-  // اطلاعات بالادستی برنامه (LoadIncrement, Deload)
-  const workout_plan_info = getPlanInstructions(input.level)
-
-  // کل لیست تمرین‌ها از حافظه
+  const workoutPlanInfo = getPlanInstructions(input.level)
   const allExercises = getAllExercisesArray()
-  if (!allExercises || allExercises.length === 0) {
+  if (!allExercises || allExercises.length === 0)
     throw new AppError('PLAN_NO_EXERCISES_FOUND', 'No exercises loaded in memory', 400)
-  }
 
-  // جهت منطبق‌سازی سطح سختی:
   const levels = ['novice', 'beginner', 'intermediate', 'advanced', 'expert']
   const userLevelIndex = levels.indexOf(input.level.toLowerCase())
-  // اگر مثلاً userLevelIndex=2 یعنی حداکثر اجازه difficulty_level='intermediate' را می‌دهیم
 
   const weeks: GeneratedWeek[] = []
 
   for (const w of input.weeks) {
     const weekData: GeneratedWeek = {
       index: w.week,
-      loadIncrement: workout_plan_info.loadIncrement,
-      deload: workout_plan_info.deload,
+      loadIncrement: workoutPlanInfo.loadIncrement,
+      deload: workoutPlanInfo.deload,
       sessions: [],
     }
 
     for (const sessionItem of w.sessions) {
-      // اول از session_instructions منطق تعداد تمرین و غیره را می‌گیریم
       const sessionInfo = getSessionInstructions({
         age: input.age,
         gender: input.gender,
@@ -111,103 +98,80 @@ export function generatePlan(input: PlanGeneratorInput): GeneratedWeek[] {
         target_muscle_groups: sessionItem.targetMuscles,
       })
 
-      // ساختار جلسه
       const sessionData: GeneratedSession = {
         index: sessionItem.session,
         split: sessionItem.segmentation,
         targetMuscles: sessionItem.targetMuscles,
         cooldownActivities: sessionInfo.cooldownActivities,
         warmupActivities: sessionInfo.warmupActivities,
-        cooldownDuration_ground: sessionInfo.cooldownDuration_ground,
-        cooldownDuration_ceiling: sessionInfo.cooldownDuration_ceiling,
-        warmupDuration_ground: sessionInfo.warmupDuration_ground,
-        warmupDuration_ceiling: sessionInfo.warmupDuration_ceiling,
+        cooldownDurationGround: sessionInfo.cooldownDuration_ground,
+        cooldownDurationCeiling: sessionInfo.cooldownDuration_ceiling,
+        warmupDurationGround: sessionInfo.warmupDuration_ground,
+        warmupDurationCeiling: sessionInfo.warmupDuration_ceiling,
         recoveryTime: sessionInfo.recoveryTime,
         sessionDuration: sessionInfo.sessionDuration,
         exercises: [],
       }
 
-      // منطق فیلتر: EXACT همان شرایط کوئری
-      //  (age_ground <= input.age AND age_ceiling >= input.age)
-      //  (weight_ground <= input.weight AND weight_ceiling >= input.weight)
-      //  (gender = input.gender OR gender IS NULL)
-      //  (target = input.target OR target IS NULL)
-      //  difficulty_level IN (levels.slice(0..userLevelIndex))
-      //  (target_muscle_group IN sessionItem.targetMuscles OR target_muscle_group IS NULL)
+      // منطق فیلتر
       const muscleValues = sessionItem.targetMuscles
-
-      // اعمال فیلتر
       const filtered = allExercises.filter((ex) => {
         // شرط سن
-        if (ex.age_ground !== null && ex.age_ground > input.age)
+        // اگر ex.ageGround > age => رد
+        if (ex.ageGround && ex.ageGround > input.age)
           return false
-        if (ex.age_ceiling !== null && ex.age_ceiling < input.age)
+        if (ex.ageCeiling && ex.ageCeiling < input.age)
           return false
 
         // شرط وزن
-        if (ex.weight_ground !== null && ex.weight_ground > input.weight)
+        if (ex.weightGround && ex.weightGround > input.weight)
           return false
-        if (ex.weight_ceiling !== null && ex.weight_ceiling < input.weight)
+        if (ex.weightCeiling && ex.weightCeiling < input.weight)
           return false
 
-        // شرط جنسیت
+        // شرط gender
         if (ex.gender !== null && ex.gender !== input.gender)
           return false
 
         // شرط target
-        if (ex.target !== null && ex.target !== input.target)
+        if (ex.target && ex.target !== input.target)
           return false
 
-        // شرط difficulty_level
-        if (ex.difficulty_level) {
-          const exLevelIndex = levels.indexOf(ex.difficulty_level.toLowerCase())
-          // اگر difficulty_level در آرایه‌ی levels نباشد (exLevelIndex=-1) => رد
-          // یا اگر بالاتر از سطح کاربر باشد => رد
+        // difficultyLevel in [0..userLevelIndex]
+        if (ex.difficultyLevel) {
+          const exLevelIndex = levels.indexOf(ex.difficultyLevel.toLowerCase())
           if (exLevelIndex === -1 || exLevelIndex > userLevelIndex)
             return false
         }
 
-        // شرط muscle group
-        // اگر muscleValues.length > 0 باشد، باید ex.target_muscle_group:
-        //  (در آن muscleValues باشد) OR null
-        if (muscleValues.length > 0) {
-          if (
-            ex.target_muscle_group !== null
-            && !muscleValues.includes(ex.target_muscle_group)
-          ) {
+        // muscle group
+        if (muscleValues.length > 0 && ex.targetMuscleGroup) {
+          if (!muscleValues.includes(ex.targetMuscleGroup))
             return false
-          }
         }
-
         return true
       })
 
-      // رندم‌کردن
+      // شافل و لیمیت
       shuffleArray(filtered)
+      const limitCount = sessionInfo.number_of_exercises_per_muscle * muscleValues.length
+      const chosen = filtered.slice(0, limitCount)
 
-      // تعیین limit:
-      //  sessionInfo.number_of_exercises_per_muscle * sessionItem.targetMuscles.length
-      const limitCount
-        = sessionInfo.number_of_exercises_per_muscle * sessionItem.targetMuscles.length
-
-      const chosenExercises = filtered.slice(0, limitCount)
-
-      // حالا برای هرتمرین، اطلاعات مربوط به sets/reps/... را از exercise_instructions می‌گیریم
-      const finalExercises: GeneratedExercise[] = chosenExercises.map((ex) => {
+      const finalExercises = chosen.map((ex) => {
         const exInstr = getExerciseInstructions({
           age: input.age,
           gender: input.gender,
           target: input.target,
           level: input.level,
           mechanics: ex.mechanics || '',
-          target_muscle_groups: sessionItem.targetMuscles,
+          target_muscle_groups: muscleValues,
         })
 
         return {
           ...ex,
           restBetweenSets: exInstr.restBetweenSets,
-          exercise_weight: exInstr.exercise_weight,
-          number_of_sets: exInstr.number_of_sets,
+          exerciseWeight: exInstr.exercise_weight,
+          numberOfSets: exInstr.number_of_sets,
           repsPerSet: exInstr.repsPerSet,
         }
       })
@@ -222,9 +186,6 @@ export function generatePlan(input: PlanGeneratorInput): GeneratedWeek[] {
   return weeks
 }
 
-/**
- * تابع شافل کردن آرایه (مشابه ORDER BY RANDOM())
- */
 function shuffleArray<T>(array: T[]): void {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))

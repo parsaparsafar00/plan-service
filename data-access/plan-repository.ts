@@ -1,5 +1,5 @@
 import type { Knex } from 'knex'
-import type { PlanType } from '../domain/plan-schema.ts'
+import type { PlanType } from '../domain/plan-schema.js'
 import { AppError } from '@amard/error-handling'
 
 let knexInstance: Knex
@@ -9,11 +9,14 @@ export function setKnexInstanceForPlanRepo(instance: Knex) {
 }
 
 /**
- * تولید برنامه تمرینی جدید
+ * تولید برنامه تمرینی جدید در جدول plan_records
  */
 export async function insertPlan(data: PlanType): Promise<PlanType> {
   try {
-    const [inserted] = await knexInstance('plan_records').insert(data).returning('*')
+    // ایجاد سطر جدید
+    const [inserted] = await knexInstance<PlanType>('plan_records')
+      .insert(data)
+      .returning('*')
     return inserted
   }
   catch (error) {
@@ -26,7 +29,9 @@ export async function insertPlan(data: PlanType): Promise<PlanType> {
  */
 export async function getPlanById(id: string): Promise<PlanType | undefined> {
   try {
-    return await knexInstance('plan_records').where({ id }).first()
+    return await knexInstance<PlanType>('plan_records')
+      .where({ id })
+      .first()
   }
   catch (error) {
     throw new AppError('PLAN_DB_QUERY_ERROR', 'Database getPlanById query error', 500, error)
@@ -34,22 +39,14 @@ export async function getPlanById(id: string): Promise<PlanType | undefined> {
 }
 
 /**
- * دریافت برنامه تمرینی با آیدی
- */
-export async function generatePlan(query: string, values: any[]): Promise<PlanType[]> {
-  try {
-    const result = await knexInstance.raw(query, values); // Remove the extra array around `values`
-    return result.rows; // Return the array of rows
-  } catch (error) {
-    throw new AppError('PLAN_DB_QUERY_ERROR', 'Database generatePlan query error', 500, error);
-  }
-}
-/**
  * ویرایش برنامه تمرینی
  */
 export async function updatePlan(id: string, updates: Partial<PlanType>): Promise<PlanType> {
   try {
-    const [updated] = await knexInstance('plan_records').where({ id }).update(updates).returning('*')
+    const [updated] = await knexInstance<PlanType>('plan_records')
+      .where({ id })
+      .update(updates)
+      .returning('*')
     return updated
   }
   catch (error) {
@@ -58,7 +55,7 @@ export async function updatePlan(id: string, updates: Partial<PlanType>): Promis
 }
 
 /**
- * حذف برنامه تمرینی 
+ * حذف برنامه تمرینی
  */
 export async function deletePlan(id: string): Promise<void> {
   try {

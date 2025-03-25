@@ -8,41 +8,61 @@ export function setKnexInstanceForExerciseRepo(instance: Knex): void {
 }
 
 /**
- * مدل داده برای ردیف‌های جدول حرکات
- * باید مطابق با ستون های واقعی جدول حرکات تنظیم بشه
+ * مدل داده برای سطرهای جدول plan_exercises
  */
 export interface ExerciseEntity {
   id: string
   name: string
+  shortYoutubeDemonstration: string | null
+  inDepthYoutubeExplanation: string | null
+  difficultyLevel: string | null
+  targetMuscleGroup: string | null
+  primeMoverMuscle: string | null
+  secondaryMuscle: string | null
+  tertiaryMuscle: string | null
+  primaryEquipment: string | null
+  secondaryEquipment: string | null
+  numberOfItems: number | null
+  posture: string | null
+  singleOrDoubleArm: string | null
+  grip: string | null
+  loadPositionAtTheEnd: string | null
+  footElevation: string | null
+  comboExercises: string | null
+  movementPattern: string | null
+  movementPattern2: string | null
+  movementPattern3: string | null
+  bodyRegion: string | null
+  forceType: string | null
+  laterality: string | null
+  exerciseClassification: string | null
+  muscleJointTypes: string | null
+  priority: number | null
+  gender: number | null
+  ageGround: number | null
+  ageCeiling: number | null
+  weightGround: number | null
+  weightCeiling: number | null
+  target: string | null
   mechanics: string | null
-  difficulty_level: string | null
-  body_region: string | null
-  prime_mover_muscle: string | null
-  combo_exercises: string | null
-  target_muscle_group: string | null
-  short_youtube_demonstration: string | null
-  in_depth_youtube_explanation: string | null
-  // ستون‌های دیگر در صورت نیاز
 }
 
-// آرایه‌ای از همه تمرین‌ها، جهت جستجو و فیلتر
+/**
+ * آرایه‌ای از همه تمرین‌ها، جهت جستجو و فیلتر در inMemory
+ */
 let inMemoryExercises: ExerciseEntity[] = []
-
-// مپ از شناسه‌ی تمرین به خود تمرین، جهت دسترسی سریع بر اساس شناسه
-// const inMemoryExercisesMap = new Map<string, ExerciseEntity>()
 
 /**
  * یکبار از دیتابیس همه‌ی تمرین‌ها را می‌خوانیم و در حافظه ذخیره می‌کنیم
  */
 export async function loadAllExercises(): Promise<void> {
-  try {
-    const rows = await knexInstance<ExerciseEntity>('exercises').select('*')
-    inMemoryExercises = rows
-    // inMemoryExercisesMap.clear()
+  if (!knexInstance)
+    throw new AppError('EXERCISE_REPO_DB_NOT_READY', 'Knex instance not set in ExerciseRepo', 500)
 
-    // for (const ex of rows) {
-    //   inMemoryExercisesMap.set(ex.id, ex)
-    // }
+  try {
+    // انتخاب از جدول plan_exercises
+    const rows = await knexInstance<ExerciseEntity>('plan_exercises').select('*')
+    inMemoryExercises = rows
   }
   catch (error) {
     throw new AppError('PLAN_EXERCISE_DB_ERROR', 'Database loadAllExercises error', 500, error)
@@ -55,7 +75,3 @@ export async function loadAllExercises(): Promise<void> {
 export function getAllExercisesArray(): ExerciseEntity[] {
   return inMemoryExercises
 }
-
-// export function getExerciseById(id: string): ExerciseEntity | undefined {
-//   return inMemoryExercisesMap.get(id)
-// }
