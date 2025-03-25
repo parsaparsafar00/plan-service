@@ -8,6 +8,7 @@ import { initCasbin } from '@amard/access-control'
 import { AppError, errorHandler } from '@amard/error-handling'
 import { logger } from '@amard/logger'
 import { closeKnexConnection, createKnexInstance } from '@amard/postgresql-connection'
+import { setKnexInstanceForExerciseRepo } from './data-access/exercise-repository.js'
 import { setKnexInstanceForPlanRepo } from './data-access/plan-repository.js'
 import { startWebServer, stopWebServer } from './entry-points/api/server.js'
 
@@ -63,6 +64,7 @@ export async function startServer(): Promise<RawServerBase> {
     await knexInstance.migrate.latest()
 
     setKnexInstanceForPlanRepo(knexInstance)
+    setKnexInstanceForExerciseRepo(knexInstance)
 
     // شروع وب سرور
     const app = await startWebServer(knexInstance)

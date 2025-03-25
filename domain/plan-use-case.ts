@@ -7,9 +7,9 @@ import { auditLogger, setAuditRequest } from '@amard/logger'
 import { DateTime } from 'luxon'
 import { validate as isValidUuid, v4 as uuidv4 } from 'uuid'
 import * as planRepo from '../data-access/plan-repository.js'
+import { getExerciseInstructions } from '../instructions/exercise_instructions.js'
 import { getPlanInstructions } from '../instructions/plan_instructions.js'
 import { getSessionInstructions } from '../instructions/session_instructions.js'
-import { getExerciseInstructions } from '../instructions/exercise_instructions.js'
 
 // تابع کمکی برای استخراج نقش/شناسه کاربر از request
 function extractSenderData(request: FastifyRequest) {
@@ -36,7 +36,6 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
       userId = request.body.teacher_id
   }
 
-
   const traineeInfo = request.body.traineeInfo
   const nowStr = DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-LL-dd HH:mm:ss')
   const newPlan: planSchema.PlanType = {
@@ -51,52 +50,52 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
     student_weight: request.body.traineeInfo.weight,
     student_age: request.body.traineeInfo.age,
     n_weeks: (request.body.weeks).length,
-    workout_plan: "",
+    workout_plan: '',
     createdAt: nowStr,
     updatedAt: nowStr,
   }
-  const workoutPlan = [];
+  const workoutPlan = []
   const weeks = request.body.weeks
   const age = traineeInfo.age
   const weight = traineeInfo.weight
   const gender = traineeInfo.gender
   const target = request.body.target
   const level = traineeInfo.level
-  const levels = ['novice', 'beginner', 'intermediate', 'advanced', 'expert'];
+  const levels = ['novice', 'beginner', 'intermediate', 'advanced', 'expert']
 
-  const workout_plan_info = getPlanInstructions(level);
+  const workout_plan_info = getPlanInstructions(level)
 
   for (const [weekIndex, week] of weeks.entries()) {
-      const { sessions } = week;
-      const weekData = {
-          index: weekIndex + 1,
-          ...workout_plan_info,
-          sessions: []
-      };
+    const { sessions } = week
+    const weekData = {
+      index: weekIndex + 1,
+      ...workout_plan_info,
+      sessions: [],
+    }
 
-      for (const [sessionIndex, session] of sessions.entries()) {
-          const { segmentation, targetMuscles: sessionTargetMuscles } = session;
-          const muscleValues = sessionTargetMuscles.filter(muscle => muscle.trim() !== "");
-          
-          const session_info = getSessionInstructions({
-            age,
-            gender,
-            target,
-            level,
-            target_muscle_groups: muscleValues
-          });
+    for (const [sessionIndex, session] of sessions.entries()) {
+      const { segmentation, targetMuscles: sessionTargetMuscles } = session
+      const muscleValues = sessionTargetMuscles.filter(muscle => muscle.trim() !== '')
 
-          const { recoveryTime, number_of_exercises_per_muscle, sessionDuration, cooldownActivities, warmupActivities, cooldownDuration_ground, cooldownDuration_ceiling, warmupDuration_ground, warmupDuration_ceiling } = session_info;
+      const session_info = getSessionInstructions({
+        age,
+        gender,
+        target,
+        level,
+        target_muscle_groups: muscleValues,
+      })
 
-          // Generate query conditions for generating the dedicated plan
-          const levelIndex = levels.indexOf(level);
-          const difficultyCondition = levels.slice(0, levelIndex + 1).map(() => '?').join(', ');
-          const muscleCondition = muscleValues.length > 0
-            ? `AND (target_muscle_group IN (${muscleValues.map(() => '?').join(', ')}) OR target_muscle_group IS NULL)`
-            : '';
-          
-          // Query string with ? placeholders
-          const plan_generator_query = `
+      const { recoveryTime, number_of_exercises_per_muscle, sessionDuration, cooldownActivities, warmupActivities, cooldownDuration_ground, cooldownDuration_ceiling, warmupDuration_ground, warmupDuration_ceiling } = session_info
+
+      // Generate query conditions for generating the dedicated plan
+      const levelIndex = levels.indexOf(level)
+      const difficultyCondition = levels.slice(0, levelIndex + 1).map(() => '?').join(', ')
+      const muscleCondition = muscleValues.length > 0
+        ? `AND (target_muscle_group IN (${muscleValues.map(() => '?').join(', ')}) OR target_muscle_group IS NULL)`
+        : ''
+
+      // Query string with ? placeholders
+      const plan_generator_query = `
             SELECT id, name, short_youtube_demonstration, in_depth_youtube_explanation,
                 difficulty_level, primary_equipment, body_region, mechanics
             FROM exercises
@@ -108,67 +107,68 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
             ${muscleCondition}
             ORDER BY RANDOM()
             LIMIT ?
-          `;
-          
-          // Values to replace placeholders
-          const values = [
-            age,          // Replaces the first ? (age_ground <= ?)
-            age,          // Replaces the second ? (age_ceiling >= ?)
-            weight,       // Replaces the third ? (weight_ground <= ?)
-            weight,       // Replaces the fourth ? (weight_ceiling >= ?)
-            gender,       // Replaces the fifth ? (gender = ?)
-            target,       // Replaces the sixth ? (target = ?)
-            ...levels.slice(0, levelIndex + 1), // Replaces difficulty_level IN (?, ?, ...)
-            ...muscleValues, // Replaces target_muscle_group IN (?, ?, ...)
-            muscleValues.length * number_of_exercises_per_muscle // Replaces LIMIT ?
-          ];
+          `
 
-          const exercises = await planRepo.generatePlan(plan_generator_query, values);
+      // Values to replace placeholders
+      const values = [
+        age, // Replaces the first ? (age_ground <= ?)
+        age, // Replaces the second ? (age_ceiling >= ?)
+        weight, // Replaces the third ? (weight_ground <= ?)
+        weight, // Replaces the fourth ? (weight_ceiling >= ?)
+        gender, // Replaces the fifth ? (gender = ?)
+        target, // Replaces the sixth ? (target = ?)
+        ...levels.slice(0, levelIndex + 1), // Replaces difficulty_level IN (?, ?, ...)
+        ...muscleValues, // Replaces target_muscle_group IN (?, ?, ...)
+        muscleValues.length * number_of_exercises_per_muscle, // Replaces LIMIT ?
+      ]
 
-          const sessionData = {
-              index: sessionIndex + 1,
-              split: segmentation,
-              targetMuscles: muscleValues,
-              cooldownActivities: cooldownActivities,
-              warmupActivities: warmupActivities,
-              cooldownDuration_ground: cooldownDuration_ground,
-              cooldownDuration_ceiling: cooldownDuration_ceiling,
-              warmupDuration_ground: warmupDuration_ground,
-              recoveryTime: recoveryTime,
-              warmupDuration_ceiling: warmupDuration_ceiling,
-              sessionDuration: sessionDuration,
-              exercises: []
-          };
-          if (!exercises)
-            throw new AppError('PLAN_NOT_FOUND', 'No related plan was found', 400)
-          else {
-            console.log(exercises)
-            for (const exercise of exercises) {
-              const mechanics = exercise.mechanics
-              const exercise_info = getExerciseInstructions({
-                age,
-                gender,
-                target,
-                level,
-                mechanics,
-                target_muscle_groups: muscleValues
-              });
+      const exercises = await planRepo.generatePlan(plan_generator_query, values)
 
-              const { restBetweenSets, exercise_weight, number_of_sets, repsPerSet } = exercise_info;
-
-              sessionData.exercises.push({
-                  ...exercise,
-                  restBetweenSets,
-                  exercise_weight,
-                  number_of_sets,
-                  repsPerSet
-              });
-            }
-          }
-          weekData.sessions.push(sessionData);
+      const sessionData = {
+        index: sessionIndex + 1,
+        split: segmentation,
+        targetMuscles: muscleValues,
+        cooldownActivities,
+        warmupActivities,
+        cooldownDuration_ground,
+        cooldownDuration_ceiling,
+        warmupDuration_ground,
+        recoveryTime,
+        warmupDuration_ceiling,
+        sessionDuration,
+        exercises: [],
       }
+      if (!exercises) {
+        throw new AppError('PLAN_NOT_FOUND', 'No related plan was found', 400)
+      }
+      else {
+        console.log(exercises)
+        for (const exercise of exercises) {
+          const mechanics = exercise.mechanics
+          const exercise_info = getExerciseInstructions({
+            age,
+            gender,
+            target,
+            level,
+            mechanics,
+            target_muscle_groups: muscleValues,
+          })
 
-      workoutPlan.push(weekData);
+          const { restBetweenSets, exercise_weight, number_of_sets, repsPerSet } = exercise_info
+
+          sessionData.exercises.push({
+            ...exercise,
+            restBetweenSets,
+            exercise_weight,
+            number_of_sets,
+            repsPerSet,
+          })
+        }
+      }
+      weekData.sessions.push(sessionData)
+    }
+
+    workoutPlan.push(weekData)
   }
 
   const workoutPlan_json = JSON.stringify(workoutPlan, null, 2)
