@@ -60,7 +60,6 @@ export async function up(knex: Knex): Promise<void> {
       table.string('forceType', 255).nullable()
       table.string('laterality', 255).nullable()
       table.string('exerciseClassification', 255).nullable()
-      table.string('exerciseClassification', 255).nullable()
       table.string('muscleJointTypes', 255).nullable()
       table.integer('priority').nullable()
       table.integer('gender').nullable() // 0=male, 1=female, or null
