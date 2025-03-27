@@ -9,6 +9,7 @@ import { AppError, errorHandler } from '@amard/error-handling'
 import { logger } from '@amard/logger'
 import { closeKnexConnection, createKnexInstance } from '@amard/postgresql-connection'
 import { loadAllExercises, setKnexInstanceForExerciseRepo } from './data-access/exercise-repository.js'
+import { initExerciseTable } from './data-access/migrations/exercise-data/create_exercise_table.js'
 import { setKnexInstanceForPlanRepo } from './data-access/plan-repository.js'
 import { startWebServer, stopWebServer } from './entry-points/api/server.js'
 
@@ -63,9 +64,12 @@ export async function startServer(): Promise<RawServerBase> {
     })
     await knexInstance.migrate.latest()
 
+    // ساختن جدول حرکات به همراه ورود دیتاها، در صورت عدم وجود
+    await initExerciseTable(knexInstance)
+
     setKnexInstanceForPlanRepo(knexInstance)
     setKnexInstanceForExerciseRepo(knexInstance)
-
+    // لود کردن تمام حرکات درون یک متغیر آرایه ای سراسری
     await loadAllExercises()
 
     // شروع وب سرور

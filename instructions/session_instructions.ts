@@ -35,7 +35,7 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
   let warmupActivities: string[] = []
   let cooldownActivities: string[] = []
 
-  // Recovery Periods Logic
+  // دستورالعمل های دوره های ریکاوری ورزشکار
   if (target_muscle_groups.some(item => ['Chest', 'Back', 'Abductors', 'Adductors'].includes(item))) {
     if (gender === 0) {
       recoveryTime_ceiling = 72

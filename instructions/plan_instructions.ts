@@ -23,7 +23,7 @@ export function getPlanInstructions(level: string): LoadPlan {
   //         break;
   // }
 
-  // Determine load adjustments based on level
+  // دستورالعمل های افزایش و کاهش بار تمرینی در طی هفته ها
   switch (level) {
     case 'beginner':
     case 'novice':
