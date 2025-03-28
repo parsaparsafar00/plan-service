@@ -33,7 +33,7 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
   let restBetweenSets_ceiling: number
   let restBetweenSets_ground: number
 
-  // Determine workout intensity based on gender and target
+  // دستور العمل های وزن حرکت
   if (target === 'hypertrophy') {
     weight_ceiling = 75
     weight_ground = 65
@@ -41,7 +41,7 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
       number_of_sets_ceiling = 6
       number_of_sets_ground = 3
     }
-    else if (mechanics === 'Isolation') {
+    else { // mechanics === 'Isolation'
       number_of_sets_ceiling = 4
       number_of_sets_ground = 3
     }
@@ -59,7 +59,7 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
       number_of_sets_ceiling = 6
       number_of_sets_ground = 4
     }
-    else if (mechanics === 'Isolation') {
+    else { // mechanics === 'Isolation'
       number_of_sets_ceiling = 5
       number_of_sets_ground = 3
     }
@@ -86,7 +86,7 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
   const exercise_weight = Number.parseInt(((weight_ground + weight_ceiling) / 2).toString())
   const number_of_sets = Number.parseInt(((number_of_sets_ceiling + number_of_sets_ground) / 2).toString())
 
-  // repeat per each muscle
+  // دستورالعمل های تکرار حرکات برای هر کدام از عضلات
   if (target === 'strength') {
     if (level === 'beginner' || level === 'novice') {
       repeats_per_set_ground = 12
@@ -143,7 +143,7 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
       repeats_per_set_ceiling = 25
     }
   }
-  else if (target === 'mobility') {
+  else { // target === 'mobility'
     if (level === 'beginner' || level === 'novice') {
       repeats_per_set_ground = 8
       repeats_per_set_ceiling = 12
@@ -173,7 +173,7 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
 
   const repsPerSet = Number.parseInt(((repeats_per_set_ceiling + repeats_per_set_ground) / 2).toString())
 
-  // Rest Between Sets Logic
+  // دستور العمل های استراحت بین ست ها
   if (target === 'strength') {
     if (mechanics === 'Compound') {
       if (repsPerSet <= 5) {
@@ -185,7 +185,7 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
         restBetweenSets_ground = 120
       }
     }
-    else if (mechanics === 'Isolation') {
+    else { // mechanics === 'Isolation'
       restBetweenSets_ceiling = 120
       restBetweenSets_ground = 60
     }
@@ -210,11 +210,11 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
       restBetweenSets_ground = 30
     }
   }
-  else if (['balance', 'postural'].includes(target)) {
+  else if (target === 'balance' || target === 'postural') {
     restBetweenSets_ceiling = 60
     restBetweenSets_ground = 30
   }
-  else if (target === 'mobility') {
+  else { // target === 'mobility'
     restBetweenSets_ceiling = 60
     restBetweenSets_ground = 20
   }
@@ -340,7 +340,7 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
   //     console.log("You can gradually increase the intensity of your exercises.");
   // }
 
-  // Export the results for use in main.ts
+  // بازگشت خروجی 
   return {
     restBetweenSets,
     exercise_weight,

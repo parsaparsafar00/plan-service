@@ -58,7 +58,7 @@ export interface GeneratedSession {
 }
 
 /**
- * ساختار یک هفته
+ * ساختار یک هفته در خروجی
  */
 export interface GeneratedWeek {
   index: number
@@ -68,10 +68,12 @@ export interface GeneratedWeek {
 }
 
 /**
- * تولید برنامه تمرینی بر اساس داده‌های داخل inMemoryExercises
+ * تولید برنامه تمرینی بر اساس داده‌های داخل ورودی کاربر و داده های موجود در متغیر سراسری حرکات
  */
 export function generatePlan(input: PlanGeneratorInput): GeneratedWeek[] {
+  // استفاده از دستورالعمل های مربوط به برنامه تمرینی
   const workoutPlanInfo = getPlanInstructions(input.level)
+
   const allExercises = getAllExercisesArray()
   if (!allExercises || allExercises.length === 0)
     throw new AppError('PLAN_NO_EXERCISES_FOUND', 'No exercises loaded in memory', 400)
@@ -90,6 +92,7 @@ export function generatePlan(input: PlanGeneratorInput): GeneratedWeek[] {
     }
 
     for (const sessionItem of w.sessions) {
+      // استفاده از دستورالعمل های مربوط به جلسه تمرینی
       const sessionInfo = getSessionInstructions({
         age: input.age,
         gender: input.gender,
@@ -113,51 +116,57 @@ export function generatePlan(input: PlanGeneratorInput): GeneratedWeek[] {
         exercises: [],
       }
 
-      // منطق فیلتر
       const muscleValues = sessionItem.targetMuscles
+      let chosen_exercises = [];
+      // منطق فیلترینگ
       const filtered = allExercises.filter((ex) => {
-        // شرط سن
-        // اگر ex.ageGround > age => رد
+        // فیلتر بر اساس سن
         if (ex.ageGround && ex.ageGround > input.age)
           return false
         if (ex.ageCeiling && ex.ageCeiling < input.age)
           return false
 
-        // شرط وزن
+        // فیلتر بر اساس وزن
         if (ex.weightGround && ex.weightGround > input.weight)
           return false
         if (ex.weightCeiling && ex.weightCeiling < input.weight)
           return false
 
-        // شرط gender
+        // فیلتر بر اساس جنسیت
         if (ex.gender !== null && ex.gender !== input.gender)
           return false
 
-        // شرط target
+        // فیلتر بر اساس هدف تمرین شخص
         if (ex.target && ex.target !== input.target)
           return false
 
-        // difficultyLevel in [0..userLevelIndex]
+        // فیلتر بر اساس درجه سختی حرکت
         if (ex.difficultyLevel) {
           const exLevelIndex = levels.indexOf(ex.difficultyLevel.toLowerCase())
           if (exLevelIndex === -1 || exLevelIndex > userLevelIndex)
             return false
         }
 
-        // muscle group
+        // فیلتر بر اساس عضلات هدف
         if (muscleValues.length > 0 && ex.targetMuscleGroup) {
           if (!muscleValues.includes(ex.targetMuscleGroup))
             return false
         }
         return true
-      })
+      });
 
-      // شافل و لیمیت
+      // شافل کردن آرایه برای انتخاب رندوم حرکات
       shuffleArray(filtered)
-      const limitCount = sessionInfo.number_of_exercises_per_muscle * muscleValues.length
-      const chosen = filtered.slice(0, limitCount)
 
-      const finalExercises = chosen.map((ex) => {
+      // به ازای هر کدوم از حرکات، باید به تعدادی که دستور داده شده، حرکت انتخاب بشه
+      chosen_exercises = [];
+      for (const muscleGroup of muscleValues) {
+        const exercisesForMuscle = filtered.filter(ex => ex.targetMuscleGroup === muscleGroup || ex.targetMuscleGroup);
+        chosen_exercises.push(...exercisesForMuscle.slice(0, sessionInfo.number_of_exercises_per_muscle));
+      }
+      
+      // استفاده از دستورالعمل های مربوط به حرکات بدنسازی
+      const finalExercises = chosen_exercises.map((ex) => {
         const exInstr = getExerciseInstructions({
           age: input.age,
           gender: input.gender,
@@ -165,7 +174,7 @@ export function generatePlan(input: PlanGeneratorInput): GeneratedWeek[] {
           level: input.level,
           mechanics: ex.mechanics || '',
           target_muscle_groups: muscleValues,
-        })
+        });
 
         return {
           ...ex,
@@ -175,7 +184,6 @@ export function generatePlan(input: PlanGeneratorInput): GeneratedWeek[] {
           repsPerSet: exInstr.repsPerSet,
         }
       })
-
       sessionData.exercises = finalExercises
       weekData.sessions.push(sessionData)
     }

@@ -48,7 +48,7 @@ export interface ExerciseEntity {
 }
 
 /**
- * آرایه‌ای از همه تمرین‌ها، جهت جستجو و فیلتر در inMemory
+ * آرایه‌ای گلوبال از همه تمرین‌ها، جهت جستجو و فیلتر در مموری
  */
 let inMemoryExercises: ExerciseEntity[] = []
 
@@ -70,7 +70,7 @@ export async function loadAllExercises(): Promise<void> {
 }
 
 /**
- * برگرداندن لیست تمرین‌ها (آرایه) از درون حافظه
+ * برگرداندن لیست حرکات (آرایه) از درون حافظه
  */
 export function getAllExercisesArray(): ExerciseEntity[] {
   return inMemoryExercises
