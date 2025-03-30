@@ -6,22 +6,6 @@ export interface LoadPlan {
 export function getPlanInstructions(level: string): LoadPlan {
   let loadIncrement = ''
   let deload = ''
-  // Determine rest between sessions based on workout split
-  // switch (workout_split) {
-  //     case "Full-Body":
-  //     case "Upper/Lower":
-  //         restBetweenSessions_ceiling = 48;
-  //         restBetweenSessions_ground = 48;
-  //         break;
-  //     case "Push/Pull/Legs":
-  //         restBetweenSessions_ceiling = 72;
-  //         restBetweenSessions_ground = 48;
-  //         break;
-  //     case "Body Part Split":
-  //         restBetweenSessions_ceiling = 7;
-  //         restBetweenSessions_ground = 5;
-  //         break;
-  // }
 
   // دستورالعمل های افزایش و کاهش بار تمرینی در طی هفته ها
   switch (level) {
@@ -43,8 +27,8 @@ export function getPlanInstructions(level: string): LoadPlan {
       deload = 'هر ۵ الی ۶ هفته یک بار کاهش حجم تمرین به میزان ۵۰٪ با تمرکز بر ریکاوری و تکنیک'
       break
     default:
-      loadIncrement = '---'
-      deload = '---'
+      loadIncrement = ''
+      deload = ''
   }
 
   return { loadIncrement, deload }
