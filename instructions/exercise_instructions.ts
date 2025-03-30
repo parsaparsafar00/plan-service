@@ -37,11 +37,11 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
   if (target === 'hypertrophy') {
     weight_ceiling = 75
     weight_ground = 65
-    if (mechanics === 'Compound') {
+    if (mechanics === 'compound') {
       number_of_sets_ceiling = 6
       number_of_sets_ground = 3
     }
-    else { // mechanics === 'Isolation'
+    else { // mechanics === 'isolation'
       number_of_sets_ceiling = 4
       number_of_sets_ground = 3
     }
@@ -55,11 +55,11 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
       weight_ceiling = 95
       weight_ground = 80
     }
-    if (mechanics === 'Compound') {
+    if (mechanics === 'compound') {
       number_of_sets_ceiling = 6
       number_of_sets_ground = 4
     }
-    else { // mechanics === 'Isolation'
+    else { // mechanics === 'isolation'
       number_of_sets_ceiling = 5
       number_of_sets_ground = 3
     }
@@ -67,7 +67,7 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
   else if (target === 'endurance') {
     weight_ceiling = gender === 0 ? 60 : 65
     weight_ground = gender === 0 ? 40 : 45
-    if (mechanics === 'Compound') {
+    if (mechanics === 'compound') {
       number_of_sets_ceiling = 4
       number_of_sets_ground = 3
     }
@@ -175,7 +175,7 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
 
   // دستور العمل های استراحت بین ست ها
   if (target === 'strength') {
-    if (mechanics === 'Compound') {
+    if (mechanics === 'compound') {
       if (repsPerSet <= 5) {
         restBetweenSets_ceiling = 300
         restBetweenSets_ground = 180
@@ -185,7 +185,7 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
         restBetweenSets_ground = 120
       }
     }
-    else { // mechanics === 'Isolation'
+    else { // mechanics === 'isolation'
       restBetweenSets_ceiling = 120
       restBetweenSets_ground = 60
     }

@@ -1,7 +1,7 @@
 import type { Knex } from 'knex'
 export async function up(knex: Knex): Promise<void> {
   // ساخت جدول planRecords
-  let tableExists = await knex.schema.hasTable('plan_records')
+  const tableExists = await knex.schema.hasTable('plan_records')
   if (!tableExists) {
     await knex.schema.createTable('plan_records', (table) => {
       table.uuid('id').primary()

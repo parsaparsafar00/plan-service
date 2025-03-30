@@ -295,41 +295,6 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
     cooldownActivities.push('کشش پشت بازو بالای سر', 'کشش عضله دوسر')
   }
 
-  // // exercise per session (we can only use exercise per musclesssssssss !!!)
-  // if (target === "hypertrophy") {
-  //     if (level === "beginner" || level === "novice") {
-  //         exercises_per_session = 4;
-  //     } else if (level === "intermediate") {
-  //         exercises_per_session = 5;
-  //     } else { // advanced and expert
-  //         exercises_per_session = 6;
-  //     }
-  // } else if (target === "strength") {
-  //     if (level === "beginner" || level === "novice") {
-  //         exercises_per_session = 3;
-  //     } else if (level === "intermediate") {
-  //         exercises_per_session = 4;
-  //     } else { // advanced and expert
-  //         exercises_per_session = 5;
-  //     }
-  // } else if (target === "endurance") {
-  //     if (level === "beginner" || level === "novice") {
-  //         exercises_per_session = 5;
-  //     } else if (level === "intermediate") {
-  //         exercises_per_session = 6;
-  //     } else { // advanced and expert
-  //         exercises_per_session = 7;
-  //     }
-  // } else {
-  //     if (level === "beginner" || level === "novice") {
-  //         exercises_per_session = 3;
-  //     } else if (level === "intermediate") {
-  //         exercises_per_session = 4;
-  //     } else { // advanced and expert
-  //         exercises_per_session = 5;
-  //     }
-  // }
-
   return {
     recoveryTime,
     number_of_exercises_per_muscle,
