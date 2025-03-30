@@ -1,7 +1,8 @@
 import type { Knex } from 'knex'
+
 export async function up(knex: Knex): Promise<void> {
   // ساخت جدول planRecords
-  let tableExists = await knex.schema.hasTable('plan_records')
+  const tableExists = await knex.schema.hasTable('plan_records')
   if (!tableExists) {
     await knex.schema.createTable('plan_records', (table) => {
       table.uuid('id').primary()
@@ -14,7 +15,7 @@ export async function up(knex: Knex): Promise<void> {
       table.string('target', 255).notNullable()
       table.string('status', 30).nullable()
       table.text('description').nullable()
-      table.integer('nWeeks').nullable() // تعداد هفته های برنامه 
+      table.integer('nWeeks').nullable() // تعداد هفته های برنامه
       table.text('workoutPlan').nullable() // فیلد برنامه که بصورت جیسان ذخیره میشه
 
       table.timestamp('createdAt', { useTz: false }).notNullable()
