@@ -5,7 +5,6 @@ export const OpenAPIOptions = {
       description: 'API for personal plan',
       version: '1.0.0',
     },
-    tags: [{ name: 'v1.0', description: 'Current version for Plan Service' }],
   },
 }
 
