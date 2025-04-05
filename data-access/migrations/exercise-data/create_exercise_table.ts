@@ -1,146 +1,149 @@
 import type { Knex } from 'knex'
 import ExcelJS from 'exceljs'
 import * as path from 'node:path'
-import camelCase from 'lodash.camelCase'
 import { v4 as uuidv4 } from 'uuid'
 
-// تابع برای تولید اولیه جدول حرکات
+// کمل کیس بدون استفاده از کتابخانه های نود جی اس
+function customCamelCase(str: string): string {
+  return str
+    .replace(/[\-*#]/g, ' ')
+    .replace(/[^\w\s]/g, '')
+    .trim()
+    .split(/\s+/)
+    .map((word, index) => {
+      if (index === 0) {
+        return word.toLowerCase();
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join('');
+}
+
 export async function initExerciseTable(knex: Knex): Promise<void> {
   const tableExists = await knex.schema.hasTable('plan_exercises')
   if (!tableExists) {
     await knex.schema.createTable('plan_exercises', (table) => {
       table.uuid('id').primary()
       table.string('name', 255).notNullable()
+      table.string('nameFa', 255).notNullable()
       table.text('shortYoutubeDemonstration').nullable()
       table.text('inDepthYoutubeExplanation').nullable()
       table.string('difficultyLevel', 50).nullable()
       table.string('targetMuscleGroup', 255).nullable()
+      table.string('primeMoverMuscle', 255).nullable()
+      table.string('secondaryMuscle', 255).nullable()
+      table.string('tertiaryMuscle', 255).nullable()
       table.string('primaryEquipment', 255).nullable()
       table.string('secondaryEquipment', 255).nullable()
       table.string('bodyRegion', 50).nullable()
       table.string('mechanics', 50).nullable()
       table.string('target', 50).nullable()
       table.integer('priority').nullable()
-      table.integer('gender').nullable() // 0=male, 1=female, or null
+      table.integer('gender').nullable()
       table.integer('ageGround').nullable()
       table.integer('ageCeiling').nullable()
       table.integer('weightGround').nullable()
       table.integer('weightCeiling').nullable()
     })
 
-    // مسیر فایل اکسل حرکات بدنسازی فعلی که پراسس نشده
     const excelFilePath = path.join(process.cwd(), '/data-access/migrations/exercise-data/exercises-data.xlsx')
     const workbook = new ExcelJS.Workbook()
     await workbook.xlsx.readFile(excelFilePath)
     const sheet = workbook.worksheets[0]
 
-    // تنظیم فونت تمام سلول‌ها 
-    //   sheet.eachRow((row) => {
-    //     row.eachCell((cell) => {
-    //       if (cell.value !== null && typeof cell.value !== 'undefined') {
-    //         cell.font = { name: 'Times New Roman', size: 11 }
-    //       }
-    //     })
-    //   })
-
-    // استخراج سرفصل‌ها و نگاشت به camelCase
     const headerRow = sheet.getRow(1)
-    const rawHeaders = (headerRow.values as string[]).slice(1) // حذف مقدار null اولیه
-    const toCamel = (s: string) =>
-        camelCase(s.replace(/[\-*#]/g, '').replace(/[^\w\s]/g, '').trim())
+    const rawHeaders = (headerRow.values as string[]).slice(1)
 
-    let renamedHeaders = rawHeaders.map(toCamel)
-
-    // تغییر نام اولین و آخرین ستون
-    renamedHeaders[0] = 'name'
-    renamedHeaders[renamedHeaders.length - 1] = 'target'
-
-    // فیلتر ستون‌های مورد نیاز
+    // فقط تعدادی از ستون های حاضر در دیتاست بع دیتابیس منتقل می شوند
     const columnsToKeep = new Set([
-        'name',
-        'inDepthYouTubeExplanation',
-        'shortYouTubeDemonstration',
-        'targetMuscleGroup',
-        'difficultyLevel',
-        'primaryEquipment',
-        'secondaryEquipment',
-        'bodyRegion',
-        'mechanics',
-        'target',
+      'name',
+      'nameFa',
+      "primeMoverMuscle",
+      "secondaryMuscle",
+      "tertiaryMuscle",
+      'inDepthYoutubeExplanation',
+      'shortYoutubeDemonstration',
+      'targetMuscleGroup',
+      'difficultyLevel',
+      'primaryEquipment',
+      'secondaryEquipment',
+      'bodyRegion',
+      'mechanics',
+      'target',
     ])
 
-    // استخراج ردیف‌ها
     const records: any[] = []
 
     for (let i = 2; i <= sheet.rowCount; i++) {
-        const row = sheet.getRow(i)
-        const rowData: any = {}
+      const row = sheet.getRow(i)
+      const rowData: any = {}
 
-        row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-        const key = renamedHeaders[colNumber - 1]
-
+      row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        const key = rawHeaders.map(customCamelCase)[colNumber - 1]
         if (!columnsToKeep.has(key)) return
-        if (key === 'inDepthYouTubeExplanation' || key === 'shortYouTubeDemonstration') {
-            const hyperlink = cell.hyperlink || null;  
-            const value = typeof cell.value === 'string' ? cell.value.trim() : null;
-        
-            // Use hyperlink if available, otherwise fallback to the visible value
-            rowData[key] = hyperlink ? hyperlink : value;
 
+
+        // اینجا باید خود لینک رو بجای هایپر لینک بگیریم از دیتاست
+        if (key === 'inDepthYoutubeExplanation' || key === 'shortYoutubeDemonstration') {
+          const hyperlink = cell.hyperlink || null
+          const value = typeof cell.value === 'string' ? cell.value.trim() : null
+          rowData[key] = hyperlink ? hyperlink : value
         } else {
-            let val = typeof cell.value === 'string' ? cell.value.trim() : cell.value
-
-            if (['Unsorted', 'Unsorted*', 'unsorted', 'none', 'None'].includes(String(val))) {
-            val = ''
-            }
-
-            if (key === 'target') {
+          let val = typeof cell.value === 'string' ? cell.value.trim() : cell.value
+          
+          // حذف مقادیری ک بدرد نخور هستن در تمامی ستون ها و رکورد ها
+          if (['Unsorted', 'Unsorted*', 'unsorted', 'none', 'None'].includes(String(val))) val = ''
+          
+          // تبدیل مقادیر موجود در ستون هدف (ممکن است نیاز به بازنگری داشته باشند)
+          if (key === 'target') {
             const targetMap: Record<string, string> = {
-                'Calisthenics': 'endurance',
-                'Grinds': 'endurance',
-                'Animal Flow': '',
-                'Plyometric': 'strength',
-                'Olympic Weightlifting': 'strength',
-                'Powerlifting': 'strength',
-                'Ballistics': 'strength',
-                'Bodybuilding': 'hypertrophy',
-                'Postural': 'postural',
-                'Mobility': 'mobility',
-                'Balance': 'balance'
+              'Calisthenics': 'endurance',
+              'Grinds': 'endurance',
+              'Animal Flow': '',
+              'Plyometric': 'strength',
+              'Olympic Weightlifting': 'strength',
+              'Powerlifting': 'strength',
+              'Ballistics': 'strength',
+              'Bodybuilding': 'hypertrophy',
+              'Postural': 'postural',
+              'Mobility': 'mobility',
+              'Balance': 'balance'
             }
             val = targetMap[val as string] ?? val
-            }
+          }
 
-            rowData[key] = val ?? ''
+          rowData[key] = val ?? ''
         }
-        })
-
-        records.push(rowData)
+      })
+      records.push(rowData)
     }
 
-    // ساخت رکوردها برای درج در دیتابیس
     const mappedRecords = records.map((row) => ({
-        id: uuidv4(),
-        name: row.name || '',
-        shortYoutubeDemonstration: row.shortYouTubeDemonstration,
-        inDepthYoutubeExplanation: row.inDepthYouTubeExplanation,
-        difficultyLevel: row.difficultyLevel ? row.difficultyLevel.toLowerCase() : null,
-        targetMuscleGroup: row.targetMuscleGroup ? row.targetMuscleGroup.toLowerCase() : null,
-        primaryEquipment: row.primaryEquipment ? row.primaryEquipment.toLowerCase() : null,
-        secondaryEquipment: row.secondaryEquipment ? row.secondaryEquipment.toLowerCase() : null,
-        bodyRegion: row.bodyRegion ? row.bodyRegion.toLowerCase() : null,
-        mechanics: row.mechanics ? row.mechanics.toLowerCase() : null,
-        target: row.target || null,
-        gender: row.gender || null,
-        ageCeiling: row.ageCeiling || null,
-        ageGround: row.ageGround || null,
-        weightCeiling: row.weightCeiling || null,
-        weightGround: row.weightGround || null,
+      id: uuidv4(),
+      name: row.name || '',
+      nameFa: row.nameFa || '',
+      shortYoutubeDemonstration: row.shortYoutubeDemonstration,
+      inDepthYoutubeExplanation: row.inDepthYoutubeExplanation,
+      difficultyLevel: row.difficultyLevel ? row.difficultyLevel.toLowerCase() : null,
+      targetMuscleGroup: row.targetMuscleGroup ? row.targetMuscleGroup.toLowerCase() : null,
+      primeMoverMuscle: row.primeMoverMuscle ? row.primeMoverMuscle.toLowerCase() : null,
+      secondaryMuscle: row.secondaryMuscle ? row.secondaryMuscle.toLowerCase() : null,
+      tertiaryMuscle: row.tertiaryMuscle ? row.tertiaryMuscle.toLowerCase() : null,
+      primaryEquipment: row.primaryEquipment ? row.primaryEquipment.toLowerCase() : null,
+      secondaryEquipment: row.secondaryEquipment ? row.secondaryEquipment.toLowerCase() : null,
+      bodyRegion: row.bodyRegion ? row.bodyRegion.toLowerCase() : null,
+      mechanics: row.mechanics ? row.mechanics.toLowerCase() : null,
+      target: row.target || null,
+      gender: row.gender || null,
+      ageCeiling: row.ageCeiling || null,
+      ageGround: row.ageGround || null,
+      weightCeiling: row.weightCeiling || null,
+      weightGround: row.weightGround || null,
     }))
 
-    // درج در دیتابیس به صورت chunk
+    // بصورت تکه تکه وارد دیتابیس میشن رکورد ها 
     const chunkSize = 500
     await knex.batchInsert('plan_exercises', mappedRecords, chunkSize)
     console.log(`✅ Inserted ${mappedRecords.length} records into plan_exercises.`)
-    }
+  }
 }

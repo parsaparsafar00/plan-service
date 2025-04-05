@@ -28,6 +28,33 @@ export async function planRoutes(app: FastifyInstance) {
     },
   })
 
+
+  /**
+     * ایجاد برنامه تمرینی مخصوص پرینت گرفتن ورزشکارن
+     * POST /v1/plan/create-print
+     */
+  app.post('/create-print', {
+    schema: {
+      tags: ['Plan'],
+      summary: 'ایجاد یادداشت جدید',
+      description: `
+  ##فقط معلم بایستی قادر باشه که برنامه تولید بکنه 
+  `,
+      body: planSchema.CreatePlanRequest,
+      response: {
+        200: { content: { 'application/json': { schema: planSchema.SinglePlanResponse } }, description: planSchema.SuccessResponseDes },
+        400: planSchema.BadRequestError,
+        403: planSchema.ForbiddenError,
+        500: planSchema.InternalServerError,
+      },
+    },
+    handler: async (request: FastifyRequest<{ Body: planSchema.CreatePlanRequestType }>, reply: FastifyReply) => {
+      const plan = await planUseCase.createPlan(request)
+      reply.send({ data: { plan }, msgCode: '', msgType: 'success' })
+    },
+  })
+
+
   /**
    * گرفتن برنامه تمرینی
    * GET /v1/plan/by-id/:id

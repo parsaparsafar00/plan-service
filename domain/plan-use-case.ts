@@ -6,7 +6,7 @@ import { auditLogger, setAuditRequest } from '@amard/logger'
 import { DateTime } from 'luxon'
 import { validate as isValidUuid, v4 as uuidv4 } from 'uuid'
 import * as planRepo from '../data-access/plan-repository.js'
-import { generatePlan } from '../instructions/plan_generator.js'
+import { generatePlan, printGeneratePlan } from '../instructions/plan_generator.js'
 
 function extractSenderData(request: FastifyRequest) {
   const underJwt = request.underJwt === 'true'
@@ -39,13 +39,11 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
     studentWeight: request.body.traineeInfo.weight,
     studentAge: request.body.traineeInfo.age,
     nWeeks: request.body.weeks.length,
-    workoutPlan: '',
+    workoutPlan: {},
     createdAt: nowStr,
     updatedAt: nowStr,
   }
-
-  // inMemory plan generator
-  const workout = generatePlan({
+  const generate_plan_input = {
     target: request.body.target,
     level: request.body.traineeInfo.level,
     age: request.body.traineeInfo.age,
@@ -60,10 +58,17 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
         targetMuscles: s.targetMuscles,
       })),
     })),
-  })
+  }
 
-  newPlan.workoutPlan = JSON.stringify(workout, null, 2)
+  // آیا برنامه برای مخصوص پرینت است یا خیر
+  let workout = []
+  if (request.raw.url && request.raw.url.includes('create-print')) {
+    workout = printGeneratePlan(generate_plan_input);
+  } else {
+    workout = generatePlan(generate_plan_input);
+  }
 
+  newPlan.workoutPlan = workout
   const inserted = await planRepo.insertPlan(newPlan)
   auditLogger.create('', { request: setAuditRequest(request), oldData: null, newData: inserted })
 
@@ -71,7 +76,7 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
 }
 
 /**
- * دریافت برنامه با آیدی
+ * دریافت برنامه تمرینی با آیدی
  */
 export async function getPlan(request: FastifyRequest<{ Params: planSchema.IdParamType }>) {
   const plan = await planRepo.getPlanById(request.params.id)
@@ -89,7 +94,7 @@ export async function getPlan(request: FastifyRequest<{ Params: planSchema.IdPar
 }
 
 /**
- * ویرایش برنامه
+ * ویرایش برنامه تمرینی
  */
 export async function updatePlan(request: FastifyRequest<{ Params: planSchema.IdParamType, Body: planSchema.UpdatePlanRequestType }>) {
   const { userId: updaterId, role: updaterRole } = extractSenderData(request)

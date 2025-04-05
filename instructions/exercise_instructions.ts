@@ -1,227 +1,68 @@
 export interface ExerciseInstructionInput {
   age: number
-  gender: number // 0 -> male, 1 -> female
+  // gender: number // 0 -> male, 1 -> female
   target: string
-  level: string
   mechanics: string
-  target_muscle_groups: string[]
+  repeatsPerSetGround: number, 
+  repeatsPerSetCeiling: number
 }
 
 export interface ExerciseInstructionResult {
-  restBetweenSets: number
-  exercise_weight: number
-  number_of_sets: number
-  repsPerSet: number
+  restBetweenSetsCeiling: number
+  restBetweenSetsGround: number
 }
 
-export function getExerciseInstructions({ gender, target, level, mechanics, target_muscle_groups }: ExerciseInstructionInput): ExerciseInstructionResult {
-  // let injuryDesc; // Count of isometric sets performed
-  // let age = global.age;
-  // let target_muscle_groups = global.target_muscle_groups;
-  // let gender = global.gender; // 0 for male, 1 for female
-  // let target = global.target;
-  // let difficulty_level = global.difficulty_level;
-  // let mechanics = global.mechanics;
-  // let weight = global.weight;
+export function getExerciseInstructions({ target, mechanics, repeatsPerSetGround, repeatsPerSetCeiling }: ExerciseInstructionInput): ExerciseInstructionResult {
 
-  let weight_ceiling: number
-  let weight_ground: number
-  let number_of_sets_ceiling: number
-  let number_of_sets_ground: number
-  let repeats_per_set_ground: number
-  let repeats_per_set_ceiling: number
-  let restBetweenSets_ceiling: number
-  let restBetweenSets_ground: number
+  let restBetweenSetsCeiling: number
+  let restBetweenSetsGround: number
 
-  // دستور العمل های وزن حرکت
-  if (target === 'hypertrophy') {
-    weight_ceiling = 75
-    weight_ground = 65
-    if (mechanics === 'compound') {
-      number_of_sets_ceiling = 6
-      number_of_sets_ground = 3
-    }
-    else { // mechanics === 'isolation'
-      number_of_sets_ceiling = 4
-      number_of_sets_ground = 3
-    }
-  }
-  else if (target === 'strength') {
-    if (gender === 0) {
-      weight_ceiling = 100
-      weight_ground = 80
-    }
-    else {
-      weight_ceiling = 95
-      weight_ground = 80
-    }
-    if (mechanics === 'compound') {
-      number_of_sets_ceiling = 6
-      number_of_sets_ground = 4
-    }
-    else { // mechanics === 'isolation'
-      number_of_sets_ceiling = 5
-      number_of_sets_ground = 3
-    }
-  }
-  else if (target === 'endurance') {
-    weight_ceiling = gender === 0 ? 60 : 65
-    weight_ground = gender === 0 ? 40 : 45
-    if (mechanics === 'compound') {
-      number_of_sets_ceiling = 4
-      number_of_sets_ground = 3
-    }
-    else {
-      number_of_sets_ceiling = 3
-      number_of_sets_ground = 2
-    }
-  }
-  else {
-    number_of_sets_ceiling = 4
-    number_of_sets_ground = 3
-    weight_ceiling = 70
-    weight_ground = 60
-  }
-
-  const exercise_weight = Number.parseInt(((weight_ground + weight_ceiling) / 2).toString())
-  const number_of_sets = Number.parseInt(((number_of_sets_ceiling + number_of_sets_ground) / 2).toString())
-
-  // دستورالعمل های تکرار حرکات برای هر کدام از عضلات
-  if (target === 'strength') {
-    if (level === 'beginner' || level === 'novice') {
-      repeats_per_set_ground = 12
-      repeats_per_set_ceiling = 15
-    }
-    else if (level === 'intermediate') {
-      repeats_per_set_ground = 6
-      repeats_per_set_ceiling = 12
-    }
-    else {
-      repeats_per_set_ground = 1
-      repeats_per_set_ceiling = 5
-    }
-  }
-  else if (target === 'endurance') {
-    if (level === 'beginner' || level === 'novice') {
-      repeats_per_set_ground = 12
-      repeats_per_set_ceiling = 20
-    }
-    else if (level === 'intermediate') {
-      repeats_per_set_ground = 15
-      repeats_per_set_ceiling = 25
-    }
-    else {
-      repeats_per_set_ground = 20
-      repeats_per_set_ceiling = 30
-    }
-  }
-  else if (target === 'hypertrophy') {
-    if (level === 'beginner' || level === 'novice') {
-      repeats_per_set_ground = 10
-      repeats_per_set_ceiling = 15
-    }
-    else if (level === 'intermediate') {
-      repeats_per_set_ground = 8
-      repeats_per_set_ceiling = 12
-    }
-    else {
-      repeats_per_set_ground = 6
-      repeats_per_set_ceiling = 12
-    }
-  }
-  else if (target === 'balance' || target === 'postural') {
-    if (level === 'beginner' || level === 'novice') {
-      repeats_per_set_ground = 10
-      repeats_per_set_ceiling = 15
-    }
-    else if (level === 'intermediate') {
-      repeats_per_set_ground = 12
-      repeats_per_set_ceiling = 20
-    }
-    else {
-      repeats_per_set_ground = 15
-      repeats_per_set_ceiling = 25
-    }
-  }
-  else { // target === 'mobility'
-    if (level === 'beginner' || level === 'novice') {
-      repeats_per_set_ground = 8
-      repeats_per_set_ceiling = 12
-    }
-    else if (level === 'intermediate') {
-      repeats_per_set_ground = 10
-      repeats_per_set_ceiling = 15
-    }
-    else {
-      repeats_per_set_ground = 12
-      repeats_per_set_ceiling = 20
-    }
-  }
-
-  if (
-    target_muscle_groups.some(item => ['Chest', 'Back', 'Abductors', 'Adductors'].includes(item))
-  ) {
-    repeats_per_set_ground += 2
-    repeats_per_set_ceiling += 2
-  }
-  else if (
-    target_muscle_groups.some(item => ['Biceps', 'Triceps', 'Shoulders', 'Calves'].includes(item))
-  ) {
-    repeats_per_set_ground -= 2
-    repeats_per_set_ceiling -= 2
-  }
-
-  const repsPerSet = Number.parseInt(((repeats_per_set_ceiling + repeats_per_set_ground) / 2).toString())
 
   // دستور العمل های استراحت بین ست ها
   if (target === 'strength') {
     if (mechanics === 'compound') {
-      if (repsPerSet <= 5) {
-        restBetweenSets_ceiling = 300
-        restBetweenSets_ground = 180
+      if (repeatsPerSetGround <= 5) {
+        restBetweenSetsCeiling = 300
+        restBetweenSetsGround = 180
       }
       else {
-        restBetweenSets_ceiling = 240
-        restBetweenSets_ground = 120
+        restBetweenSetsCeiling = 240
+        restBetweenSetsGround = 120
       }
     }
     else { // mechanics === 'isolation'
-      restBetweenSets_ceiling = 120
-      restBetweenSets_ground = 60
+      restBetweenSetsCeiling = 120
+      restBetweenSetsGround = 60
     }
-  }
-  else if (target === 'hypertrophy') {
-    if (repsPerSet >= 6 && repsPerSet <= 12) {
-      restBetweenSets_ceiling = 60
-      restBetweenSets_ground = 30
-    }
-    else {
-      restBetweenSets_ceiling = 45
-      restBetweenSets_ground = 30
+  } else if (target === 'hypertrophy') {
+    if (repeatsPerSetGround >= 6 && repeatsPerSetCeiling <= 12) {
+      restBetweenSetsCeiling = 60
+      restBetweenSetsGround = 30
+    } else {
+      restBetweenSetsCeiling = 45
+      restBetweenSetsGround = 30
     }
   }
   else if (target === 'endurance') {
-    if (repsPerSet > 12) {
-      restBetweenSets_ceiling = 60
-      restBetweenSets_ground = 20
+    if (repeatsPerSetGround > 12) {
+      restBetweenSetsCeiling = 60
+      restBetweenSetsGround = 20
     }
     else {
-      restBetweenSets_ceiling = 90
-      restBetweenSets_ground = 30
+      restBetweenSetsCeiling = 90
+      restBetweenSetsGround = 30
     }
   }
   else if (target === 'balance' || target === 'postural') {
-    restBetweenSets_ceiling = 60
-    restBetweenSets_ground = 30
+    restBetweenSetsCeiling = 60
+    restBetweenSetsGround = 30
   }
   else { // target === 'mobility'
-    restBetweenSets_ceiling = 60
-    restBetweenSets_ground = 20
+    restBetweenSetsCeiling = 60
+    restBetweenSetsGround = 20
   }
 
-  const restBetweenSets = Number.parseInt(((restBetweenSets_ceiling + restBetweenSets_ground) / 2).toString())
-
-  // Special Techniques Logic
+  // دستور العمل های تکنیک های خاص
   // if (advancedTechniques === "Drop Set") {
   //     if (target === "hypertrophy") {
   //         if (age <= 30) {
@@ -248,8 +89,8 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
   //
   //     dropSet_restBetweenDrops_ceiling = 20;
   //     dropSet_restBetweenDrops_ground = 10;
-  //     dropSet_restBetweenSets_ceiling = 90;
-  //     dropSet_restBetweenSets_ground = 60;
+  //     dropSet_restBetweenSetsCeiling = 90;
+  //     dropSet_restBetweenSetsGround = 60;
   // }
   //
   // if (advancedTechniques === "Superset") {
@@ -285,8 +126,8 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
   //
   //     allowGiantSet = !["Squat", "Deadlift"].includes(exerciseList);
   //
-  //     giantSet_restBetweenSets_ceiling = 3;
-  //     giantSet_restBetweenSets_ground = 2;
+  //     giantSet_restBetweenSetsCeiling = 3;
+  //     giantSet_restBetweenSetsGround = 2;
   // }
   //
   // if (advancedTechniques === "Forced Reps") {
@@ -342,9 +183,7 @@ export function getExerciseInstructions({ gender, target, level, mechanics, targ
 
   // بازگشت خروجی 
   return {
-    restBetweenSets,
-    exercise_weight,
-    number_of_sets,
-    repsPerSet,
+    restBetweenSetsCeiling,
+    restBetweenSetsGround
   }
 }

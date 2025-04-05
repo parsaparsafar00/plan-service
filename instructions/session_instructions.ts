@@ -7,9 +7,11 @@ export interface SessionInstructionInput {
 }
 
 export interface SessionInstructionResult {
-  recoveryTime: number
-  number_of_exercises_per_muscle: number
-  sessionDuration: number
+  recoveryTime_ceiling: number
+  recoveryTime_ground: number
+  number_of_exercises_per_muscle_set: number[]
+  sessionDuration_ceiling: number
+  sessionDuration_ground: number
   warmupDuration_ceiling: number
   warmupDuration_ground: number
   cooldownDuration_ceiling: number
@@ -19,15 +21,10 @@ export interface SessionInstructionResult {
 }
 
 export function getSessionInstructions({ age, gender, target, level, target_muscle_groups }: SessionInstructionInput): SessionInstructionResult {
-  // let age = global.age; // Age of the individual
-  // let target_muscle_groups = global.target_muscle_groups;
-  // let gender = global.gender; // 0 for male, 1 for female
-  // let target = global.target;
-  // let level = global.level;
 
   let recoveryTime_ceiling: number
   let recoveryTime_ground: number
-  let number_of_exercises_per_muscle: number
+  let number_of_exercises_per_muscle_set: number[]
   let warmupDuration_ceiling: number
   let warmupDuration_ground: number
   let cooldownDuration_ceiling: number
@@ -36,55 +33,54 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
   let cooldownActivities: string[] = []
 
   // دستورالعمل های دوره های ریکاوری ورزشکار
-  if (target_muscle_groups.some(item => ['Chest', 'Back', 'Abductors', 'Adductors'].includes(item))) {
+  if (target_muscle_groups.some(item => ['chest', 'back', 'abductors', 'adductors'].includes(item))) {
     if (gender === 0) {
       recoveryTime_ceiling = 72
       recoveryTime_ground = 48
-    }
-    else {
+    } else {
       recoveryTime_ceiling = 60
       recoveryTime_ground = 36
     }
-  }
-  else if (target_muscle_groups.some(item => ['Biceps', 'Triceps', 'Shoulders', 'Calves'].includes(item))) {
+  } else if (target_muscle_groups.some(item => ['biceps', 'triceps', 'shoulders', 'calves'].includes(item))) {
     if (gender === 0) {
       recoveryTime_ceiling = 48
       recoveryTime_ground = 24
-    }
-    else {
+    } else {
       recoveryTime_ceiling = 36
       recoveryTime_ground = 18
     }
-  }
-  else if (target === 'hypertrophy') {
+  } else if (target === 'hypertrophy') {
     if (gender === 0) {
       recoveryTime_ceiling = 72
       recoveryTime_ground = 48
-    }
-    else {
+    } else {
       recoveryTime_ceiling = 60
       recoveryTime_ground = 36
     }
-  }
-  else if (target === 'endurance') {
+  } else if (target === 'endurance') {
     if (gender === 0) {
       recoveryTime_ceiling = 48
       recoveryTime_ground = 24
-    }
-    else {
+    } else {
       recoveryTime_ceiling = 36
       recoveryTime_ground = 18
+    }
+  } else { // genereal fitness purposes
+    if (gender === 0) {
+      recoveryTime_ceiling = 48;
+      recoveryTime_ground = 36;
+    } else {
+      recoveryTime_ceiling = 36;
+      recoveryTime_ground = 24;
     }
   }
 
   if (age > 40) {
     recoveryTime_ceiling += 24
     recoveryTime_ground += 12
-  }
+  } 
 
-  const recoveryTime = Number.parseInt(((recoveryTime_ceiling + recoveryTime_ground) / 2).toString())
-
-  // Determine session duration based on level and target
+  // دستورالعمل های مدت زمان جلسه تمرینی 
   let sessionDuration_ceiling: number
   let sessionDuration_ground: number
 
@@ -97,27 +93,22 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
     else {
       sessionDuration_ground = 30
     }
-  }
-  else if (level === 'intermediate') {
+  } else if (level === 'intermediate') {
     sessionDuration_ceiling = 60
     sessionDuration_ground = 45
     if (target === 'strength') {
       sessionDuration_ceiling = 60
-    }
-    else if (target === 'hypertrophy') {
+    } else if (target === 'hypertrophy') {
       sessionDuration_ceiling = 75
-    }
-    else {
+    } else {
       sessionDuration_ground = 55
     }
-  }
-  else {
+  } else {
     // level === "advanced" or level === "expert"
     if (gender === 0) {
       sessionDuration_ceiling = 90
       sessionDuration_ground = 60
-    }
-    else {
+    } else {
       sessionDuration_ceiling = 90
       sessionDuration_ground = 75
     }
@@ -132,84 +123,45 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
     }
   }
 
-  const sessionDuration = Number.parseInt(((sessionDuration_ground + sessionDuration_ceiling) / 2).toString())
+  // دستورالعمل های تعداد حرکات به ازای هر عضله
+  const largeMuscles = ['back', 'chest', 'quadricepts', 'hamstrings', 'glutes'];
+  const smallMuscles = ['biceps', 'triceps', 'calves', 'abdominals', 'shoulders'];
 
-  // Number of exercises per muscle group
-  if (target === 'hypertrophy') {
-    if (level === 'beginner') {
-      number_of_exercises_per_muscle = 1
-    }
-    else if (level === 'novice') {
-      number_of_exercises_per_muscle = 2
-    }
-    else if (level === 'intermediate') {
-      number_of_exercises_per_muscle = 3
-    }
-    else if (level === 'advanced') {
-      number_of_exercises_per_muscle = 4
-    }
-    else {
-      // expert
-      number_of_exercises_per_muscle = 5
-    }
+  // گام اول - چیدن مقدار اولیه تعداد کل حرکات در جلسه، بر حسب هدف ورزشکار
+  let total_number_of_exercises;
+  switch (target) {
+    case 'hypertrophy':
+      total_number_of_exercises = level === 'beginner' ? 9 :
+                           level === 'novice' ? 10 :
+                           level === 'intermediate' ? 11 :
+                           level === 'advanced' ? 12 : 13;
+    break;
+    case 'strength':
+      total_number_of_exercises = level === 'beginner' ? 7 :
+                           level === 'novice' ? 8 :
+                           level === 'intermediate' ? 9 :
+                           level === 'advanced' ? 10 : 11;
+    break;
+    case 'endurance':
+      total_number_of_exercises = level === 'beginner' ? 6 :
+                           level === 'novice' ? 7 :
+                           level === 'intermediate' ? 8 :
+                           level === 'advanced' ? 9 : 9;
+    break;
+    default: // general fitness
+    total_number_of_exercises = level === 'beginner' ? 8 :
+                           level === 'novice' ? 9 :
+                           level === 'intermediate' ? 10 :
+                           level === 'advanced' ? 11 : 12;
   }
-  else if (target === 'strength') {
-    if (level === 'beginner') {
-      number_of_exercises_per_muscle = 1
-    }
-    else if (level === 'novice') {
-      number_of_exercises_per_muscle = 2
-    }
-    else if (level === 'intermediate') {
-      number_of_exercises_per_muscle = 2
-    }
-    else if (level === 'advanced') {
-      number_of_exercises_per_muscle = 3
-    }
-    else {
-      // expert
-      number_of_exercises_per_muscle = 4
-    }
-  }
-  else if (target === 'endurance') {
-    if (level === 'beginner') {
-      number_of_exercises_per_muscle = 1
-    }
-    else if (level === 'novice') {
-      number_of_exercises_per_muscle = 2
-    }
-    else if (level === 'intermediate') {
-      number_of_exercises_per_muscle = 2
-    }
-    else if (level === 'advanced') {
-      number_of_exercises_per_muscle = 3
-    }
-    else {
-      // expert
-      number_of_exercises_per_muscle = 4
-    }
-  }
-  else {
-    // general fitness
-    if (level === 'beginner') {
-      number_of_exercises_per_muscle = 1
-    }
-    else if (level === 'novice') {
-      number_of_exercises_per_muscle = 2
-    }
-    else if (level === 'intermediate') {
-      number_of_exercises_per_muscle = 2
-    }
-    else if (level === 'advanced') {
-      number_of_exercises_per_muscle = 3
-    }
-    else {
-      // expert
-      number_of_exercises_per_muscle = 4
-    }
-  }
+  // آداپته کردن جواب بر اساس اینکه چقدر عضله های مورد تمرین در جلسه فعلی بزرگ هستند
+  number_of_exercises_per_muscle_set = new Array(target_muscle_groups.length).fill(Math.floor(total_number_of_exercises / target_muscle_groups.length));
+  target_muscle_groups.forEach((muscle, index) => {
+    if (largeMuscles.includes(muscle)) number_of_exercises_per_muscle_set[index] -= 1;
+    else if (smallMuscles.includes(muscle)) number_of_exercises_per_muscle_set[index] += 1;
+  });
 
-  // Determine warm-up and cool-down based on gender and level
+  // دستورالعمل های گرم کردن و سرد کردن
   if (gender === 0) {
     if (level === 'beginner' || level === 'novice') {
       warmupDuration_ceiling = 10
@@ -218,16 +170,14 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
       cooldownDuration_ground = 5
       warmupActivities = ['تمرینات هوازی سبک', 'کشش‌های پویا', 'حرکات افزایش دامنه حرکتی']
       cooldownActivities = ['راه رفتن سبک', 'کشش‌های ایستا', 'تمرینات تنفسی']
-    }
-    else if (level === 'intermediate') {
+    } else if (level === 'intermediate') {
       warmupDuration_ceiling = 15
       warmupDuration_ground = 10
       cooldownDuration_ceiling = 10
       cooldownDuration_ground = 5
       warmupActivities = ['تمرینات هوازی متوسط', 'حرکات تحرک پویا', 'ست‌های گرم کردنی سبک']
       cooldownActivities = ['کاردیو با سرعت کم', 'کشش‌های ایستا', 'ماساژ با فوم رولر']
-    }
-    else {
+    } else {
       // level === "advanced" or level === "expert
       warmupDuration_ceiling = 20
       warmupDuration_ground = 15
@@ -236,8 +186,7 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
       warmupActivities = ['تمرینات هوازی با شدت بالا', 'فعال‌سازی سیستم عصبی مرکزی', 'حرکات پویا']
       cooldownActivities = ['کشش‌های ایستا عمیق', 'ماساژ با فوم رولر', 'سرد کردن تدریجی']
     }
-  }
-  else {
+  } else {
     if (level === 'beginner' || level === 'novice') {
       warmupDuration_ceiling = 12
       warmupDuration_ground = 7
@@ -245,16 +194,14 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
       cooldownDuration_ground = 5
       warmupActivities = ['تمرینات هوازی سبک', 'کشش‌های پویا', 'حرکات افزایش دامنه مفصلی']
       cooldownActivities = ['راه رفتن سبک', 'کشش‌های ایستا', 'تمرینات تنفسی', 'ریلکسیشن بر پایه یوگا']
-    }
-    else if (level === 'intermediate') {
+    } else if (level === 'intermediate') {
       warmupDuration_ceiling = 18
       warmupDuration_ground = 12
       cooldownDuration_ceiling = 12
       cooldownDuration_ground = 7
       warmupActivities = ['تمرینات هوازی متوسط', 'حرکات پویا', 'فعال‌سازی عضلات سرینی', 'ست‌های گرم کردنی سبک']
       cooldownActivities = ['کاردیو با سرعت کم', 'کشش‌های یوگا', 'ماساژ با فوم رولر']
-    }
-    else {
+    } else {
       // level === "advanced" or level === "expert
       warmupDuration_ceiling = 22
       warmupDuration_ground = 15
@@ -265,40 +212,38 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
     }
   }
 
-  if (target_muscle_groups.includes('Chest')) {
+  if (target_muscle_groups.includes('chest')) {
     warmupActivities.push('چرخش بازوها', 'پرس سینه با دمبل سبک')
     cooldownActivities.push('کشش سینه ایستاده', 'کشش بازو در مقابل سینه')
-  }
-  else if (target_muscle_groups.includes('Back')) {
+  } else if (target_muscle_groups.includes('back')) {
     warmupActivities.push('چرخش تنه', 'پارو زدن با کش')
     cooldownActivities.push('کشش کودک', 'کشش گربه-شتر')
-  }
-  else if (
-    target_muscle_groups.includes('Adductors')
-    || target_muscle_groups.includes('Abductors')
-    || target_muscle_groups.includes('Hip Flexors')
-    || target_muscle_groups.includes('Quadricepts')
+  } else if (
+    target_muscle_groups.includes('adductors')
+    || target_muscle_groups.includes('abductors')
+    || target_muscle_groups.includes('hip flexors')
+    || target_muscle_groups.includes('quadricepts')
   ) {
     warmupActivities.push('لانج پویا', 'اسکات با وزن بدن')
     cooldownActivities.push('کشش همسترینگ نشسته', 'کشش چهارسر ایستاده')
-  }
-  else if (target_muscle_groups.includes('Shoulders')) {
+  } else if (target_muscle_groups.includes('shoulders')) {
     warmupActivities.push('چرخش شانه', 'بالا بردن جانبی دمبل سبک')
     cooldownActivities.push('کشش شانه در مقابل بدن', 'کشش عضله دلتوئید')
-  }
-  else if (
-    target_muscle_groups.includes('Forearms')
-    || target_muscle_groups.includes('Bicepts')
-    || target_muscle_groups.includes('Tricepts')
+  } else if (
+    target_muscle_groups.includes('forearms')
+    || target_muscle_groups.includes('bicepts')
+    || target_muscle_groups.includes('tricepts')
   ) {
     warmupActivities.push('چرخش مچ', 'پرس پشت بازو با دمبل سبک')
     cooldownActivities.push('کشش پشت بازو بالای سر', 'کشش عضله دوسر')
   }
 
   return {
-    recoveryTime,
-    number_of_exercises_per_muscle,
-    sessionDuration,
+    recoveryTime_ceiling,
+    recoveryTime_ground,
+    number_of_exercises_per_muscle_set,
+    sessionDuration_ceiling,
+    sessionDuration_ground,
     warmupDuration_ceiling,
     warmupDuration_ground,
     cooldownDuration_ceiling,

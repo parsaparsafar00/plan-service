@@ -15,7 +15,7 @@ export async function up(knex: Knex): Promise<void> {
       table.string('status', 30).nullable()
       table.text('description').nullable()
       table.integer('nWeeks').nullable() // تعداد هفته های برنامه 
-      table.text('workoutPlan').nullable() // فیلد برنامه که بصورت جیسان ذخیره میشه
+      table.jsonb('workoutPlan').nullable().defaultTo('{}') // فیلد برنامه که بصورت جیسان ذخیره میشه
 
       table.timestamp('createdAt', { useTz: false }).notNullable()
       table.timestamp('updatedAt', { useTz: false }).notNullable()
