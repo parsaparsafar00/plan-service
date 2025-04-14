@@ -23,6 +23,7 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
   const tableExists = await knex.schema.hasTable('plan_exercises')
   if (!tableExists) {
     await knex.schema.createTable('plan_exercises', (table) => {
+      table.integer('number').primary()
       table.uuid('id').primary()
       table.string('name', 255).notNullable()
       table.string('nameFa', 255).notNullable()
@@ -30,9 +31,6 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
       table.text('inDepthYoutubeExplanation').nullable()
       table.string('difficultyLevel', 50).nullable()
       table.string('targetMuscleGroup', 255).nullable()
-      table.string('primeMoverMuscle', 255).nullable()
-      table.string('secondaryMuscle', 255).nullable()
-      table.string('tertiaryMuscle', 255).nullable()
       table.string('primaryEquipment', 255).nullable()
       table.string('secondaryEquipment', 255).nullable()
       table.string('bodyRegion', 50).nullable()
@@ -58,9 +56,6 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
     const columnsToKeep = new Set([
       'name',
       'nameFa',
-      "primeMoverMuscle",
-      "secondaryMuscle",
-      "tertiaryMuscle",
       'inDepthYoutubeExplanation',
       'shortYoutubeDemonstration',
       'targetMuscleGroup',
@@ -72,53 +67,91 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
       'target',
     ])
 
+    // ستون‌هایی که برای پردازش نیاز داریم (اما در نهایت به دیتابیس نمی‌روند)
+    const processingColumns = new Set([
+      'primeMoverMuscle',
+      'secondaryMuscle',
+      'tertiaryMuscle'
+    ])
+
     const records: any[] = []
 
     for (let i = 2; i <= sheet.rowCount; i++) {
       const row = sheet.getRow(i)
       const rowData: any = {}
+      const processingData: any = {} // برای ذخیره موقت ستون‌های پردازشی
 
+      // ابتدا تمام داده‌ها را بخوانید (هم برای پردازش و هم برای ذخیره)
       row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
         const key = rawHeaders.map(customCamelCase)[colNumber - 1]
-        if (!columnsToKeep.has(key)) return
-
-
-        // اینجا باید خود لینک رو بجای هایپر لینک بگیریم از دیتاست
-        if (key === 'inDepthYoutubeExplanation' || key === 'shortYoutubeDemonstration') {
-          const hyperlink = cell.hyperlink || null
-          const value = typeof cell.value === 'string' ? cell.value.trim() : null
-          rowData[key] = hyperlink ? hyperlink : value
-        } else {
+        
+        // ذخیره ستون‌های پردازشی
+        if (processingColumns.has(key)) {
           let val = typeof cell.value === 'string' ? cell.value.trim() : cell.value
-          
-          // حذف مقادیری ک بدرد نخور هستن در تمامی ستون ها و رکورد ها
           if (['Unsorted', 'Unsorted*', 'unsorted', 'none', 'None'].includes(String(val))) val = ''
-          
-          // تبدیل مقادیر موجود در ستون هدف (ممکن است نیاز به بازنگری داشته باشند)
-          if (key === 'target') {
-            const targetMap: Record<string, string> = {
-              'Calisthenics': 'endurance',
-              'Grinds': 'endurance',
-              'Animal Flow': '',
-              'Plyometric': 'strength',
-              'Olympic Weightlifting': 'strength',
-              'Powerlifting': 'strength',
-              'Ballistics': 'strength',
-              'Bodybuilding': 'hypertrophy',
-              'Postural': 'postural',
-              'Mobility': 'mobility',
-              'Balance': 'balance'
-            }
-            val = targetMap[val as string] ?? val
-          }
+          processingData[key] = val ?? ''
+          return
+        }
 
-          rowData[key] = val ?? ''
+        // ذخیره ستون‌های اصلی
+        if (columnsToKeep.has(key)) {
+          if (key === 'inDepthYoutubeExplanation' || key === 'shortYoutubeDemonstration') {
+            const hyperlink = cell.hyperlink || null
+            const value = typeof cell.value === 'string' ? cell.value.trim() : null
+            rowData[key] = hyperlink ? hyperlink : value
+          } else {
+            let val = typeof cell.value === 'string' ? cell.value.trim() : cell.value
+            if (['Unsorted', 'Unsorted*', 'unsorted', 'none', 'None'].includes(String(val))) val = ''
+            
+            if (key === 'target') {
+              const targetMap: Record<string, string> = {
+                'Calisthenics': 'endurance',
+                'Grinds': 'endurance',
+                'Animal Flow': '',
+                'Plyometric': 'strength',
+                'Olympic Weightlifting': 'strength',
+                'Powerlifting': 'strength',
+                'Ballistics': 'strength',
+                'Bodybuilding': 'hypertrophy',
+                'Postural': 'postural',
+                'Mobility': 'mobility',
+                'Balance': 'balance'
+              }
+              val = targetMap[val as string] ?? val
+            }
+
+            rowData[key] = val ?? ''
+          }
         }
       })
+
+      // تنظیم کردن مقادیر ستون عضله ها
+      if (rowData.targetMuscleGroup) {
+        const primeMover = (processingData.primeMoverMuscle || '').toLowerCase();
+        const secondaryMuscle = (processingData.secondaryMuscle || '').toLowerCase();
+        const tertiaryMuscle = (processingData.tertiaryMuscle || '').toLowerCase();
+        const targetMuscle = rowData.targetMuscleGroup.toLowerCase();
+
+        // جایگزینی مقدار Trapezius با trap
+        if (targetMuscle === 'trapezius') {
+          rowData.targetMuscleGroup = 'trap';
+        }
+        // پردازش جایگزینی مقدار Back
+        else if (targetMuscle === 'back') {
+          if (primeMover.includes('latissimus dorsi') || secondaryMuscle.includes('latissimus dorsi') || tertiaryMuscle.includes('latissimus dorsi')) {
+            rowData.targetMuscleGroup = 'lat';
+          }
+          else if (primeMover.includes('erector spinae') || secondaryMuscle.includes('erector spinae') || tertiaryMuscle.includes('erector spinae')) {
+            rowData.targetMuscleGroup = 'fillet';
+          }
+        }
+      }
+
       records.push(rowData)
     }
-
+    let autoIncrementId = 1
     const mappedRecords = records.map((row) => ({
+      number: autoIncrementId++, // شماره حرکت تمرینی
       id: uuidv4(),
       name: row.name || '',
       nameFa: row.nameFa || '',
@@ -126,9 +159,6 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
       inDepthYoutubeExplanation: row.inDepthYoutubeExplanation,
       difficultyLevel: row.difficultyLevel ? row.difficultyLevel.toLowerCase() : null,
       targetMuscleGroup: row.targetMuscleGroup ? row.targetMuscleGroup.toLowerCase() : null,
-      primeMoverMuscle: row.primeMoverMuscle ? row.primeMoverMuscle.toLowerCase() : null,
-      secondaryMuscle: row.secondaryMuscle ? row.secondaryMuscle.toLowerCase() : null,
-      tertiaryMuscle: row.tertiaryMuscle ? row.tertiaryMuscle.toLowerCase() : null,
       primaryEquipment: row.primaryEquipment ? row.primaryEquipment.toLowerCase() : null,
       secondaryEquipment: row.secondaryEquipment ? row.secondaryEquipment.toLowerCase() : null,
       bodyRegion: row.bodyRegion ? row.bodyRegion.toLowerCase() : null,

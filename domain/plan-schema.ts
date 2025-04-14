@@ -3,9 +3,10 @@ import { getCodesByServiceAndStatus } from '@amard/message-manager'
 import { isoWithoutTimezonePattern } from '@amard/validation'
 import { Type } from '@sinclair/typebox'
 
+// -------------------------------------- اسکیم های مرتبط با برنامه تمرینی --------------------------------------
 
 /**
- * اسکیم یک برنامه تمرینی (Plan) در جدول plan_records (اما ستون‌ها camelCase)
+ * اسکیم یک برنامه تمرینی
  */
 export const PlanSchema = Type.Object({
   // ستون‌های اصلی
@@ -26,9 +27,88 @@ export const PlanSchema = Type.Object({
 })
 export type PlanType = Static<typeof PlanSchema>
 
+/**
+ * اسکیم tain helper 
+ */
+export const PlanTrainHelperSchema = Type.Object({
+  // ستون‌های اصلی
+  id: Type.String({ format: 'uuid' }),
+  planId: Type.String({ format: 'uuid' }),
+  exerciseNumber: Type.Integer(),
+  createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
+  updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
+})
+export type PlanTrainHelperType = Static<typeof PlanTrainHelperSchema>
 
 /**
- * برای ایجاد برنامه تمرینی
+ * اسکیم یک سیستم در برنامه تمرینی
+ */
+export const SystemSchema = Type.Object({
+  id: Type.String({ format: 'uuid' }),
+  abbrName: Type.String({ maxLength: 511 }),
+  teacherId: Type.String({ format: 'uuid' }),
+  description: Type.String(),
+  descIsVisible: Type.Boolean(),
+  method: Type.String(),
+  repeatPattern: Type.Array(Type.Number(), { maxItems: 6 }), // ماکسیمم تعداد ست برابر با 6 است
+  status: Type.Optional(Type.String({ maxLength: 30 })), // مثل 'active', 'done'
+  createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
+  updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
+})
+export type SystemType = Static<typeof SystemSchema>
+
+/**
+ * اسکیم یک تکنیک در برنامه تمرینی
+ */
+export const TechniqueSchema = Type.Object({
+  id: Type.String({ format: 'uuid' }),
+  abbrName: Type.String({ maxLength: 511 }),
+  name: Type.String({ maxLength: 255 }),
+  teacherId: Type.String({ format: 'uuid' }),
+  description: Type.String(),
+  descIsVisible: Type.Boolean(),
+  method: Type.String(),
+  status: Type.Optional(Type.String({ maxLength: 30 })), // مثل 'active', 'done'
+  createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
+  updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
+})
+export type TechniqueType = Static<typeof TechniqueSchema>
+
+
+// -------------------------------------- ساختار ورودی تولید سیستم --------------------------------------
+
+/**
+ * ساختار ورودی تولید سیستم برنامه تمرینی
+ */
+export const CreatePlanSystemRequest = Type.Object({
+  teacherId: Type.String({ format: 'uuid' }),
+  description: Type.String(),
+  descIsVisible: Type.Boolean(),
+  method: Type.String({maxLength: 255}),
+  repeatPattern: Type.Array(Type.Number(), { maxItems: 6 }), // ماکسیمم تعداد ست برابر با 6 است
+});
+export type CreatePlanSystemRequestType = Static<typeof CreatePlanSystemRequest>
+
+
+// -------------------------------------- ساختار ورودی تولید تکنیک  --------------------------------------
+
+/**
+ * ساختار ورودی تولید تکنیک برنامه تمرینی
+ */
+export const CreateTechniqueRequest = Type.Object({
+  teacherId: Type.String({ format: 'uuid' }),
+  description: Type.String(),
+  name: Type.String({maxLength: 255}),
+  descIsVisible: Type.Boolean(),
+  method: Type.String({maxLength: 255}),
+});
+export type CreateTechniqueRequestType = Static<typeof CreateTechniqueRequest>
+
+
+// -------------------------------------- ساختار ورودی های تولید برنامه تمرینی --------------------------------------
+
+/**
+ * ورودی تولید برنامه تمرینی 
  */
 export const CreatePlanRequest = Type.Object({
   studentId: Type.String({ format: 'uuid' }),
@@ -40,12 +120,10 @@ export const CreatePlanRequest = Type.Object({
   injuries: Type.Array(Type.String()),
   weeks: Type.Array(
     Type.Object({
-      week: Type.Number(),
-      sessionsPerWeek: Type.Number(),
+      number: Type.Array(Type.Number()),
       sessions: Type.Array(
         Type.Object({
           session: Type.Number(),
-          segmentation: Type.String(),
           targetMuscles: Type.Array(Type.String()),
         }),
       ),
@@ -61,19 +139,10 @@ export const CreatePlanRequest = Type.Object({
 })
 export type CreatePlanRequestType = Static<typeof CreatePlanRequest>
 
-
-/**
- *
- * ساختار ورودی ها و خروجی های یک برنامه تمرینی
- *    
- */
-
 export interface weekInputSchema {
-  week: number
-  sessionsPerWeek: number
+  number: number[]
   sessions: {
     session: number
-    segmentation: string
     targetMuscles: string[]
   }[]
 }
@@ -87,13 +156,17 @@ export interface planInputSchema {
   age: number
   weight: number
   gender: number
+  printingPlan: boolean
   weeks: weekInputSchema[]
 }
+
+// -------------------------------------- ساختار خروجی های یک برنامه تمرینی --------------------------------------
 
 /**
  * ساختار خروجی یک حرکت تولید شده توسط سرویس
  */
 export const exerciseOutputSchema = Type.Object({
+  number: Type.Number(),
   id: Type.String(),
   name: Type.String(),
   nameFa: Type.String(),
@@ -101,12 +174,9 @@ export const exerciseOutputSchema = Type.Object({
   difficultyLevel: Type.Union([Type.String(), Type.Null()]),
   bodyRegion: Type.Union([Type.String(), Type.Null()]),
   inDepthYoutubeExplanation: Type.Union([Type.String(), Type.Null()]),
-  restBetweenSetsCeiling: Type.Number(),
-  restBetweenSetsGround: Type.Number(),
-  weightCeilingPercentage: Type.Number(),
-  weightGroundPercentage: Type.Number(),
-  numberOfSets: Type.Number(),
-  repeatsPerSets: Type.Number()
+  restBetweenSets: Type.Number(),
+  weightPercentage: Type.String(),
+  system: Type.Array(Type.Number())
 })
 export type exerciseOutputType = Static<typeof exerciseOutputSchema>
 
@@ -114,10 +184,12 @@ export type exerciseOutputType = Static<typeof exerciseOutputSchema>
  * ساختار خروجی یک حرکت تولید شده توسط سرویس (مخصوص پرینت گرفتن)
  */
 export const printingExerciseOutputSchema = Type.Object({
+  number: Type.Number(),
   name: Type.String(),
   nameFa: Type.String(),
-  restBetweenSetsCeiling: Type.Number(),
-  restBetweenSetsGround: Type.Number(),
+  restBetweenSets: Type.Number(),
+  weightPercentage: Type.String(),
+  system: Type.Array(Type.Number()),
 })
 export type printingExerciseOutputType = Static<typeof printingExerciseOutputSchema>
 
@@ -127,7 +199,6 @@ export type printingExerciseOutputType = Static<typeof printingExerciseOutputSch
 export const sessionOutputSchema = Type.Object({
   index: Type.Number(),
   targetMuscles: Type.Array(Type.String()),
-  number_of_exercises_per_muscle_set: Type.Array(Type.Number()),
   cooldownActivities: Type.Array(Type.String()),
   warmupActivities: Type.Array(Type.String()),
   cooldownDuration: Type.String(),
@@ -158,10 +229,7 @@ export type printingSessionOutputType = Static<typeof printingSessionOutputSchem
  * ساختار هفته ها در خروجی
  */
 export const weekOutputSchema = Type.Object({
-  name: Type.String(),
-  system: Type.String(),
-  weightCeiling: Type.Number(),
-  weightGround: Type.Number(),
+  number: Type.Array(Type.Number()),
   sessions: Type.Array(sessionOutputSchema),
 });
 export type weekOutputType = Static<typeof weekOutputSchema>
@@ -176,7 +244,6 @@ export const planOutputSchema = Type.Object({
 });
 export type planOutputType = Static<typeof planOutputSchema>
 
-
 /**
  * برای آپدیت
  */
@@ -190,6 +257,8 @@ export const IdParam = Type.Object({
   id: Type.String({ format: 'uuid' }),
 })
 export type IdParamType = Static<typeof IdParam>
+
+// -------------------------------------- ساختار پاسخ ها --------------------------------------
 
 /**
  * پاسخ موفق خالی
@@ -206,6 +275,46 @@ export const EmptySuccessResponse = Type.Object({
 export const SinglePlanResponse = Type.Object({
   data: Type.Object({
     plan: PlanSchema,
+  }),
+  msgCode: Type.String(),
+  msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),
+})
+
+/**
+ * پاسخ موفق با برگرداندن یک سیستم
+ */
+export const SingleSystemResponse = Type.Object({
+  data: Type.Object({
+    system: SystemSchema,
+  }),
+  msgCode: Type.String(),
+  msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),
+})
+
+// پاسخ موفق چند سیستم
+export const MultipleSystemResponse = Type.Object({
+  data: Type.Object({
+    systems: Type.Array(SystemSchema),
+  }),
+  msgCode: Type.String(),
+  msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),
+})
+
+/**
+ * پاسخ موفق با برگرداندن یک تکنیک
+ */
+export const SingleTechniqueResponse = Type.Object({
+  data: Type.Object({
+    technique: TechniqueSchema,
+  }),
+  msgCode: Type.String(),
+  msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),
+})
+
+// پاسخ موفق چند تکنیک
+export const MultipleTechniqueResponse = Type.Object({
+  data: Type.Object({
+    techniques: Type.Array(TechniqueSchema),
   }),
   msgCode: Type.String(),
   msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),

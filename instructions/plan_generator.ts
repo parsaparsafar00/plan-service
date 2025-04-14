@@ -3,7 +3,7 @@ import { getAllExercisesArray } from '../data-access/exercise-repository.js'
 import { getExerciseInstructions } from './exercise_instructions.js'
 import { getPlanInstructions } from './plan_instructions.js'
 import { getSessionInstructions } from './session_instructions.js'
-import { getWeekInstructions } from './week_instructions.js'
+// import { getWeekInstructions } from './week_instructions.js'
 import * as PlanSchemas from '../domain/plan-schema.js'
 
 /**
@@ -20,7 +20,7 @@ export function generatePlan(input: PlanSchemas.planInputSchema): PlanSchemas.pl
 
   const levels = ['novice', 'beginner', 'intermediate', 'advanced', 'expert']
   const userLevelIndex = levels.indexOf(input.level.toLowerCase())
-  const plan : PlanSchemas.planOutputType = {     
+  const plan : PlanSchemas.planOutputType = { 
     load: workoutPlanInfo.loadIncrement,
     deload: workoutPlanInfo.deload,
     weeks: []
@@ -28,20 +28,15 @@ export function generatePlan(input: PlanSchemas.planInputSchema): PlanSchemas.pl
   const weeks: PlanSchemas.weekOutputType[] = []
 
   for (const w of input.weeks) {
-    const weekInfo = getWeekInstructions({
-      gender: input.gender,
-      target: input.target,
-      level: input.level
-    });
 
-    const repeatsPerSet = Math.ceil((weekInfo.repeatsPerSetCeiling + weekInfo.repeatsPerSetGround) / 2)
-    const numberOfSets = Math.ceil((weekInfo.numberOfSetsCeiling + weekInfo.numberOfSetsGround) / 2)
+    // const weekInfo = getWeekInstructions({
+    //   gender: input.gender,
+    //   target: input.target,
+    //   level: input.level
+    // });
     
     const weekData: PlanSchemas.weekOutputType = {
-      name: "هفته " + w.week,
-      system: numberOfSets + " × " + repeatsPerSet,
-      weightCeiling: weekInfo.weightCeilingPercentage,
-      weightGround: weekInfo.weightCeilingPercentage,
+      number: w.number,
       sessions: []
     }
 
@@ -59,7 +54,6 @@ export function generatePlan(input: PlanSchemas.planInputSchema): PlanSchemas.pl
       const sessionData: PlanSchemas.sessionOutputType = {
         index: sessionItem.session,
         targetMuscles: sessionItem.targetMuscles,
-        number_of_exercises_per_muscle_set: sessionInfo.number_of_exercises_per_muscle_set,
         cooldownActivities: sessionInfo.cooldownActivities,
         warmupActivities: sessionInfo.warmupActivities,
         cooldownDuration: sessionInfo.cooldownDuration_ground  + " تا " + sessionInfo.cooldownDuration_ceiling + " دقیقه",
@@ -73,6 +67,11 @@ export function generatePlan(input: PlanSchemas.planInputSchema): PlanSchemas.pl
       let chosen_exercises = [];
       // منطق فیلترینگ
       const filtered = allExercises.filter((ex) => {
+        
+        // فیلتر حرکاتی ک فیلم آموزشی دارند
+        if (!ex.shortYoutubeDemonstration || ex.shortYoutubeDemonstration == '' || ex.shortYoutubeDemonstration == null)
+          return false
+        
         // فیلتر بر اساس سن
         if (ex.ageGround && ex.ageGround > input.age)
           return false
@@ -99,14 +98,15 @@ export function generatePlan(input: PlanSchemas.planInputSchema): PlanSchemas.pl
           if (exLevelIndex === -1 || exLevelIndex > userLevelIndex)
             return false
         }
-
         // فیلتر بر اساس عضلات هدف
-        if (muscleValues.length > 0 && ex.targetMuscleGroup) {
-          if (!muscleValues.includes(ex.targetMuscleGroup)
-             && (ex.primeMoverMuscle && !muscleValues.includes(ex.primeMoverMuscle)|| !ex.primeMoverMuscle)
-             && (ex.secondaryMuscle && !muscleValues.includes(ex.secondaryMuscle) || !ex.secondaryMuscle)
-             && (ex.tertiaryMuscle && !muscleValues.includes(ex.tertiaryMuscle)) || !ex.tertiaryMuscle)
-            return false
+        if (muscleValues.length > 0) {
+          for (let i=0; i <= muscleValues.length - 1; i++) {
+            if (muscleValues[i] !== ex.targetMuscleGroup) {
+              if (i === muscleValues.length - 1) return false;
+            } else {
+              break
+            }
+          }
         } else {
           return false
         }
@@ -127,174 +127,59 @@ export function generatePlan(input: PlanSchemas.planInputSchema): PlanSchemas.pl
       // استفاده از دستورالعمل های مربوط به حرکات بدنسازی
       const finalExercises = chosen_exercises.map((ex) => {
         const exInstr = getExerciseInstructions({
-          age: input.age,
+          gender: input.gender,
           target: input.target,
           mechanics: ex.mechanics || '',
-          repeatsPerSetGround: weekInfo.repeatsPerSetGround,
-          repeatsPerSetCeiling: weekInfo.repeatsPerSetCeiling
+          level: input.level,
+          target_muscle_groups: muscleValues
         });
 
-        return {
-          ...ex,
-          restBetweenSetsCeiling: exInstr.restBetweenSetsCeiling,
-          restBetweenSetsGround: exInstr.restBetweenSetsGround,
-        }
-      })
-      sessionData.exercises = finalExercises
-      weekData.sessions.push(sessionData)
-    }
+        let exData: PlanSchemas.printingExerciseOutputType | PlanSchemas.exerciseOutputType;
+        
+        //  انتخاب رندوم تعداد تکرار ها و تعداد ست ها بر اساس مقدار ماکسیمم و مینیمم ممکن
+        let numberOfSets = Math.floor(Math.random() * (exInstr.numberOfSetsCeiling - exInstr.numberOfSetsGround + 1)) + exInstr.numberOfSetsGround;
+        let repeatSystem = []
 
-    weeks.push(weekData)
-  }
-
-  plan.weeks = weeks
-  return plan
-}
-
-/**
- * تولید برنامه تمرینی بر اساس داده‌های داخل ورودی کاربر و داده های موجود در متغیر سراسری حرکات
- */
-export function printGeneratePlan(input: PlanSchemas.planInputSchema): PlanSchemas.planOutputType[] {
-
-  // استفاده از دستورالعمل های مربوط به برنامه تمرینی
-  if (!input.level) throw new AppError("PLAN_STUDENT_LEVEL_INVALID", "No exercises loaded in memory", 400);
-  const workoutPlanInfo = getPlanInstructions(input.level)
-
-  const allExercises = getAllExercisesArray()
-  if (!allExercises || allExercises.length === 0) throw new AppError('PLAN_NO_EXERCISES_FOUND', 'No exercises loaded in memory', 400)
-
-  const levels = ['novice', 'beginner', 'intermediate', 'advanced', 'expert']
-  const userLevelIndex = levels.indexOf(input.level.toLowerCase())
-  const plan : PlanSchemas.planOutputType = {     
-    load: workoutPlanInfo.loadIncrement,
-    deload: workoutPlanInfo.deload,
-    weeks: []
-  }
-  const weeks: PlanSchemas.weekOutputType[] = []
-
-  for (const w of input.weeks) {
-    const weekInfo = getWeekInstructions({
-      gender: input.gender,
-      target: input.target,
-      level: input.level
-    });
-
-    const repeatsPerSet = Math.ceil((weekInfo.repeatsPerSetCeiling + weekInfo.repeatsPerSetGround) / 2)
-    const numberOfSets = Math.ceil((weekInfo.numberOfSetsCeiling + weekInfo.numberOfSetsGround) / 2)
-
-    const weekData: PlanSchemas.weekOutputType = {
-      name: "هفته " + w.week,
-      system: numberOfSets + " × " + repeatsPerSet,
-      weightCeiling: weekInfo.weightCeilingPercentage,
-      weightGround: weekInfo.weightCeilingPercentage,
-      sessions: []
-    }
-
-    for (const sessionItem of w.sessions) {
-
-      // استفاده از دستورالعمل های مربوط به جلسات تمرینی
-      const sessionInfo = getSessionInstructions({
-        age: input.age,
-        gender: input.gender,
-        target: input.target,
-        level: input.level,
-        target_muscle_groups: sessionItem.targetMuscles,
-      });
-
-      const sessionData: PlanSchemas.printingSessionOutputType = {
-        index: sessionItem.session,
-        targetMuscles: sessionItem.targetMuscles,
-        cooldownActivities: sessionInfo.cooldownActivities,
-        warmupActivities: sessionInfo.warmupActivities,
-        cooldownDuration: sessionInfo.cooldownDuration_ground  + " تا " + sessionInfo.cooldownDuration_ceiling + " دقیقه",
-        warmupDuration: sessionInfo.warmupDuration_ground  + " تا " + sessionInfo.warmupDuration_ceiling+ " دقیقه",
-        recoveryTime: sessionInfo.recoveryTime_ground + " تا " + sessionInfo.recoveryTime_ceiling + " ساعت",
-        sessionDuration: sessionInfo.sessionDuration_ground + " تا " + sessionInfo.sessionDuration_ceiling + " ساعت",
-        exercises: [],
-      }
-
-      const muscleValues = sessionItem.targetMuscles
-      let chosen_exercises = [];
-
-      // منطق فیلترینگ
-      const filtered = allExercises.filter((ex) => {
-        // فیلتر بر اساس سن
-        if (ex.ageGround && ex.ageGround > input.age) return false
-        if (ex.ageCeiling && ex.ageCeiling < input.age) return false
-
-        // فیلتر بر اساس وزن
-        if (ex.weightGround && ex.weightGround > input.weight) return false
-        if (ex.weightCeiling && ex.weightCeiling < input.weight) return false
-
-        // فیلتر بر اساس جنسیت
-        if (ex.gender && ex.gender !== input.gender) return false
-
-        // فیلتر بر اساس هدف تمرین شخص
-        if (ex.target && ex.target !== input.target) return false
-
-        // فیلتر بر اساس درجه سختی حرکت
-        if (ex.difficultyLevel) {
-          const exLevelIndex = levels.indexOf(ex.difficultyLevel.toLowerCase())
-          if (exLevelIndex === -1 || exLevelIndex > userLevelIndex) return false
+        for (let s=1; s <= numberOfSets; s++) {
+          let repeatsPerSet = Math.floor(Math.random() * (exInstr.repeatsPerSetCeiling - exInstr.repeatsPerSetGround + 1)) + exInstr.repeatsPerSetGround;
+          repeatSystem.push(repeatsPerSet);
         }
 
-        // فیلتر بر اساس عضلات هدف
-        if (muscleValues.length > 0 && ex.targetMuscleGroup) {
-          if (!muscleValues.includes(ex.targetMuscleGroup)
-             && (ex.primeMoverMuscle && !muscleValues.includes(ex.primeMoverMuscle)|| !ex.primeMoverMuscle)
-             && (ex.secondaryMuscle && !muscleValues.includes(ex.secondaryMuscle) || !ex.secondaryMuscle)
-             && (ex.tertiaryMuscle && !muscleValues.includes(ex.tertiaryMuscle)) || !ex.tertiaryMuscle)
-            return false
-        } else {
-          return false
-        }
 
-        return true
-      });
+        const restBestweenSets = getRandomMultipleOf5(exInstr.restBetweenSetsGround, exInstr.restBetweenSetsCeiling);
+        let weightPercentage
+        if (ex.primaryEquipment == "bodyweight") weightPercentage = "وزن بدن"
+        else weightPercentage = getRandomMultipleOf5(exInstr.weightGroundPercentage, exInstr.weightCeilingPercentage).toString();
 
-      // شافل کردن آرایه برای انتخاب رندوم حرکات
-      shuffleArray(filtered)
-      // به ازای هر کدوم از حرکات، باید به تعدادی که دستور داده شده، حرکت انتخاب بشه
-      chosen_exercises = [];
-      let exercisesForMuscle = []
-      for (let i = 0; i < muscleValues.length; i++) {
-        exercisesForMuscle = filtered.filter(
-          ex => ex.targetMuscleGroup === muscleValues[i] 
-          || ex.primeMoverMuscle === muscleValues[i] 
-          || ex.secondaryMuscle === muscleValues[i] 
-          || ex.tertiaryMuscle === muscleValues[i]);
-        chosen_exercises.push(...exercisesForMuscle.slice(0, sessionInfo.number_of_exercises_per_muscle_set[i]));
-      }
-      
-      // استفاده از دستورالعمل های مربوط به حرکات بدنسازی
-      const finalExercises = chosen_exercises.map((ex) => {
-        const exInstr = getExerciseInstructions({
-          age: input.age,
-          target: input.target,
-          mechanics: ex.mechanics || '',
-          repeatsPerSetGround: weekInfo.repeatsPerSetGround,
-          repeatsPerSetCeiling: weekInfo.repeatsPerSetCeiling
-        });
-
-
-        const exData: PlanSchemas.printingExerciseOutputType = {
+        if (input.printingPlan && input.printingPlan == true) {
+        exData = {
+          number: ex.number,
           name: ex.name,
           nameFa: ex.nameFa,
-          restBetweenSetsCeiling: exInstr.restBetweenSetsCeiling,
-          restBetweenSetsGround: exInstr.restBetweenSetsGround,
+          restBetweenSets: restBestweenSets,
+          weightPercentage: weightPercentage,
+          system: repeatSystem,
         }
+      } else {
+        exData = {
+          ...ex,
+          restBetweenSets: restBestweenSets,
+          weightPercentage: weightPercentage,
+          system: repeatSystem,
+        }
+      }
         return exData
       });
-
+      
       sessionData.exercises = finalExercises
       weekData.sessions.push(sessionData)
     }
 
     weeks.push(weekData)
   }
+
   plan.weeks = weeks
   return plan
-
 }
 
 function shuffleArray<T>(array: T[]): void {
@@ -302,4 +187,20 @@ function shuffleArray<T>(array: T[]): void {
     const j = Math.floor(Math.random() * (i + 1))
     ;[array[i], array[j]] = [array[j], array[i]]
   }
+}
+
+function getRandomMultipleOf5(min: number, max: number): number {
+  // Ensure min <= max (swap if needed)
+  const [lower, upper] = [Math.min(min, max), Math.max(min, max)];
+  
+  // Find the nearest multiples of 5 within the range
+  const lowerBound = Math.ceil(lower / 5) * 5;  // Round up to nearest 5
+  const upperBound = Math.floor(upper / 5) * 5; // Round down to nearest 5
+
+  // If no multiples of 5 in range, return NaN or handle error
+  if (lowerBound > upperBound) return NaN; // (Or throw an error)
+
+  // Generate a random multiple of 5
+  const randomSteps = Math.floor(Math.random() * ((upperBound - lowerBound) / 5 + 1));
+  return lowerBound + randomSteps * 5;
 }

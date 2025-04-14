@@ -238,6 +238,21 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
     cooldownActivities.push('کشش پشت بازو بالای سر', 'کشش عضله دوسر')
   }
 
+    // دستورالعمل تعداد سوپر ست های مجاز در هر جلسه
+    // if (target === 'endurance' || target === 'balance' || target === 'hypertrophy') {
+    //   numberOfSuperSets = level === 'novice' ? 0: level === 'beginner' ? 1 : level === 'intermediate' ? 2 : 3
+    // }
+  
+    // // دستورالعمل تعداد دراپ ست های مجاز در هر جلسه
+    // if (target === 'hypertrophy' && (targetMuscleGroups.includes('biceps') || targetMuscleGroups.includes('triceps') || targetMuscleGroups.includes('shoulders'))) {
+    //   numberOfDropSets = level === 'novice' ? 0: level === 'beginner' ? 1 : 2
+    // }
+  
+    // // دستورالعمل تعداد جاینت ست های مجاز در هر جلسه
+    // if ((target === 'balance' || target === 'hypertrophy') && (targetMuscleGroups.includes('quadriceps') || targetMuscleGroups.includes('adductors') || targetMuscleGroups.includes('abductors'))) {
+    //   numberOfGiantSets = level === 'novice' ? 0: level === 'beginner' ? 0 : level === 'intermediate' ? 1 : 2
+    // }
+
   return {
     recoveryTime_ceiling,
     recoveryTime_ground,
