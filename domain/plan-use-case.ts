@@ -19,28 +19,33 @@ function extractSenderData(request: FastifyRequest) {
   return { role, userId }
 }
 
-/**------------------------------------------------------- Plans -------------------------------------------------------*/
+/** ------------------------------------------------------- Plans ------------------------------------------------------- */
 
 /**
  * ایجاد برنامه تمرینی با استفاده از آرایه موجود در حافظه
  */
 export async function createPlan(request: FastifyRequest<{ Body: planSchema.CreatePlanRequestType }>) {
-  if (!isValidUuid(request.body.teacherId)) throw new AppError('PLAN_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
-  
-  // جمع آوری مجموعه هفته های انتخاب شده توسط مربی 
-  let weeks: number[] = []; 
+  if (!isValidUuid(request.body.teacherId))
+    throw new AppError('PLAN_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+
+  // جمع آوری مجموعه هفته های انتخاب شده توسط مربی
+  const weeks: number[] = []
   // چک اولیه برای وجود آرایه هفته ها
   if (request.body.weeks && Array.isArray(request.body.weeks)) {
-    request.body.weeks.forEach(weekArr => {
+    request.body.weeks.forEach((weekArr) => {
       // بررسی اینکه weeks آرایه هست یا خیر
       if (Array.isArray(weekArr)) {
-        weekArr.forEach(weekNum => {
-          if (!weeks.includes(weekNum)) weeks.push(weekNum);
-        });
+        weekArr.forEach((weekNum) => {
+          if (!weeks.includes(weekNum))
+            weeks.push(weekNum)
+        })
       }
-    });
-  } else throw new AppError('PLAN_WEEK_INPUT_INVALID', 'Invalid or missing weeks data in request', 400);
-  
+    })
+  }
+  else {
+    throw new AppError('PLAN_WEEK_INPUT_INVALID', 'Invalid or missing weeks data in request', 400)
+  }
+
   const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss') // useTz=false در migration
   const newPlan: planSchema.PlanType = {
     id: uuidv4(),
@@ -58,7 +63,7 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
     createdAt: nowStr,
     updatedAt: nowStr,
   }
-  
+
   // ورودی تابع تولید کننده برنامه تمرینی
   const generatePlanInput = {
     target: request.body.target,
@@ -73,20 +78,19 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
         targetMuscles: s.targetMuscles,
       })),
     })),
-    printingPlan: request.raw.url?.includes("print") // آیا برنامه برای مخصوص پرینت است یا خیر
+    printingPlan: request.raw.url?.includes('print'), // آیا برنامه برای مخصوص پرینت است یا خیر
   }
 
   // تولید برنامه تمرینی و ذخیره آن بصورت جیسان در جدول برنامه ها
-  let workout = generatePlan(generatePlanInput);
+  const workout = generatePlan(generatePlanInput)
   newPlan.workoutPlan = workout
   const inserted = await planRepo.insertPlan(newPlan)
 
-  // اینسرت کردن تمام حرکات موجود در برنامه تمرینی به جدول کمکی مربوط به ترین، به انضمام سیستم های تولید شده توسط دستور العمل ها 
+  // اینسرت کردن تمام حرکات موجود در برنامه تمرینی به جدول کمکی مربوط به ترین، به انضمام سیستم های تولید شده توسط دستور العمل ها
   await Promise.all(
-    workout.weeks.flatMap(week => 
+    workout.weeks.flatMap(week =>
       week.sessions.flatMap(session =>
         session.exercises?.map(async (ex) => {
-        
           // ورودی تابع ذخیره اطلاعات مربوط به جدول ترین
           const generatePlanTrainInput = {
             id: uuidv4(),
@@ -96,10 +100,10 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
             updatedAt: nowStr,
           }
           // ورودی تابع ذخیره اطلاعات مربوط به جدول سیستم ها
-          const systemMethod = "دلخواه"
+          const systemMethod = 'دلخواه'
           const systemInput: planSchema.SystemType = {
             id: uuidv4(),
-            abbrName: "سیستم " + systemMethod + " " + ex.system.toString(),
+            abbrName: `سیستم ${systemMethod} ${ex.system.toString()}`,
             teacherId: request.body.teacherId,
             description: '',
             descIsVisible: false,
@@ -112,11 +116,10 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
 
           await planRepo.insertPlanTrainHelper(generatePlanTrainInput)
           await planRepo.insertPlanSystem(systemInput)
-
-        }) ?? []
-      )
-    )
-  );
+        }) ?? [],
+      ),
+    ),
+  )
   // بازگشت خروجی
   auditLogger.create('', { request: setAuditRequest(request), oldData: null, newData: inserted })
   return inserted
@@ -159,18 +162,19 @@ export async function deletePlan(request: FastifyRequest<{ Params: planSchema.Id
   auditLogger.delete('', { request: setAuditRequest(request), oldData: existing, newData: null })
 }
 
-/**------------------------------------------------------- Systems -------------------------------------------------------*/
+/** ------------------------------------------------------- Systems ------------------------------------------------------- */
 
 /**
  * تولید سیستم برنامه تمرینی
  */
 export async function createPlanSystem(request: FastifyRequest<{ Body: planSchema.CreatePlanSystemRequestType }>) {
-  if (!isValidUuid(request.body.teacherId)) throw new AppError('PLAN_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
-    
+  if (!isValidUuid(request.body.teacherId))
+    throw new AppError('PLAN_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+
   const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss') // useTz=false در migration
   const newSystem: planSchema.SystemType = {
     id: uuidv4(),
-    abbrName: "سیستم " + request.body.method + " " + request.body.repeatPattern.toString(),
+    abbrName: `سیستم ${request.body.method} ${request.body.repeatPattern.toString()}`,
     teacherId: request.body.teacherId,
     description: request.body.description,
     descIsVisible: request.body.descIsVisible,
@@ -180,7 +184,7 @@ export async function createPlanSystem(request: FastifyRequest<{ Body: planSchem
     createdAt: nowStr,
     updatedAt: nowStr,
   }
-  
+
   const inserted = await planRepo.insertPlanSystem(newSystem)
   auditLogger.create('', { request: setAuditRequest(request), oldData: null, newData: inserted })
   return inserted
@@ -190,26 +194,27 @@ export async function createPlanSystem(request: FastifyRequest<{ Body: planSchem
  * گرفتن همه سیستم های برنامه تمرینی
  */
 export async function getAllSystemsByTeacherId(request: FastifyRequest<{ Params: planSchema.IdParamType }>) {
-  if (!isValidUuid(request.params.id)) throw new AppError('SYSTEM_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+  if (!isValidUuid(request.params.id))
+    throw new AppError('SYSTEM_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
 
   const systems = await planRepo.getAllSystemsByTeacherId(request.params.id)
 
-  auditLogger.create('', { request: setAuditRequest(request), oldData: null, newData: systems })
   return systems
 }
 
-/**------------------------------------------------------- Techniques -------------------------------------------------------*/
+/** ------------------------------------------------------- Techniques ------------------------------------------------------- */
 
 /**
  * تولید تکنیک
  */
 export async function createTechnique(request: FastifyRequest<{ Body: planSchema.CreateTechniqueRequestType }>) {
-  if (!isValidUuid(request.body.teacherId)) throw new AppError('PLAN_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
-    
+  if (!isValidUuid(request.body.teacherId))
+    throw new AppError('PLAN_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+
   const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss') // useTz=false در migration
   const newTechnique: planSchema.TechniqueType = {
     id: uuidv4(),
-    abbrName: "تکنیک " + request.body.method + " " + request.body.name,
+    abbrName: `تکنیک ${request.body.method} ${request.body.name}`,
     name: request.body.name,
     teacherId: request.body.teacherId,
     description: request.body.description,
@@ -219,7 +224,7 @@ export async function createTechnique(request: FastifyRequest<{ Body: planSchema
     createdAt: nowStr,
     updatedAt: nowStr,
   }
-  
+
   const inserted = await planRepo.insertTechnique(newTechnique)
   auditLogger.create('', { request: setAuditRequest(request), oldData: null, newData: inserted })
   return inserted
@@ -229,10 +234,9 @@ export async function createTechnique(request: FastifyRequest<{ Body: planSchema
  * گرفتن همه سیستم های برنامه تمرینی
  */
 export async function getAllTechniquesByTeacherId(request: FastifyRequest<{ Params: planSchema.IdParamType }>) {
-  if (!isValidUuid(request.params.id)) throw new AppError('TECHNIQUE_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+  if (!isValidUuid(request.params.id))
+    throw new AppError('TECHNIQUE_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
 
   const techniques = await planRepo.getTechniquesByTeacherId(request.params.id)
-
-  auditLogger.create('', { request: setAuditRequest(request), oldData: null, newData: techniques })
   return techniques
 }

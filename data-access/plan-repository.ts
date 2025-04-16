@@ -1,5 +1,5 @@
 import type { Knex } from 'knex'
-import type { PlanType, PlanTrainHelperType, SystemType, TechniqueType } from '../domain/plan-schema.js'
+import type { PlanTrainHelperType, PlanType, SystemType, TechniqueType } from '../domain/plan-schema.js'
 import { AppError } from '@amard/error-handling'
 
 let knexInstance: Knex
@@ -14,26 +14,28 @@ export function setKnexInstanceForPlanRepo(instance: Knex) {
 export async function insertPlanSystem(data: SystemType): Promise<SystemType> {
   try {
     // بررسی اینکه آیا نام اختصاری در دیتابیس موجود است یا خیر
-    const existingRecord = await knexInstance<SystemType>('plan_systems').where('abbrName', data.abbrName).first();
+    const existingRecord = await knexInstance<SystemType>('plan_systems').where('abbrName', data.abbrName).first()
     if (!existingRecord) {
-
       // اطمینان از اینکه فیلد repeatPattern به‌درستی به رشته جیسان تبدیل شود
-      if (Array.isArray(data.repeatPattern)) data.repeatPattern = JSON.stringify(data.repeatPattern);
-      
+      if (Array.isArray(data.repeatPattern))
+        data.repeatPattern = JSON.stringify(data.repeatPattern)
+
       // ایجاد سطر جدید
-      const [inserted] = await knexInstance<SystemType>('plan_systems').insert(data).returning('*');
+      const [inserted] = await knexInstance<SystemType>('plan_systems').insert(data).returning('*')
 
       // اگر repeatPattern به عنوان رشته JSON ذخیره شده، آن را به آرایه بازگردان
       if (typeof inserted.repeatPattern === 'string') {
-        inserted.repeatPattern = JSON.parse(inserted.repeatPattern);
+        inserted.repeatPattern = JSON.parse(inserted.repeatPattern)
       }
 
-      return inserted; // برگرداندن رکورد ذخیره شده
-    } else {
-      return existingRecord; // برگرداندن رکورد موجود اگر پیدا شود
+      return inserted // برگرداندن رکورد ذخیره شده
     }
-  } catch (error) {
-    throw new AppError('PLAN_SYSTEMS_DB_INSERT_ERROR', 'خطا در دیتابیس insertPlanSystem', 500, error);
+    else {
+      return existingRecord // برگرداندن رکورد موجود اگر پیدا شود
+    }
+  }
+  catch (error) {
+    throw new AppError('PLAN_SYSTEMS_DB_INSERT_ERROR', 'خطا در دیتابیس insertPlanSystem', 500, error)
   }
 }
 
@@ -42,9 +44,10 @@ export async function insertPlanSystem(data: SystemType): Promise<SystemType> {
  */
 export async function getAllSystemsByTeacherId(teacherId: string): Promise<SystemType | undefined> {
   try {
-    return await knexInstance<SystemType>('plan_systems').where({ teacherId });
-  } catch (error) {
-    throw new AppError('PLAN_SYSTEM_DB_QUERY_ERROR', 'Database getAllSystemsByTeacherId query error', 500, error);
+    return await knexInstance('plan_systems').where({ teacherId })
+  }
+  catch (error) {
+    throw new AppError('PLAN_SYSTEM_DB_QUERY_ERROR', 'Database getAllSystemsByTeacherId query error', 500, error)
   }
 }
 
@@ -54,18 +57,18 @@ export async function getAllSystemsByTeacherId(teacherId: string): Promise<Syste
 export async function insertTechnique(data: TechniqueType): Promise<TechniqueType> {
   try {
     // بررسی اینکه آیا نام اختصاری در دیتابیس موجود است یا خیر
-    const existingRecord = await knexInstance<TechniqueType>('plan_techniques').where('abbrName', data.abbrName).first();
+    const existingRecord = await knexInstance<TechniqueType>('plan_techniques').where('abbrName', data.abbrName).first()
     if (!existingRecord) {
-      
       // ایجاد سطر جدید
-      const [inserted] = await knexInstance<TechniqueType>('plan_techniques').insert(data).returning('*');
-      return inserted; // برگرداندن رکورد ذخیره شده
-
-    } else {
-      return existingRecord; // برگرداندن رکورد موجود اگر پیدا شود
+      const [inserted] = await knexInstance('plan_techniques').insert(data).returning('*')
+      return inserted // برگرداندن رکورد ذخیره شده
     }
-  } catch (error) {
-    throw new AppError('PLAN_TECHNIQUES_DB_INSERT_ERROR', 'خطا در دیتابیس insertTechnique', 500, error);
+    else {
+      return existingRecord // برگرداندن رکورد موجود اگر پیدا شود
+    }
+  }
+  catch (error) {
+    throw new AppError('PLAN_TECHNIQUES_DB_INSERT_ERROR', 'خطا در دیتابیس insertTechnique', 500, error)
   }
 }
 
@@ -74,9 +77,10 @@ export async function insertTechnique(data: TechniqueType): Promise<TechniqueTyp
  */
 export async function getTechniquesByTeacherId(teacherId: string): Promise<TechniqueType | undefined> {
   try {
-    return await knexInstance<TechniqueType>('plan_techniques').where({ teacherId });
-  } catch (error) {
-    throw new AppError('PLAN_TECHNIQUES_DB_QUERY_ERROR', 'Database getTechniquesByTeacherId query error', 500, error);
+    return await knexInstance('plan_techniques').where({ teacherId })
+  }
+  catch (error) {
+    throw new AppError('PLAN_TECHNIQUES_DB_QUERY_ERROR', 'Database getTechniquesByTeacherId query error', 500, error)
   }
 }
 
@@ -86,7 +90,7 @@ export async function getTechniquesByTeacherId(teacherId: string): Promise<Techn
 export async function insertPlan(data: PlanType): Promise<PlanType> {
   try {
     // ایجاد سطر جدید
-    const [inserted] = await knexInstance<PlanType>('plan_records').insert(data).returning('*')
+    const [inserted] = await knexInstance('plan_records').insert(data).returning('*')
     return inserted
   }
   catch (error) {
@@ -100,7 +104,7 @@ export async function insertPlan(data: PlanType): Promise<PlanType> {
 export async function insertPlanTrainHelper(data: PlanTrainHelperType): Promise<PlanTrainHelperType> {
   try {
     // ایجاد سطر جدید
-    const [inserted] = await knexInstance<PlanType>('plan_train_helper').insert(data).returning('*')
+    const [inserted] = await knexInstance('plan_train_helper').insert(data).returning('*')
     return inserted
   }
   catch (error) {

@@ -3,9 +3,7 @@ import * as planSchema from '../../domain/plan-schema.js'
 import * as planUseCase from '../../domain/plan-use-case.js'
 
 export async function planRoutes(app: FastifyInstance) {
-  
-  
-  /**------------------------------------------------------- Plans -------------------------------------------------------*/  
+  /** ------------------------------------------------------- Plans ------------------------------------------------------- */
   /**
    * ایجاد برنامه تمرینی
    * POST /v1/plan/create
@@ -30,9 +28,9 @@ export async function planRoutes(app: FastifyInstance) {
   })
 
   /**
-     * ایجاد برنامه تمرینی مخصوص پرینت گرفتن ورزشکارن
-     * POST /v1/plan/create-print
-  */
+   * ایجاد برنامه تمرینی مخصوص پرینت گرفتن ورزشکارن
+   * POST /v1/plan/create-print
+   */
   app.post('/create-print', {
     schema: {
       tags: ['Plan'],
@@ -80,7 +78,7 @@ export async function planRoutes(app: FastifyInstance) {
   /**
    * حذف برنامه تمرینی
    * DELETE /v1/plan/delete/by-id/:id
-  */
+   */
   app.delete('/delete/by-id/:id', {
     schema: {
       tags: ['Plan'],
@@ -100,12 +98,12 @@ export async function planRoutes(app: FastifyInstance) {
     },
   })
 
-  /**------------------------------------------------------- Systems -------------------------------------------------------*/
-  
+  /** ------------------------------------------------------- Systems ------------------------------------------------------- */
+
   /**
    * ایجاد سیستم جدید
    * POST /v1/plan/create-system
-  */
+   */
   app.post('/create-system', {
     schema: {
       tags: ['Plan'],
@@ -150,12 +148,12 @@ export async function planRoutes(app: FastifyInstance) {
     },
   })
 
-/**------------------------------------------------------- Techniques -------------------------------------------------------*/
+  /** ------------------------------------------------------- Techniques ------------------------------------------------------- */
 
   /**
    * ایجاد تکنیک جدید
    * POST /v1/plan/technique-system
-  */
+   */
   app.post('/create-technique', {
     schema: {
       tags: ['Plan'],
@@ -170,8 +168,7 @@ export async function planRoutes(app: FastifyInstance) {
       },
     },
     handler: async (request: FastifyRequest<{ Body: planSchema.CreateTechniqueRequestType }>, reply: FastifyReply) => {
-      const technique = await planUseCase.createTechnique(request);
-      console.log(technique)
+      const technique = await planUseCase.createTechnique(request)
       reply.send({ data: { technique }, msgCode: '', msgType: 'success' })
     },
   })
@@ -201,4 +198,3 @@ export async function planRoutes(app: FastifyInstance) {
     },
   })
 }
-

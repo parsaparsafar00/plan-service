@@ -28,7 +28,7 @@ export const PlanSchema = Type.Object({
 export type PlanType = Static<typeof PlanSchema>
 
 /**
- * اسکیم tain helper 
+ * اسکیم tain helper
  */
 export const PlanTrainHelperSchema = Type.Object({
   // ستون‌های اصلی
@@ -74,7 +74,6 @@ export const TechniqueSchema = Type.Object({
 })
 export type TechniqueType = Static<typeof TechniqueSchema>
 
-
 // -------------------------------------- ساختار ورودی تولید سیستم --------------------------------------
 
 /**
@@ -84,11 +83,10 @@ export const CreatePlanSystemRequest = Type.Object({
   teacherId: Type.String({ format: 'uuid' }),
   description: Type.String(),
   descIsVisible: Type.Boolean(),
-  method: Type.String({maxLength: 255}),
+  method: Type.String({ maxLength: 255 }),
   repeatPattern: Type.Array(Type.Number(), { maxItems: 6 }), // ماکسیمم تعداد ست برابر با 6 است
-});
+})
 export type CreatePlanSystemRequestType = Static<typeof CreatePlanSystemRequest>
-
 
 // -------------------------------------- ساختار ورودی تولید تکنیک  --------------------------------------
 
@@ -98,17 +96,16 @@ export type CreatePlanSystemRequestType = Static<typeof CreatePlanSystemRequest>
 export const CreateTechniqueRequest = Type.Object({
   teacherId: Type.String({ format: 'uuid' }),
   description: Type.String(),
-  name: Type.String({maxLength: 255}),
+  name: Type.String({ maxLength: 255 }),
   descIsVisible: Type.Boolean(),
-  method: Type.String({maxLength: 255}),
-});
+  method: Type.String({ maxLength: 255 }),
+})
 export type CreateTechniqueRequestType = Static<typeof CreateTechniqueRequest>
-
 
 // -------------------------------------- ساختار ورودی های تولید برنامه تمرینی --------------------------------------
 
 /**
- * ورودی تولید برنامه تمرینی 
+ * ورودی تولید برنامه تمرینی
  */
 export const CreatePlanRequest = Type.Object({
   studentId: Type.String({ format: 'uuid' }),
@@ -129,7 +126,6 @@ export const CreatePlanRequest = Type.Object({
       ),
     }),
   ),
-
   traineeInfo: Type.Object({
     level: Type.String({ maxLength: 255 }),
     age: Type.Number(),
@@ -148,7 +144,7 @@ export interface weekInputSchema {
 }
 
 /**
- * ساختار ورودی یک برنامه تمرینی 
+ * ساختار ورودی یک برنامه تمرینی
  */
 export interface planInputSchema {
   target: string
@@ -176,7 +172,7 @@ export const exerciseOutputSchema = Type.Object({
   inDepthYoutubeExplanation: Type.Union([Type.String(), Type.Null()]),
   restBetweenSets: Type.Number(),
   weightPercentage: Type.String(),
-  system: Type.Array(Type.Number())
+  system: Type.Array(Type.Number()),
 })
 export type exerciseOutputType = Static<typeof exerciseOutputSchema>
 
@@ -231,17 +227,17 @@ export type printingSessionOutputType = Static<typeof printingSessionOutputSchem
 export const weekOutputSchema = Type.Object({
   number: Type.Array(Type.Number()),
   sessions: Type.Array(sessionOutputSchema),
-});
+})
 export type weekOutputType = Static<typeof weekOutputSchema>
 
 /**
- * ساختار خروجی یک برنامه تمرینی 
+ * ساختار خروجی یک برنامه تمرینی
  */
 export const planOutputSchema = Type.Object({
   load: Type.String(),
   deload: Type.String(),
   weeks: Type.Array(weekOutputSchema),
-});
+})
 export type planOutputType = Static<typeof planOutputSchema>
 
 /**

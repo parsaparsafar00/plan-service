@@ -2,7 +2,7 @@ import type { Knex } from 'knex'
 
 export async function up(knex: Knex): Promise<void> {
   // ساخت جدول plan_records
-  let recordsTableExists = await knex.schema.hasTable('plan_records')
+  const recordsTableExists = await knex.schema.hasTable('plan_records')
   if (!recordsTableExists) {
     await knex.schema.createTable('plan_records', (table) => {
       table.uuid('id').primary()
@@ -15,7 +15,7 @@ export async function up(knex: Knex): Promise<void> {
       table.string('target', 255).notNullable()
       table.string('status', 30).nullable()
       table.text('description').nullable()
-      table.integer('nWeeks').nullable() // تعداد هفته های برنامه 
+      table.integer('nWeeks').nullable() // تعداد هفته های برنامه
       table.jsonb('workoutPlan').nullable().defaultTo('{}') // فیلد برنامه که بصورت جیسان ذخیره میشه
       table.timestamp('createdAt', { useTz: false }).notNullable()
       table.timestamp('updatedAt', { useTz: false }).notNullable()
@@ -27,7 +27,7 @@ export async function up(knex: Knex): Promise<void> {
     })
   }
   // ساخت جدول plan_systems
-  let systemsTableExists = await knex.schema.hasTable('plan_systems')
+  const systemsTableExists = await knex.schema.hasTable('plan_systems')
   if (!systemsTableExists) {
     await knex.schema.createTable('plan_systems', (table) => {
       table.uuid('id').primary()
@@ -47,7 +47,7 @@ export async function up(knex: Knex): Promise<void> {
   }
 
   // ساخت جدول plan_techniques
-  let techniquesTableExists = await knex.schema.hasTable('plan_techniques')
+  const techniquesTableExists = await knex.schema.hasTable('plan_techniques')
   if (!techniquesTableExists) {
     await knex.schema.createTable('plan_techniques', (table) => {
       table.uuid('id').primary()
@@ -67,7 +67,7 @@ export async function up(knex: Knex): Promise<void> {
   }
 
   // ساخت جدول plan_train_helper
-  let helperTableExists = await knex.schema.hasTable('plan_train_helper')
+  const helperTableExists = await knex.schema.hasTable('plan_train_helper')
   if (!helperTableExists) {
     await knex.schema.createTable('plan_train_helper', (table) => {
       table.uuid('id').primary()
