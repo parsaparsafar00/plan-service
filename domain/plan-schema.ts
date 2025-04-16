@@ -113,9 +113,8 @@ function generateDescriptionForStatus(title: string, status: number) {
   return `${title}${lines.join('\n')}`
 }
 
-export const SuccessResponseDes = {
-  description: `### عملیات موفق با کد 200 گزارش میشود. مدل خروجی در اسکیما.`,
-}
+export const SuccessResponseDes = `### عملیات موفق با کد 200 گزارش میشود. مدل خروجی در اسکیما.`
+
 export const BadRequestError = {
   description: generateDescriptionForStatus(`
   ### هرگونه مشکلی در ورودی اطلاعات با خطای 400 گزارش میشود
