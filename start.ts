@@ -62,13 +62,14 @@ export async function startServer(): Promise<RawServerBase> {
       directory: migrationsDirectory,
       tableName: 'knex_migrations_plan_service',
     })
-    await knexInstance.migrate.latest()
-
-    // ساختن جدول حرکات به همراه ورود دیتاها، در صورت عدم وجود
+    
+    // ساختن جدول حرکات به همراه ورود دیتاها، در صورت عدم وجود (باید اول این جدول تولید بشه چرا که جداول دیگه ازش فارین کی میگیرن)
     await initExerciseTable(knexInstance)
 
-    setKnexInstanceForPlanRepo(knexInstance)
+    await knexInstance.migrate.latest()
     setKnexInstanceForExerciseRepo(knexInstance)
+    setKnexInstanceForPlanRepo(knexInstance)
+
     // لود کردن تمام حرکات درون یک متغیر آرایه ای سراسری
     await loadAllExercises()
 
