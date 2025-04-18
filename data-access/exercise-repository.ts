@@ -8,11 +8,13 @@ export function setKnexInstanceForExerciseRepo(instance: Knex): void {
 }
 
 /**
- * مدل داده برای سطرهای جدول plan_exercises
+ * مدل داده برای سطرهای جدول حرکات در دیتابیس
  */
 export interface ExerciseEntity {
+  number: number
   id: string
   name: string
+  nameFa: string
   shortYoutubeDemonstration: string | null
   inDepthYoutubeExplanation: string | null
   difficultyLevel: string | null

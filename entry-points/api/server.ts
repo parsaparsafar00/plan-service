@@ -9,8 +9,8 @@ import { fastifyRequestContextPlugin } from '@amard/requests-context'
 import fastifySwagger from '@fastify/swagger'
 import fastifySwaggerUi from '@fastify/swagger-ui'
 import Fastify from 'fastify'
-import { planRoutes } from './plan-routes.js'
 import { OpenAPIOptions, OpenAPIUIOptions } from './open-api-helper.js'
+import { planRoutes } from './plan-routes.js'
 
 let app: FastifyInstance | undefined
 
