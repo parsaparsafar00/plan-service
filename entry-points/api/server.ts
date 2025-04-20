@@ -9,6 +9,9 @@ import { fastifyRequestContextPlugin } from '@amard/requests-context'
 import fastifySwagger from '@fastify/swagger'
 import fastifySwaggerUi from '@fastify/swagger-ui'
 import Fastify from 'fastify'
+import { planRoutes } from './routes/plan-routes.js'
+import { systemRoutes } from './routes/system-routes.js'
+import { techniqueRoutes } from './routes/technique-routes.js'
 import { OpenAPIOptions, OpenAPIUIOptions } from './open-api-helper.js'
 import { planRoutes } from './plan-routes.js'
 
@@ -50,8 +53,11 @@ export async function startWebServer(knexInstance: Knex): Promise<FastifyInstanc
       // اگر نیاز است checkRedis هم اضافه کنید
     },
   })
-  // ثبت روترها
+
+  // ثبت روت ها
   app.register(planRoutes, { prefix: '/v1/plan' })
+  app.register(systemRoutes, { prefix: '/v1/plan' })
+  app.register(techniqueRoutes, { prefix: '/v1/plan' })
 
   // پورت از محیط
   const port = envConfig.get('PlanServicePort')
