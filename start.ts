@@ -10,7 +10,11 @@ import { logger } from '@amard/logger'
 import { closeKnexConnection, createKnexInstance } from '@amard/postgresql-connection'
 import { loadAllExercises, setKnexInstanceForExerciseRepo } from './data-access/exercise-repository.js'
 import { initExerciseTable } from './data-access/migrations/exercise-data/create_exercise_table.js'
-import { setKnexInstanceForPlanRepo } from './data-access/plan-repository.js'
+import { setKnexInstanceForPlanRepo } from './data-access/migrations/repos/plan-repository.js'
+import { setKnexInstanceForTrainHelperRepo } from './data-access/migrations/repos/plan-helper-repository.js'
+import { setKnexInstanceForSystemRepo } from './data-access/migrations/repos/system-repository.js'
+import { setKnexInstanceForTechniqueRepo } from './data-access/migrations/repos/technique-repository.js'
+import { setKnexInstanceForTemplateRepo } from './data-access/migrations/repos/template-repository.js'
 import { startWebServer, stopWebServer } from './entry-points/api/server.js'
 
 let isShuttingDown = false
@@ -69,7 +73,11 @@ export async function startServer(): Promise<RawServerBase> {
     await knexInstance.migrate.latest()
     setKnexInstanceForExerciseRepo(knexInstance)
     setKnexInstanceForPlanRepo(knexInstance)
-
+    setKnexInstanceForSystemRepo(knexInstance)
+    setKnexInstanceForTemplateRepo(knexInstance)
+    setKnexInstanceForTechniqueRepo(knexInstance)
+    setKnexInstanceForTrainHelperRepo(knexInstance)
+    
     // لود کردن تمام حرکات درون یک متغیر آرایه ای سراسری
     await loadAllExercises()
 

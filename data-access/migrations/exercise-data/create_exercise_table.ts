@@ -2,7 +2,6 @@ import type { Knex } from 'knex'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import ExcelJS from 'exceljs'
-import camelCase from 'lodash.camelCase'
 import { v4 as uuidv4 } from 'uuid'
 
 // کمل کیس بدون استفاده از کتابخانه های نود جی اس
@@ -25,8 +24,9 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
   const tableExists = await knex.schema.hasTable('plan_exercises')
   if (!tableExists) {
     await knex.schema.createTable('plan_exercises', (table) => {
-      table.integer('number').primary()
-      table.uuid('id').primary()
+      table.integer('number').unique()
+      table.uuid('id')
+      table.primary(['number', 'id']) // composite primary key
       table.string('name', 255).notNullable()
       table.string('nameFa', 255).notNullable()
       table.text('shortYoutubeDemonstration').nullable()
@@ -66,20 +66,11 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
     await workbook.xlsx.readFile(excelFilePath)
     const sheet = workbook.worksheets[0]
 
-    // تنظیم فونت تمام سلول‌ها
-    //   sheet.eachRow((row) => {
-    //     row.eachCell((cell) => {
-    //       if (cell.value !== null && typeof cell.value !== 'undefined') {
-    //         cell.font = { name: 'Times New Roman', size: 11 }
-    //       }
-    //     })
-    //   })
-
     // استخراج سرفصل‌ها و نگاشت به camelCase
     const headerRow = sheet.getRow(1)
     const rawHeaders = (headerRow.values as string[]).slice(1) // حذف مقدار null اولیه
     const toCamel = (s: string) =>
-      camelCase(s.replace(/[\-*#]/g, '').replace(/[^\w\s]/g, '').trim())
+      customCamelCase(s.replace(/[\-*#]/g, '').replace(/[^\w\s]/g, '').trim())
 
     const renamedHeaders = rawHeaders.map(toCamel)
 
@@ -90,8 +81,9 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
     // فیلتر ستون‌های مورد نیاز
     const columnsToKeep = new Set([
       'name',
-      'inDepthYouTubeExplanation',
-      'shortYouTubeDemonstration',
+      'nameFa',
+      'inDepthYoutubeExplanation',
+      'shortYoutubeDemonstration',
       'targetMuscleGroup',
       'difficultyLevel',
       'primaryEquipment',
@@ -101,61 +93,99 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
       'target',
     ])
 
+    // ستون‌هایی که برای ستون اصلی عضلات نیاز داریم (اما در نهایت به دیتابیس نمی‌روند)
+    const processingColumns = new Set([
+      'primeMoverMuscle',
+      'secondaryMuscle',
+      'tertiaryMuscle',
+    ])
+
     const records: any[] = []
 
     for (let i = 2; i <= sheet.rowCount; i++) {
       const row = sheet.getRow(i)
       const rowData: any = {}
+      const processingData: any = {} // برای ذخیره موقت ستون‌های پردازشی
 
+      // ابتدا تمام داده‌ها را بخوانید (هم برای پردازش و هم برای ذخیره)
       row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
-        const key = renamedHeaders[colNumber - 1]
+        const key = rawHeaders.map(customCamelCase)[colNumber - 1]
 
-        if (!columnsToKeep.has(key))
-          return
-        if (key === 'inDepthYouTubeExplanation' || key === 'shortYouTubeDemonstration') {
-          const hyperlink = cell.hyperlink || null
-          const value = typeof cell.value === 'string' ? cell.value.trim() : null
-
-          // Use hyperlink if available, otherwise fallback to the visible value
-          rowData[key] = hyperlink || value
-        }
-        else {
+        // ذخیره ستون‌های پردازشی
+        if (processingColumns.has(key)) {
           let val = typeof cell.value === 'string' ? cell.value.trim() : cell.value
-
-          if (['Unsorted', 'Unsorted*', 'unsorted', 'none', 'None'].includes(String(val))) {
+          if (['Unsorted', 'Unsorted*', 'unsorted', 'none', 'None'].includes(String(val)))
             val = ''
-          }
+          processingData[key] = val ?? ''
+          return
+        }
 
-          if (key === 'target') {
-            const targetMap: Record<string, string> = {
-              'Calisthenics': 'endurance',
-              'Grinds': 'endurance',
-              'Animal Flow': '',
-              'Plyometric': 'strength',
-              'Olympic Weightlifting': 'strength',
-              'Powerlifting': 'strength',
-              'Ballistics': 'strength',
-              'Bodybuilding': 'hypertrophy',
-              'Postural': 'postural',
-              'Mobility': 'mobility',
-              'Balance': 'balance',
+        // ذخیره ستون‌های اصلی
+        if (columnsToKeep.has(key)) {
+          if (key === 'inDepthYoutubeExplanation' || key === 'shortYoutubeDemonstration') {
+            const hyperlink = cell.hyperlink || null
+            const value = typeof cell.value === 'string' ? cell.value.trim() : null
+            rowData[key] = hyperlink || value
+          }
+          else {
+            let val = typeof cell.value === 'string' ? cell.value.trim() : cell.value
+            if (['Unsorted', 'Unsorted*', 'unsorted', 'none', 'None'].includes(String(val)))
+              val = ''
+
+            if (key === 'target') {
+              const targetMap: Record<string, string> = {
+                'Calisthenics': 'endurance',
+                'Grinds': 'endurance',
+                'Animal Flow': '',
+                'Plyometric': 'strength',
+                'Olympic Weightlifting': 'strength',
+                'Powerlifting': 'strength',
+                'Ballistics': 'strength',
+                'Bodybuilding': 'hypertrophy',
+                'Postural': 'postural',
+                'Mobility': 'mobility',
+                'Balance': 'balance',
+              }
+              val = targetMap[val as string] ?? val
             }
-            val = targetMap[val as string] ?? val
-          }
 
-          rowData[key] = val ?? ''
+            rowData[key] = val ?? ''
+          }
         }
       })
 
-      records.push(rowData)
+      // تنظیم کردن مقادیر ستون عضله ها
+      if (rowData.targetMuscleGroup) {
+        // const primeMover = (processingData.primeMoverMuscle || '').toLowerCase();
+        // const secondaryMuscle = (processingData.secondaryMuscle || '').toLowerCase();
+        // const tertiaryMuscle = (processingData.tertiaryMuscle || '').toLowerCase();
+        const targetMuscle = rowData.targetMuscleGroup.toLowerCase()
+
+        // جایگزینی مقدار Trapezius با trap
+        if (targetMuscle === 'trapezius') {
+          rowData.targetMuscleGroup = 'trap'
+        }
+        // کلی سازی عضلات مرتبط با پا
+        else if (targetMuscle === 'hip flexors' || targetMuscle === 'quadriceps' || targetMuscle === 'glutes' || targetMuscle === 'calves' || targetMuscle === 'hamstrings' || targetMuscle === 'shins' || targetMuscle === 'adductors' || targetMuscle === 'abductors') {
+          rowData.targetMuscleGroup = 'legs'
+        }
+        // پردازش جایگزینی مقدار Back
+        else if (targetMuscle === 'back') {
+          rowData.targetMuscleGroup = 'back and lat'
+        }
+
+        records.push(rowData)
+      }
     }
 
-    // ساخت رکوردها برای درج در دیتابیس
+    let autoIncrementId = 1
     const mappedRecords = records.map(row => ({
+      number: autoIncrementId++, // شماره حرکت تمرینی
       id: uuidv4(),
       name: row.name || '',
-      shortYoutubeDemonstration: row.shortYouTubeDemonstration,
-      inDepthYoutubeExplanation: row.inDepthYouTubeExplanation,
+      nameFa: row.nameFa || '',
+      shortYoutubeDemonstration: row.shortYoutubeDemonstration,
+      inDepthYoutubeExplanation: row.inDepthYoutubeExplanation,
       difficultyLevel: row.difficultyLevel ? row.difficultyLevel.toLowerCase() : null,
       targetMuscleGroup: row.targetMuscleGroup ? row.targetMuscleGroup.toLowerCase() : null,
       primaryEquipment: row.primaryEquipment ? row.primaryEquipment.toLowerCase() : null,

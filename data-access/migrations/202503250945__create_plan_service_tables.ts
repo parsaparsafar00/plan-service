@@ -14,7 +14,6 @@ export async function up(knex: Knex): Promise<void> {
       table.string('target', 255).notNullable()
       table.string('status', 30).nullable()
       table.text('description').nullable()
-      table.integer('nWeeks').nullable() // تعداد هفته های برنامه
       table.jsonb('workoutPlan').nullable().defaultTo('{}') // فیلد برنامه که بصورت جیسان ذخیره میشه
       table.timestamp('createdAt', { useTz: false }).notNullable()
       table.timestamp('updatedAt', { useTz: false }).notNullable()
@@ -62,6 +61,23 @@ export async function up(knex: Knex): Promise<void> {
 
       // ایندکس‌ها در صورت نیاز
       table.index(['teacherId'])
+    })
+  }
+
+  // ساخت جدول plan_templates
+  let templateTableExists = await knex.schema.hasTable('plan_templates')
+  if (!templateTableExists) {
+    await knex.schema.createTable('plan_templates', (table) => {
+      table.uuid('id').primary()
+      table.string('name', 255).notNullable() // نام تعیین شده توسط مربی
+      table.text('description').nullable()
+      table.uuid('teacherId').notNullable()
+      table.string('target', 255).nullable()
+      table.string('level', 255).nullable()
+      table.jsonb('muscles').notNullable().defaultTo('{}')
+      table.jsonb('workoutPlan').nullable().defaultTo('{}') // فیلد برنامه که شامل یک جلسه تمرینی هست و بصورت جیسان ذخیره میشه
+      table.timestamp('createdAt', { useTz: false }).notNullable()
+      table.timestamp('updatedAt', { useTz: false }).notNullable()
     })
   }
 
