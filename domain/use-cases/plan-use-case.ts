@@ -29,7 +29,7 @@ function extractSenderData(request: FastifyRequest) {
 /**
  * تولید جلسه ای برنامه تمرینی 
  */
-export async function generateSessionAI(request: FastifyRequest<{ Body: planSchema.GeneratePlanRequestType }>) {
+export async function generateSessionAI(request: FastifyRequest<{ Body: planSchema.GeneratePlanRequestType }>)  {
   if (!isValidUuid(request.body.teacherId)) throw new AppError('PLAN_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
 
   // تولید برنامه تمرینی و ذخیره آن بصورت جیسان در جدول برنامه ها
@@ -91,7 +91,7 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
     studentWeight: request.body.studentWeight,
     studentAge: request.body.studentAge,
     workoutPlan: {
-      sessions: request.body.sessions
+      sessions: request.body.workoutPlan.sessions
     },
     createdAt: nowStr,
     updatedAt: nowStr,
@@ -99,9 +99,9 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
 
   const inserted = await planRepo.insertPlan(newPlan)
 
-  // اینسرت کردن تمام حرکات موجود در برنامه تمرینی به جدول کمکی مربوط به ترین، به انضمام سیستم های تولید شده توسط دستور العمل ها 
+  // اینسرت کردن تمام حرکات موجود در برنامه تمرینی به جدول کمکی مربوط به ترین، به انضمام سیستم ها و تکنیک ها و پارامتر های دیگر تولید شده توسط دستور العمل ها 
   await Promise.all(
-    request.body.sessions.flatMap(session =>
+    request.body.workoutPlan.sessions.flatMap(session =>
       session.exercises?.map(async (ex) => {
       
         // ورودی تابع ذخیره اطلاعات مربوط به جدول ترین
@@ -139,8 +139,9 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
 /**
  * دریافت برنامه تمرینی با آیدی
 */
-export async function getPlan(request: FastifyRequest<{ Params: planSchema.getPlanType }>) {
-  const plan = await planRepo.getPlanById(request.params.id); 
+export async function getPlan(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
+  
+  const plan = await planRepo.getPlanById(request.params);
 
   const { role, userId } = extractSenderData(request);
   if (role === 'teacher' || role === 'student') {
@@ -171,17 +172,91 @@ export async function getPlan(request: FastifyRequest<{ Params: planSchema.getPl
   Object.entries(plan.workoutPlan.sessions).forEach(([sessionKey, session]: [string, any]) => {
     Object.entries(session.exercises).forEach(([exerciseKey, exercise]: [string, any]) => {
       const exerciseInfo = exercisesInfo.find(info => info.number === exercise.number);
-      if (request.params.print) {
-        const { number, ...restOfExercise } = { ...exercise, ...exerciseInfo }; // حذف number از خروجی حرکات
-        plan.workoutPlan.sessions[parseInt(sessionKey)].exercises[parseInt(exerciseKey)] = {...restOfExercise };
-      } else {
-        // اگر پرینتی نبود، پارامتر number رو نگهداری میکنیم
-        plan.workoutPlan.sessions[parseInt(sessionKey)].exercises[parseInt(exerciseKey)] = {...exercise, ...exerciseInfo};
-      }
+      // پارامتر شماره رو نگهداری میکنیم
+      plan.workoutPlan.sessions[parseInt(sessionKey)].exercises[parseInt(exerciseKey)] = {...exercise, ...exerciseInfo};
     });
   });
 
   return plan
+}
+
+/**
+ * دریافت برنامه پرینتی با آیدی
+*/
+export async function getPrintPlan(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
+  
+  const plan = await planRepo.getPlanById(request.params);
+
+  const { role, userId } = extractSenderData(request);
+  if (role === 'teacher' || role === 'student') {
+    const aclResult = await checkWithACL(request, { own: (plan.teacherId === userId) });
+    if (!aclResult.isOkay) throw new AppError('PLAN_ACTION_FORBIDDEN', aclResult.reason, 403);
+  }
+
+  const exerciseNumbers: number[] = [];
+  Object.values(plan.workoutPlan.sessions).forEach((session: any) => {
+    Object.values(session.exercises).forEach((exercise: any) => {
+      exerciseNumbers.push(exercise.number);
+    });
+  });
+
+  // دریافت اطلاعات حرکات برای شماره‌های منحصر به فرد
+  const uniqueExerciseNumbers = [...new Set(exerciseNumbers)];
+  const exercisesInfo = await Promise.all(
+    uniqueExerciseNumbers.map(number => {
+      const getExerciseInput: exerciseSchema.getExerciseType = {
+        number: number,
+        print: false
+      };
+      return getExercise({params: getExerciseInput});
+    })
+  );
+
+  // به‌روزرسانی حرکات هر جلسه با اطلاعات اضافی
+  Object.entries(plan.workoutPlan.sessions).forEach(([sessionKey, session]: [string, any]) => {
+    Object.entries(session.exercises).forEach(([exerciseKey, exercise]: [string, any]) => {
+      const exerciseInfo = exercisesInfo.find(info => info.number === exercise.number);
+      const { number, ...restOfExercise } = { ...exercise, ...exerciseInfo }; // حذف number از خروجی حرکات
+      plan.workoutPlan.sessions[parseInt(sessionKey)].exercises[parseInt(exerciseKey)] = {...restOfExercise };
+
+    });
+  });
+
+  return plan
+}
+
+/**
+ * گرفتن همه برنامه های تمرینی یک مربی
+*/
+export async function getAllPlansByTeacherId(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
+  if (!isValidUuid(request.params.id)) throw new AppError('PLAN_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+  return await planRepo.getPlansByTeacherId(request.params)
+}
+
+
+/**
+ * ویرایش برنامه تمرینی
+ */
+export async function updatePlan(request: FastifyRequest<{ Params: generalSchema.IdParamType, Body: planSchema.UpdatePlanRequestType }>) {
+  // const { userId: updaterId, role: updaterRole } = extractSenderData(request)
+
+  const currentPlan = await planRepo.getPlanById(request.params)
+  if (!currentPlan) throw new AppError('PLAN_NOT_FOUND', 'Plan not found', 400)
+  const updates = request.body // هر چیزی که به عنوان ورودی وارد شده است، بایستی در جدول برنامه ها آپدیت شود
+
+  // let aclResult = {isOkay: false, reason: ''}
+  // if (updaterRole === 'teacher' || updaterRole === 'admin') aclResult = await checkWithACL(request, { own: (updaterId === currentPlan.teacherId), ...updates })
+  // else aclResult = await checkWithACL(request, updates)
+
+  // if (!aclResult.isOkay) throw new AppError('PLAN_UPDATE_IS_FORBIDDEN', aclResult.reason, 403)
+
+  updates.updatedAt = DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-LL-dd HH:mm:ss')
+
+  const updated = await planRepo.updatePlan(currentPlan.id, updates)
+
+  auditLogger.update('', { request: setAuditRequest(request), oldData: currentPlan, newData: updated })
+
+  return updated
 }
 
 /**

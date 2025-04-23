@@ -27,29 +27,6 @@ export async function planRoutes(app: FastifyInstance) {
       reply.send({ data: { session }, msgCode: '', msgType: 'success' })
     },
   })
-    
-  /**
-   * تولید یک جلسه تمرینی بصورت دستی
-   * POST /v1/plan/generate-session-manual
-  */
-  // app.post('/generate-session-manual', {
-  //   schema: {
-  //     tags: ['Plan'],
-  //     summary: 'تولید جلسه ای برنامه تمرینی توسط مربی بصورت دستی',
-  //     description: `##فقط مربی بایستی قادر باشه که برنامه تولید بکنه `,
-  //     body: planSchema.CreatePlanRequest,
-  //     response: {
-  //       200: { content: { 'application/json': { schema: planSchema.SingleSessionResponse } }, description: generalSchema.SuccessResponseDes },
-  //       400: generalSchema.BadRequestError,
-  //       403: generalSchema.ForbiddenError,
-  //       500: generalSchema.InternalServerError,
-  //     },
-  //   },
-  //   handler: async (request: FastifyRequest<{ Body: planSchema.GeneratePlanRequestType }>, reply: FastifyReply) => {
-  //     const session = await planUseCase.generatePlanSessionManual(request)
-  //     reply.send({ data: { session }, msgCode: '', msgType: 'success' })
-  //   },
-  // })
 
   /**
    * تولید برنامه تمرینی با استفاده از جلسات تولید شده
@@ -78,7 +55,7 @@ export async function planRoutes(app: FastifyInstance) {
    * گرفتن برنامه تمرینی
    * GET /v1/plan/by-id/:id
    * به این معنی هست ک بایستی به طور مستقیم ایدی رو بعد از اسلش وارد بکنی
-   */
+  */
 
   app.get('/by-id/:id', {
     schema: {
@@ -93,7 +70,7 @@ export async function planRoutes(app: FastifyInstance) {
         500: generalSchema.InternalServerError,
       },
     },
-    handler: async (request: FastifyRequest<{ Params: planSchema.getPlanType }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
       const plan = await planUseCase.getPlan(request);
       reply.send({ data: { plan }, msgCode: '', msgType: 'success' })
     },
@@ -116,8 +93,56 @@ export async function planRoutes(app: FastifyInstance) {
         500: generalSchema.InternalServerError,
       },
     },
-    handler: async (request: FastifyRequest<{ Params: planSchema.getPlanType }>, reply: FastifyReply) => {
-      const plan = await planUseCase.getPlan(request)
+    handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
+      const plan = await planUseCase.getPrintPlan(request)
+      reply.send({ data: { plan }, msgCode: '', msgType: 'success' })
+    },
+  })
+  
+  /**
+   * گرفتن همه برنامه تمرینی های مربی
+   * GET /v1/plan/all-by-teacherid/:id
+  */
+  app.get('/all-by-teacherid/:id', {
+    schema: {
+      tags: ['Plan'],
+      summary: 'دریافت تمام برنامه های تمرینی با استفاده از آیدی مربی',
+      description: `## ادمین میتونه همه برنامه ها رو بگیره مربی و دانش آموز فقط برای خودشون رو میتونن بگیرن`,
+      params: generalSchema.IdParam,
+      response: {
+        200: { content: { 'application/json': { schema: planSchema.MultiplePlanResponse } }, description: generalSchema.SuccessResponseDes },
+        400: generalSchema.BadRequestError,
+        403: generalSchema.ForbiddenError,
+        500: generalSchema.InternalServerError,
+      },
+    },
+    handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
+      const plans = await planUseCase.getAllPlansByTeacherId(request);
+      console.log(plans)
+      reply.send({ data: { plans }, msgCode: '', msgType: 'success' })
+    },
+  })
+
+  /**
+   * ویرایش برنامه تمرینی
+   * PATCH /v1/plan/edit/by-id/:id
+   */
+  app.patch('/edit/by-id/:id', {
+    schema: {
+      tags: ['Plan'],
+      summary: 'ویرایش برنامه تمرینی',
+      description: `## امکان ویرایش یک برنامه تمرینی - ادمین برای همه - مربی فقط برنامه خودش  `,
+      params: generalSchema.IdParam,
+      body: planSchema.UpdatePlanRequest,
+      response: {
+        200: { content: { 'application/json': { schema: planSchema.SinglePlanResponse } }, description: generalSchema.SuccessResponseDes },
+        400: generalSchema.BadRequestError,
+        403: generalSchema.ForbiddenError,
+        500: generalSchema.InternalServerError,
+      },
+    },
+    handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType, Body: planSchema.UpdatePlanRequestType }>, reply: FastifyReply) => {
+      const plan = await planUseCase.updatePlan(request)
       reply.send({ data: { plan }, msgCode: '', msgType: 'success' })
     },
   })

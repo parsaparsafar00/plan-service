@@ -75,8 +75,9 @@ export async function up(knex: Knex): Promise<void> {
       table.uuid('teacherId').notNullable()
       table.string('target', 255).nullable()
       table.string('level', 255).nullable()
-      table.jsonb('muscles').notNullable().defaultTo('{}')
-      table.jsonb('workoutPlan').nullable().defaultTo('{}') // فیلد برنامه که شامل یک جلسه تمرینی هست و بصورت جیسان ذخیره میشه
+      table.smallint('gender').nullable()
+      table.jsonb('muscles').nullable().defaultTo('{}')
+      table.jsonb('session').nullable().defaultTo('{}') // فیلد برنامه که شامل یک جلسه تمرینی هست و بصورت جیسان ذخیره میشه
       table.timestamp('createdAt', { useTz: false }).notNullable()
       table.timestamp('updatedAt', { useTz: false }).notNullable()
     })

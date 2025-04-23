@@ -1,5 +1,5 @@
 export interface SessionInstructionInput {
-  age: number
+  age: number | undefined
   gender: number
   target: string
   level: string
@@ -75,7 +75,7 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
     }
   }
 
-  if (age > 40) {
+  if (age && age > 40) {
     recoveryTime_ceiling += 24
     recoveryTime_ground += 12
   } 
@@ -114,7 +114,7 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
     }
   }
 
-  if (age >= 40) {
+  if (age && age >= 40) {
     sessionDuration_ceiling -= 10
     sessionDuration_ground -= 10
     if (target === 'endurance') {

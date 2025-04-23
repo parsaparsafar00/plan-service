@@ -16,8 +16,6 @@ export function AISessionGenerator(sessionInput: PlanSchemas.GeneratePlanRequest
   const weight = sessionInput.traineeInfo.weight
   const muscleValues = sessionInput.targetMuscles
 
-  if (!level) throw new AppError("PLAN_STUDENT_LEVEL_INVALID", "No exercises loaded in memory", 400);
-
   const allExercises = getAllExercisesArray()
   if (!allExercises || allExercises.length === 0) throw new AppError('PLAN_NO_EXERCISES_FOUND', 'No exercises loaded in memory', 400)
 
@@ -35,7 +33,7 @@ export function AISessionGenerator(sessionInput: PlanSchemas.GeneratePlanRequest
 
   const sessionData: PlanSchemas.sessionOutputType = {
     targetMuscles: muscleValues,
-    weeks: sessionInput.weeks,
+    weeks: [], // هفته ها، صرفا زمانی که قرار باشه برنامه ذخیره بشه، پر میشن. در غیر این صورت نیازی به مقدار داشتنشون نیست
     description: '', // وقتی هوش مصنوعی برنامه تولید میکنه، توضیحات خالی خواهد بود
     cooldownActivities: sessionInfo.cooldownActivities,
     warmupActivities: sessionInfo.warmupActivities,
@@ -55,15 +53,15 @@ export function AISessionGenerator(sessionInput: PlanSchemas.GeneratePlanRequest
       return false
     
     // فیلتر بر اساس سن
-    if (ex.ageGround && ex.ageGround > age)
+    if (ex.ageGround && age && ex.ageGround > age)
       return false
-    if (ex.ageCeiling && ex.ageCeiling < age)
+    if (ex.ageCeiling && age && ex.ageCeiling < age)
       return false
 
     // فیلتر بر اساس وزن
-    if (ex.weightGround && ex.weightGround > weight)
+    if (ex.weightGround && weight && ex.weightGround > weight)
       return false
-    if (ex.weightCeiling && ex.weightCeiling < weight)
+    if (ex.weightCeiling && weight && ex.weightCeiling < weight)
       return false
 
     // فیلتر بر اساس جنسیت

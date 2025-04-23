@@ -11,6 +11,8 @@ import fastifySwaggerUi from '@fastify/swagger-ui'
 import Fastify from 'fastify'
 import { planRoutes } from './routes/plan-routes.js'
 import { systemRoutes } from './routes/system-routes.js'
+import { templateRoutes } from './routes/template-routes.js'
+import { exerciseRoutes } from './routes/exercise-routes.js'
 import { techniqueRoutes } from './routes/technique-routes.js'
 import { OpenAPIOptions, OpenAPIUIOptions } from './open-api-helper.js'
 
@@ -36,6 +38,7 @@ export async function startWebServer(knexInstance: Knex): Promise<FastifyInstanc
 
   // RequestContext
   app.register(fastifyRequestContextPlugin, { serviceName: 'plan-service' })
+  
   // Logger
   app.register(fastifyApiLoggerPlugin, { serviceName: 'plan-service' })
 
@@ -56,7 +59,9 @@ export async function startWebServer(knexInstance: Knex): Promise<FastifyInstanc
   // ثبت روت ها
   app.register(planRoutes, { prefix: '/v1/plan' })
   app.register(systemRoutes, { prefix: '/v1/plan' })
+  app.register(exerciseRoutes, { prefix: '/v1/plan' })
   app.register(techniqueRoutes, { prefix: '/v1/plan' })
+  app.register(templateRoutes, { prefix: '/v1/plan' })
 
   // پورت از محیط
   const port = envConfig.get('PlanServicePort')
