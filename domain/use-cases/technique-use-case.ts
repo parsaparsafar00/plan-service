@@ -1,6 +1,6 @@
 import type { FastifyRequest } from 'fastify'
-import type * as techniqueSchema from '../schemas/technique-schema.js'
 import type * as generalSchema from '../schemas/plan-general-schema.js'
+import type * as techniqueSchema from '../schemas/technique-schema.js'
 import { AppError } from '@amard/error-handling'
 import { auditLogger, setAuditRequest } from '@amard/logger'
 import { DateTime } from 'luxon'
@@ -9,14 +9,15 @@ import * as techniqueRepo from '../../data-access/migrations/repos/technique-rep
 
 /**
  * تولید تکنیک
-*/
+ */
 export async function createTechnique(request: FastifyRequest<{ Body: techniqueSchema.CreateTechniqueRequestType }>) {
-  if (!isValidUuid(request.body.teacherId)) throw new AppError('PLAN_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
-    
+  if (!isValidUuid(request.body.teacherId))
+    throw new AppError('PLAN_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+
   const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss') // useTz=false در migration
   const newTechnique: techniqueSchema.TechniqueType = {
     id: uuidv4(),
-    abbrName: "تکنیک " + request.body.method + " " + request.body.name,
+    abbrName: `تکنیک ${request.body.method} ${request.body.name}`,
     name: request.body.name,
     teacherId: request.body.teacherId,
     description: request.body.description,
@@ -26,7 +27,7 @@ export async function createTechnique(request: FastifyRequest<{ Body: techniqueS
     createdAt: nowStr,
     updatedAt: nowStr,
   }
-  
+
   const inserted = await techniqueRepo.insertTechnique(newTechnique)
   auditLogger.create('', { request: setAuditRequest(request), oldData: null, newData: inserted })
   return inserted
@@ -34,18 +35,20 @@ export async function createTechnique(request: FastifyRequest<{ Body: techniqueS
 
 /**
  * گرفتن اطلاعات یک تکنیک
-*/
+ */
 export async function getTechniqueById(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
   const existing = await techniqueRepo.getTechniqueById(request.params)
-  if (!existing) throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 400)
+  if (!existing)
+    throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 400)
   return existing
 }
 
 /**
  * گرفتن همه سیستم های برنامه تمرینی
-*/
+ */
 export async function getAllTechniquesByTeacherId(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
-  if (!isValidUuid(request.params.id)) throw new AppError('TECHNIQUE_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+  if (!isValidUuid(request.params.id))
+    throw new AppError('TECHNIQUE_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
 
   const techniques = await techniqueRepo.getTechniquesByTeacherId(request.params.id)
 
@@ -54,12 +57,13 @@ export async function getAllTechniquesByTeacherId(request: FastifyRequest<{ Para
 
 /**
  * ویرایش تکنیک تمرینی
-*/
+ */
 export async function updateTechnique(request: FastifyRequest<{ Params: generalSchema.IdParamType, Body: techniqueSchema.UpdateTechniqueRequestType }>) {
   // const { userId: updaterId, role: updaterRole } = extractSenderData(request)
 
   const currentTechnique = await techniqueRepo.getTechniqueById(request.params)
-  if (!currentTechnique) throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 400)
+  if (!currentTechnique)
+    throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 400)
   const updates = request.body // هر چیزی که به عنوان ورودی وارد شده است، بایستی در جدول سیستم ها آپدیت شود
 
   // let aclResult = {isOkay: false, reason: ''}
@@ -72,16 +76,17 @@ export async function updateTechnique(request: FastifyRequest<{ Params: generalS
 
   const updated = await techniqueRepo.updateTechnique(currentTechnique.id, updates)
 
-  auditLogger.update('', { request: setAuditRequest(request), oldData: currentTechnique, newData: updated })
+  auditLogger.update('', { request: setAuditRequest(request), oldData: currentTechnique ?? null, newData: updated ?? null })
   return updated
 }
 
 /**
  * حذف تکنیک
-*/
+ */
 export async function deleteTechnique(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
   const existing = await techniqueRepo.getTechniqueById(request.params)
-  if (!existing) throw new AppError('PLAN_NOT_FOUND', 'Plan not found', 400)
+  if (!existing)
+    throw new AppError('PLAN_NOT_FOUND', 'Plan not found', 400)
 
   // const { role, userId } = extractSenderData(request)
   // if (role === 'teacher' || role === 'admin') {
@@ -93,6 +98,3 @@ export async function deleteTechnique(request: FastifyRequest<{ Params: generalS
   await techniqueRepo.deleteTechnique(existing.id)
   auditLogger.delete('', { request: setAuditRequest(request), oldData: existing, newData: null })
 }
-
-
-

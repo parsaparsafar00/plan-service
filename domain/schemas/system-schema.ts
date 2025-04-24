@@ -4,7 +4,7 @@ import { Type } from '@sinclair/typebox'
 
 /**
  * اسکیم یک سیستم در برنامه تمرینی
-*/
+ */
 export const SystemSchema = Type.Object({
   id: Type.String({ format: 'uuid' }),
   abbrName: Type.String({ maxLength: 511 }),
@@ -16,31 +16,33 @@ export const SystemSchema = Type.Object({
   status: Type.Optional(Type.String({ maxLength: 30 })), // مثل 'active', 'done'
   createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
   updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
-});
+})
 export type SystemType = Static<typeof SystemSchema>
+
+export const SystemListSchema = Type.Array(SystemSchema)
+export type SystemListType = Static<typeof SystemListSchema>
 
 /**
  * ساختار ورودی تولید سیستم برنامه تمرینی
-*/
+ */
 export const CreatePlanSystemRequest = Type.Object({
   teacherId: Type.String({ format: 'uuid' }),
   description: Type.String(),
   descIsVisible: Type.Boolean(),
-  method: Type.String({maxLength: 255}),
+  method: Type.String({ maxLength: 255 }),
   repeatPattern: Type.Array(Type.Number()),
-});
+})
 export type CreatePlanSystemRequestType = Static<typeof CreatePlanSystemRequest>
 
 /**
  * ساختار درخواست آپدیت برنامه تمرینی
-*/
+ */
 export const UpdateSystemRequestSchema = Type.Partial(SystemSchema)
 export type UpdateSystemRequestType = Static<typeof UpdateSystemRequestSchema>
 
-
 /**
  * پاسخ موفق با برگرداندن یک سیستم
-*/
+ */
 export const SingleSystemResponse = Type.Object({
   data: Type.Object({
     system: SystemSchema,

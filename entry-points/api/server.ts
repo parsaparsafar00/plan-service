@@ -9,13 +9,12 @@ import { fastifyRequestContextPlugin } from '@amard/requests-context'
 import fastifySwagger from '@fastify/swagger'
 import fastifySwaggerUi from '@fastify/swagger-ui'
 import Fastify from 'fastify'
+import { OpenAPIOptions, OpenAPIUIOptions } from './open-api-helper.js'
+import { exerciseRoutes } from './routes/exercise-routes.js'
 import { planRoutes } from './routes/plan-routes.js'
 import { systemRoutes } from './routes/system-routes.js'
-import { templateRoutes } from './routes/template-routes.js'
-import { exerciseRoutes } from './routes/exercise-routes.js'
 import { techniqueRoutes } from './routes/technique-routes.js'
-import { OpenAPIOptions, OpenAPIUIOptions } from './open-api-helper.js'
-import { planRoutes } from './plan-routes.js'
+import { templateRoutes } from './routes/template-routes.js'
 
 let app: FastifyInstance | undefined
 
@@ -39,7 +38,7 @@ export async function startWebServer(knexInstance: Knex): Promise<FastifyInstanc
 
   // RequestContext
   app.register(fastifyRequestContextPlugin, { serviceName: 'plan-service' })
-  
+
   // Logger
   app.register(fastifyApiLoggerPlugin, { serviceName: 'plan-service' })
 

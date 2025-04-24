@@ -1,5 +1,4 @@
 import type { Knex } from 'knex'
-import * as fs from 'node:fs'
 import * as path from 'node:path'
 import ExcelJS from 'exceljs'
 import { v4 as uuidv4 } from 'uuid'
@@ -108,7 +107,7 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
       const processingData: any = {} // برای ذخیره موقت ستون‌های پردازشی
 
       // ابتدا تمام داده‌ها را بخوانید (هم برای پردازش و هم برای ذخیره)
-      row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+      row.eachCell({ includeEmpty: true }, (cell: any, colNumber: number) => {
         const key = rawHeaders.map(customCamelCase)[colNumber - 1]
 
         // ذخیره ستون‌های پردازشی

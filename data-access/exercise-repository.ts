@@ -1,5 +1,5 @@
 import type { Knex } from 'knex'
-import type { exerciseOutputType, getExerciseType, printingExerciseOutputType } from '../domain/schemas/exercise-schema.js'
+import type { exerciseOutputType, getExerciseType } from '../domain/schemas/exercise-schema.js'
 import { AppError } from '@amard/error-handling'
 
 let knexInstance: Knex
@@ -59,7 +59,8 @@ let inMemoryExercises: ExerciseEntity[] = []
  * یکبار از دیتابیس همه‌ی تمرین‌ها را می‌خوانیم و در حافظه ذخیره می‌کنیم
  */
 export async function loadAllExercises(): Promise<void> {
-  if (!knexInstance) throw new AppError('EXERCISE_REPO_DB_NOT_READY', 'Knex instance not set in ExerciseRepo', 500)
+  if (!knexInstance)
+    throw new AppError('EXERCISE_REPO_DB_NOT_READY', 'Knex instance not set in ExerciseRepo', 500)
 
   try {
     // انتخاب از جدول plan_exercises
@@ -81,12 +82,11 @@ export function getAllExercisesArray(): ExerciseEntity[] {
 /**
  * دریافت حرکت تمرینی با شماره حرکت
  */
-export async function getExerciseByNumber(data: getExerciseType) {
+export async function getExerciseByNumber(data: getExerciseType): Promise<exerciseOutputType | undefined> {
   try {
-    const number = data.number
-    if (data.print !== false) return await knexInstance<printingExerciseOutputType>('plan_exercises').where(number).first();
-    else return await knexInstance<exerciseOutputType>('plan_exercises').where({number: number}).first();
-  } catch (error) {
-    throw new AppError('EXERCISE_DB_QUERY_ERROR', 'Database getExerciseById query error', 500, error);
+    return await knexInstance('plan_exercises').where({ number: data.number }).first()
+  }
+  catch (error) {
+    throw new AppError('EXERCISE_DB_QUERY_ERROR', 'Database getExerciseById query error', 500, error)
   }
 }

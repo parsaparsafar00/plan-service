@@ -6,14 +6,12 @@ export interface LoadPlan {
   numberOfDropSets: number
 }
 
-
-
 export function getPlanInstructions(level: string): LoadPlan {
   let loadIncrement = ''
   let deload = ''
-  let numberOfSuperSets = 0
-  let numberOfDropSets = 0
-  let numberOfGiantSets = 0
+  const numberOfSuperSets = 0
+  const numberOfDropSets = 0
+  const numberOfGiantSets = 0
 
   // دستورالعمل های افزایش و کاهش بار تمرینی در طی هفته ها
   switch (level) {

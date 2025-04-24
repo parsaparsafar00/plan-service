@@ -4,11 +4,10 @@ import * as systemSchema from '../../../domain/schemas/system-schema.js'
 import * as systemUseCase from '../../../domain/use-cases/system-use-case.js'
 
 export async function systemRoutes(app: FastifyInstance) {
-
   /**
    * ایجاد سیستم جدید
    * POST /v1/plan/create-system
-  */
+   */
   app.post('/create-system', {
     schema: {
       tags: ['Plan'],
@@ -28,10 +27,10 @@ export async function systemRoutes(app: FastifyInstance) {
     },
   })
 
- /**
+  /**
    * گرفتن اطلاعات یک سیستم تولید شده توسط مربی با آیدی
    * GET /v1/plan/system-by-id/:id
-  */
+   */
   app.get('/system-by-id/:id', {
     schema: {
       tags: ['Plan'],
@@ -54,7 +53,7 @@ export async function systemRoutes(app: FastifyInstance) {
   /**
    * گرفتن همه سیستم های تولیدی مربی
    * GET /v1/plan/all-systems-by-id/:teacherid
-  */
+   */
   app.get('/all-systems-by-teacherid/:id', {
     schema: {
       tags: ['Plan'],
@@ -72,13 +71,12 @@ export async function systemRoutes(app: FastifyInstance) {
       const systems = await systemUseCase.getAllSystemsByTeacherId(request)
       reply.send({ data: { systems }, msgCode: '', msgType: 'success' })
     },
-  })   
-
+  })
 
   /**
    * ویرایش سیستم تمرینی
    * PATCH /v1/plan/edit/system-by-id/:id
-  */
+   */
   app.patch('/edit/system-by-id/:id', {
     schema: {
       tags: ['Plan'],
@@ -100,9 +98,9 @@ export async function systemRoutes(app: FastifyInstance) {
   })
 
   /**
-   * حذف سیستم 
+   * حذف سیستم
    * DELETE /v1/plan/delete/system-by-id/:id
-  */
+   */
   app.delete('/delete/system-by-id/:id', {
     schema: {
       tags: ['Plan'],
@@ -117,9 +115,8 @@ export async function systemRoutes(app: FastifyInstance) {
       },
     },
     handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
-      await systemUseCase.deleteSystem(request);
-      reply.send({ data: {}, msgCode: '', msgType: 'success' });
+      await systemUseCase.deleteSystem(request)
+      reply.send({ data: {}, msgCode: '', msgType: 'success' })
     },
   })
 }
-

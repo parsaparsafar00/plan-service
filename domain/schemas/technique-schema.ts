@@ -4,7 +4,7 @@ import { Type } from '@sinclair/typebox'
 
 /**
  * اسکیم یک تکنیک در برنامه تمرینی
-*/
+ */
 export const TechniqueSchema = Type.Object({
   id: Type.String({ format: 'uuid' }),
   abbrName: Type.String({ maxLength: 511 }),
@@ -19,27 +19,30 @@ export const TechniqueSchema = Type.Object({
 })
 export type TechniqueType = Static<typeof TechniqueSchema>
 
+export const TechniqueListSchema = Type.Array(TechniqueSchema)
+export type TechniqueListType = Static<typeof TechniqueListSchema>
+
 /**
  * ساختار ورودی تولید تکنیک برنامه تمرینی
-*/
+ */
 export const CreateTechniqueRequest = Type.Object({
   teacherId: Type.String({ format: 'uuid' }),
   description: Type.String(),
-  name: Type.String({maxLength: 255}),
+  name: Type.String({ maxLength: 255 }),
   descIsVisible: Type.Boolean(),
-  method: Type.String({maxLength: 255}),
-});
+  method: Type.String({ maxLength: 255 }),
+})
 export type CreateTechniqueRequestType = Static<typeof CreateTechniqueRequest>
 
 /**
- * ساختار درخواست آپدیت تکنیک 
+ * ساختار درخواست آپدیت تکنیک
  */
 export const UpdateTechniqueRequest = Type.Partial(TechniqueSchema)
 export type UpdateTechniqueRequestType = Static<typeof UpdateTechniqueRequest>
 
 /**
  * پاسخ موفق با برگرداندن یک تکنیک
-*/
+ */
 export const SingleTechniqueResponse = Type.Object({
   data: Type.Object({
     technique: TechniqueSchema,

@@ -6,7 +6,7 @@ import { Type } from '@sinclair/typebox'
 
 /**
  * پارامتر آیدی برنامه در درخواست
-*/
+ */
 export const IdParam = Type.Object({
   id: Type.String({ format: 'uuid' }),
 })
@@ -16,7 +16,7 @@ export type IdParamType = Static<typeof IdParam>
 
 /**
  * پاسخ موفق خالی
-*/
+ */
 export const EmptySuccessResponse = Type.Object({
   data: Type.Object({}),
   msgCode: Type.String(),

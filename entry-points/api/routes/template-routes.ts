@@ -4,11 +4,10 @@ import * as templateSchema from '../../../domain/schemas/template-schema.js'
 import * as templateUseCase from '../../../domain/use-cases/template-use-case.js'
 
 export async function templateRoutes(app: FastifyInstance) {
-
   /**
    * ایجاد قالب جدید
    * POST /v1/plan/create-template-AI
-  */
+   */
   app.post('/create-template-AI', {
     schema: {
       tags: ['Plan'],
@@ -31,7 +30,7 @@ export async function templateRoutes(app: FastifyInstance) {
   /**
    * ایجاد قالب جدید
    * POST /v1/plan/create-template-manual
-  */
+   */
   app.post('/create-template-manual', {
     schema: {
       tags: ['Plan'],
@@ -54,7 +53,7 @@ export async function templateRoutes(app: FastifyInstance) {
   /**
    * گرفتن اطلاعات یک قالب تولید شده توسط مربی با استفاده از آیدی قالب
    * GET /v1/plan/template-by-id/:id
-  */
+   */
   app.get('/template-by-id/:id', {
     schema: {
       tags: ['Plan'],
@@ -77,7 +76,7 @@ export async function templateRoutes(app: FastifyInstance) {
   /**
    * گرفتن همه قالب های تولیدی مربی
    * GET /v1/plan/all-templates-by-id/:teacherid
-  */
+   */
   app.get('/all-templates-by-teacherid/:id', {
     schema: {
       tags: ['Plan'],
@@ -95,12 +94,12 @@ export async function templateRoutes(app: FastifyInstance) {
       const templates = await templateUseCase.getAllTemplatesByTeacherId(request)
       reply.send({ data: { templates }, msgCode: '', msgType: 'success' })
     },
-  })   
+  })
 
   /**
    * ویرایش قالب تمرینی
    * PATCH /v1/plan/edit/template-by-id/:id
-  */
+   */
   app.patch('/edit/template-by-id/:id', {
     schema: {
       tags: ['Plan'],
@@ -122,9 +121,9 @@ export async function templateRoutes(app: FastifyInstance) {
   })
 
   /**
-   * حذف قالب 
+   * حذف قالب
    * DELETE /v1/plan/delete/template-by-id/:id
-  */
+   */
   app.delete('/delete/template-by-id/:id', {
     schema: {
       tags: ['Plan'],
@@ -139,9 +138,8 @@ export async function templateRoutes(app: FastifyInstance) {
       },
     },
     handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
-      await templateUseCase.deleteTemplate(request);
-      reply.send({ data: {}, msgCode: '', msgType: 'success' });
+      await templateUseCase.deleteTemplate(request)
+      reply.send({ data: {}, msgCode: '', msgType: 'success' })
     },
   })
 }
-

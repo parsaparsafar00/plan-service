@@ -3,8 +3,8 @@ import { isoWithoutTimezonePattern } from '@amard/validation'
 import { Type } from '@sinclair/typebox'
 
 /**
- * اسکیم tain helper 
-*/
+ * اسکیم tain helper
+ */
 export const PlanTrainHelperSchema = Type.Object({
   // ستون‌های اصلی
   id: Type.String({ format: 'uuid' }),

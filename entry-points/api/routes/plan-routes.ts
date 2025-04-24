@@ -1,14 +1,13 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
-import * as planSchema from '../../../domain/schemas/plan-schema.js'
 import * as generalSchema from '../../../domain/schemas/plan-general-schema.js'
+import * as planSchema from '../../../domain/schemas/plan-schema.js'
 import * as planUseCase from '../../../domain/use-cases/plan-use-case.js'
 
 export async function planRoutes(app: FastifyInstance) {
-  
   /**
    * تولید یک جلسه تمرینی توسط هوش مصنوعی
    * POST /v1/plan/generate-session-AI
-  */
+   */
   app.post('/generate-session-AI', {
     schema: {
       tags: ['Plan'],
@@ -31,7 +30,7 @@ export async function planRoutes(app: FastifyInstance) {
   /**
    * تولید برنامه تمرینی با استفاده از جلسات تولید شده
    * POST /v1/plan/create
-  */
+   */
   app.post('/create', {
     schema: {
       tags: ['Plan'],
@@ -49,13 +48,13 @@ export async function planRoutes(app: FastifyInstance) {
       const plan = await planUseCase.createPlan(request)
       reply.send({ data: { plan }, msgCode: '', msgType: 'success' })
     },
-  });
+  })
 
   /**
    * گرفتن برنامه تمرینی
    * GET /v1/plan/by-id/:id
    * به این معنی هست ک بایستی به طور مستقیم ایدی رو بعد از اسلش وارد بکنی
-  */
+   */
 
   app.get('/by-id/:id', {
     schema: {
@@ -71,7 +70,7 @@ export async function planRoutes(app: FastifyInstance) {
       },
     },
     handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
-      const plan = await planUseCase.getPlan(request);
+      const plan = await planUseCase.getPlan(request)
       reply.send({ data: { plan }, msgCode: '', msgType: 'success' })
     },
   })
@@ -79,7 +78,7 @@ export async function planRoutes(app: FastifyInstance) {
   /**
    * گرفتن برنامه تمرینی مخصوص پرینت
    * GET /v1/plan/by-id-print/:id
-  */
+   */
   app.get('/by-id-print/:id', {
     schema: {
       tags: ['Plan'],
@@ -98,11 +97,11 @@ export async function planRoutes(app: FastifyInstance) {
       reply.send({ data: { plan }, msgCode: '', msgType: 'success' })
     },
   })
-  
+
   /**
    * گرفتن همه برنامه تمرینی های مربی
    * GET /v1/plan/all-by-teacherid/:id
-  */
+   */
   app.get('/all-by-teacherid/:id', {
     schema: {
       tags: ['Plan'],
@@ -117,7 +116,7 @@ export async function planRoutes(app: FastifyInstance) {
       },
     },
     handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
-      const plans = await planUseCase.getAllPlansByTeacherId(request);
+      const plans = await planUseCase.getAllPlansByTeacherId(request)
       console.log(plans)
       reply.send({ data: { plans }, msgCode: '', msgType: 'success' })
     },
@@ -150,7 +149,7 @@ export async function planRoutes(app: FastifyInstance) {
   /**
    * حذف برنامه تمرینی
    * DELETE /v1/plan/delete/by-id/:id
-  */
+   */
   app.delete('/delete/by-id/:id', {
     schema: {
       tags: ['Plan'],
@@ -165,9 +164,8 @@ export async function planRoutes(app: FastifyInstance) {
       },
     },
     handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
-      await planUseCase.deletePlan(request);
-      reply.send({ data: {}, msgCode: '', msgType: 'success' });
+      await planUseCase.deletePlan(request)
+      reply.send({ data: {}, msgCode: '', msgType: 'success' })
     },
   })
 }
-

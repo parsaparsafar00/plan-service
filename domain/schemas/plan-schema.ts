@@ -8,7 +8,7 @@ import * as generalSchema from '../schemas/plan-general-schema.js'
 
 /**
  * ساختار ورودی یک جلسه تمرینی در تولید برنامه تمرینی
-*/
+ */
 export const sessionInputSchema = Type.Object({
   weeks: Type.Array(Type.Number()),
   description: Type.String(),
@@ -25,7 +25,7 @@ export type sessionInputType = Static<typeof sessionInputSchema>
 
 /**
  * ساختار یک جلسه تمرینی
-*/
+ */
 export const sessionOutputSchema = Type.Object({
   weeks: Type.Array(Type.Number()),
   description: Type.String(),
@@ -42,7 +42,7 @@ export type sessionOutputType = Static<typeof sessionOutputSchema>
 
 /**
  * ساختار خروجی یک جلسه تمرینی پرینتی
-*/
+ */
 export const printSessionOutputSchema = Type.Object({
   weeks: Type.Array(Type.Number()),
   description: Type.String(),
@@ -59,7 +59,7 @@ export type printSessionOutputType = Static<typeof printSessionOutputSchema>
 
 /**
  * اسکیم یک برنامه تمرینی
-*/
+ */
 export const PlanSchema = Type.Object({
   id: Type.String({ format: 'uuid' }),
   studentId: Type.String({ format: 'uuid' }),
@@ -72,7 +72,7 @@ export const PlanSchema = Type.Object({
   studentAge: Type.Number(),
   status: Type.Optional(Type.String({ maxLength: 30 })), // مثل 'active', 'done'
   workoutPlan: Type.Object({
-    sessions: Type.Array(sessionOutputSchema)
+    sessions: Type.Array(sessionInputSchema),
   }),
   createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
   updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
@@ -80,8 +80,14 @@ export const PlanSchema = Type.Object({
 export type PlanType = Static<typeof PlanSchema>
 
 /**
+ * اسکیم لیست برنامه های تمرینی
+ */
+export const PlanListSchema = Type.Array(PlanSchema)
+export type PlanListType = Static<typeof PlanListSchema>
+
+/**
  *  اسکیم یک برنامه تمرینی پرینتی
-*/
+ */
 export const PrintPlanSchema = Type.Object({
   // ستون‌های اصلی
   id: Type.String({ format: 'uuid' }),
@@ -95,7 +101,7 @@ export const PrintPlanSchema = Type.Object({
   studentAge: Type.Number(),
   status: Type.Optional(Type.String({ maxLength: 30 })), // مثل 'active', 'done'
   workoutPlan: Type.Object({
-    sessions: Type.Array(printSessionOutputSchema)
+    sessions: Type.Array(printSessionOutputSchema),
   }),
   createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
   updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
@@ -112,28 +118,28 @@ export type UpdatePlanRequestType = Static<typeof UpdatePlanRequest>
 
 /**
  * ساختار ورودی دریافت یک برنامه تمرینی
-*/
+ */
 export const getPlanSchema = Type.Object({
   id: generalSchema.IdParam,
-  print: Type.Boolean()
+  print: Type.Boolean(),
 })
 export type getPlanType = Static<typeof getPlanSchema>
 
 /**
  * ساختار ورودی تولید سیستم برنامه تمرینی
-*/
+ */
 export const CreatePlanSystemRequest = Type.Object({
   teacherId: Type.String({ format: 'uuid' }),
   description: Type.String(),
   descIsVisible: Type.Boolean(),
-  method: Type.String({maxLength: 255}),
+  method: Type.String({ maxLength: 255 }),
   repeatPattern: Type.Array(Type.Number()),
-});
+})
 export type CreatePlanSystemRequestType = Static<typeof CreatePlanSystemRequest>
 
 /**
- * ورودی تولید جلسه تمرینی توسط هوش مصنوعی 
-*/
+ * ورودی تولید جلسه تمرینی توسط هوش مصنوعی
+ */
 export const GeneratePlanRequest = Type.Object({
   teacherId: Type.String({ format: 'uuid' }),
   description: Type.String(),
@@ -152,8 +158,8 @@ export const GeneratePlanRequest = Type.Object({
 export type GeneratePlanRequestType = Static<typeof GeneratePlanRequest>
 
 /**
- * ورودی تولید برنامه تمرینی بر اساس جلسات تولید شده 
-*/
+ * ورودی تولید برنامه تمرینی بر اساس جلسات تولید شده
+ */
 export const CreatePlanRequest = Type.Object({
   workoutPlan: Type.Object({
     sessions: Type.Array(sessionInputSchema),
@@ -174,21 +180,21 @@ export type CreatePlanRequestType = Static<typeof CreatePlanRequest>
 
 /**
  * ساختار خروجی یک برنامه تمرینی
-*/
+ */
 export const planOutputSchema = Type.Object({
   // load: Type.String(),
   // deload: Type.String(),
   workoutPlan: Type.Object({
     sessions: Type.Array(sessionOutputSchema),
   }),
-});
+})
 export type planOutputType = Static<typeof planOutputSchema>
 
 // -------------------------------------- ساختار پاسخ ها --------------------------------------
 
 /**
  * پاسخ موفق یک برنامه
-*/
+ */
 export const SinglePlanResponse = Type.Object({
   data: Type.Object({
     plan: PlanSchema,
@@ -199,7 +205,7 @@ export const SinglePlanResponse = Type.Object({
 
 /**
  * پاسخ موفق چند برنامه
-*/
+ */
 export const MultiplePlanResponse = Type.Object({
   data: Type.Object({
     plans: Type.Array(PlanSchema),
@@ -210,7 +216,7 @@ export const MultiplePlanResponse = Type.Object({
 
 /**
  * پاسخ موفق یک برنامه تمرینی پرینتی
-*/
+ */
 export const SinglePrintPlanResponse = Type.Object({
   data: Type.Object({
     plan: PrintPlanSchema,
@@ -221,7 +227,7 @@ export const SinglePrintPlanResponse = Type.Object({
 
 /**
  * پاسخ موفق یک جلسه تمرینی تولید شده
-*/
+ */
 export const SingleSessionResponse = Type.Object({
   data: Type.Object({
     session: sessionOutputSchema,
