@@ -1,5 +1,5 @@
 import type { Knex } from 'knex'
-import type { PlanType, getPlanType, PrintPlanType } from '../../../domain/schemas/plan-schema.js'
+import type { PlanType } from '../../../domain/schemas/plan-schema.js'
 import { AppError } from '@amard/error-handling'
 import { IdParamType } from '../../../domain/schemas/plan-general-schema.js'
 
@@ -11,7 +11,7 @@ export function setKnexInstanceForPlanRepo(instance: Knex) {
 
 /**
  * تولید برنامه تمرینی جدید در جدول plan_records
- */
+*/
 export async function insertPlan(data: PlanType): Promise<PlanType> {
   try {
     const [inserted] = await knexInstance<PlanType>('plan_records').insert(data).returning('*')
@@ -23,17 +23,26 @@ export async function insertPlan(data: PlanType): Promise<PlanType> {
 }
 
 /**
+ * دریافت تمام برنامه ها بر اساس آیدی مربی
+*/
+export async function getPlansByTeacherId(id: IdParamType): Promise<PlanType | undefined> {
+  try {
+    const teacherId = id.id
+    return await knexInstance('plan_records').where({ teacherId: teacherId });
+  } catch (error) {
+    throw new AppError('PLAN_DB_QUERY_ERROR', 'Database getPlansByTeacherId query error', 500, error);
+  }
+}
+
+/**
  * دریافت برنامه تمرینی (هم پرینتی و هم عادی) با آیدی
- */
+*/
 export async function getPlanById(id: IdParamType): Promise<PlanType> {
   try {
-    const plan = await knexInstance('plan_records')
-      .where({ id: id })
-      .first();
+    const planId = id.id
+    const plan = await knexInstance('plan_records').where({ id: planId }).first();
     
-    if (!plan) {
-      throw new AppError('PLAN_NOT_FOUND', `برنامه با شناسه ${id} یافت نشد`, 404);
-    }
+    if (!plan) throw new AppError('PLAN_NOT_FOUND', `برنامه با شناسه ${id} یافت نشد`, 404);
     return plan;
 
   } catch (error) {
@@ -41,15 +50,13 @@ export async function getPlanById(id: IdParamType): Promise<PlanType> {
     throw new AppError('PLAN_DB_QUERY_ERROR', 'خطای پایگاه داده در دریافت برنامه', 500, error);
   }
 }
+
 /**
  * ویرایش برنامه تمرینی
- */
+*/
 export async function updatePlan(id: string, updates: Partial<PlanType>): Promise<PlanType> {
   try {
-    const [updated] = await knexInstance<PlanType>('plan_records')
-      .where({ id })
-      .update(updates)
-      .returning('*')
+    const [updated] = await knexInstance<PlanType>('plan_records').where({ id }).update(updates).returning('*')
     return updated
   }
   catch (error) {
@@ -59,7 +66,7 @@ export async function updatePlan(id: string, updates: Partial<PlanType>): Promis
 
 /**
  * حذف برنامه تمرینی
- */
+*/
 export async function deletePlan(id: string): Promise<void> {
   try {
     await knexInstance('plan_records').where({ id }).del()

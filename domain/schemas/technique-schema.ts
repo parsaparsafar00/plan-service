@@ -32,6 +32,12 @@ export const CreateTechniqueRequest = Type.Object({
 export type CreateTechniqueRequestType = Static<typeof CreateTechniqueRequest>
 
 /**
+ * ساختار درخواست آپدیت تکنیک 
+ */
+export const UpdateTechniqueRequest = Type.Partial(TechniqueSchema)
+export type UpdateTechniqueRequestType = Static<typeof UpdateTechniqueRequest>
+
+/**
  * پاسخ موفق با برگرداندن یک تکنیک
 */
 export const SingleTechniqueResponse = Type.Object({

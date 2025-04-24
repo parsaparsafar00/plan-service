@@ -12,7 +12,7 @@ export const SystemSchema = Type.Object({
   description: Type.String(),
   descIsVisible: Type.Boolean(),
   method: Type.String(),
-  repeatPattern: Type.Array(Type.Number(), { maxItems: 6 }), // ماکسیمم تعداد ست برابر با 6 است
+  repeatPattern: Type.Array(Type.Number()),
   status: Type.Optional(Type.String({ maxLength: 30 })), // مثل 'active', 'done'
   createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
   updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
@@ -27,9 +27,16 @@ export const CreatePlanSystemRequest = Type.Object({
   description: Type.String(),
   descIsVisible: Type.Boolean(),
   method: Type.String({maxLength: 255}),
-  repeatPattern: Type.Array(Type.Number(), { maxItems: 6 }), // ماکسیمم تعداد ست برابر با 6 است
+  repeatPattern: Type.Array(Type.Number()),
 });
 export type CreatePlanSystemRequestType = Static<typeof CreatePlanSystemRequest>
+
+/**
+ * ساختار درخواست آپدیت برنامه تمرینی
+*/
+export const UpdateSystemRequestSchema = Type.Partial(SystemSchema)
+export type UpdateSystemRequestType = Static<typeof UpdateSystemRequestSchema>
+
 
 /**
  * پاسخ موفق با برگرداندن یک سیستم
