@@ -34,6 +34,7 @@ async function shutDownServer(reason: string, error?: Error) {
     await stopWebServer()
     // قطع اتصال دیتابیس
     await closeKnexConnection()
+    // موارد پاکسازی اینجا قرار میگیرن
 
     logger.warn('Plan-service: Shut down gracefully.')
     process.exit(0)
