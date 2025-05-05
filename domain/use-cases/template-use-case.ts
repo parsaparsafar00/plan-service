@@ -1,6 +1,7 @@
 import type { FastifyRequest } from 'fastify'
 import type * as generalSchema from '../schemas/plan-general-schema.js'
 import type * as planSchema from '../schemas/plan-schema.js'
+import type * as exerciseSchema from '../schemas/exercise-schema.js'
 import type * as templateSchema from '../schemas/template-schema.js'
 import { checkWithACL } from '@amard/access-control'
 import { AppError } from '@amard/error-handling'
@@ -28,7 +29,7 @@ export async function createTemplateByAI(request: FastifyRequest<{ Body: templat
   if (!isValidUuid(request.body.teacherId))
     throw new AppError('TEMPLATE_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
 
-  const generateSessionByAIInput: planSchema.GeneratePlanRequestType = {
+  const generateSessionByAIInput: planSchema.GenerateSessionByAIRequestType = {
     teacherId: request.body.teacherId,
     description: request.body.description,
     exerciseType: 'body building',
@@ -46,6 +47,16 @@ export async function createTemplateByAI(request: FastifyRequest<{ Body: templat
 
   const workout_session = AISessionGenerator(generateSessionByAIInput) // تولید جلسه تمرینی توسط هوش مصنوعی
 
+  const exercisesInPlanFormat: exerciseSchema.exerciseOutputInPlanType[] = Object.values(workout_session.exercises).map(exercise => ({
+    number: exercise.number,
+    restBetweenSets: exercise.restBetweenSets,
+    weightPercentage: exercise.weightPercentage,
+    systemId: exercise.systemId || '',
+    techniqueId: exercise.techniqueId || ''
+  }));
+
+  const transformedSession = {...workout_session, exercises: exercisesInPlanFormat};
+
   const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss') // useTz=false در migration
   const newTemplate: templateSchema.TemplateType = {
     id: uuidv4(),
@@ -56,7 +67,7 @@ export async function createTemplateByAI(request: FastifyRequest<{ Body: templat
     target: request.body.target,
     muscles: request.body.muscles,
     gender: request.body.gender,
-    session: workout_session,
+    session: transformedSession,
     createdAt: nowStr,
     updatedAt: nowStr,
   }
@@ -70,10 +81,9 @@ export async function createTemplateByAI(request: FastifyRequest<{ Body: templat
  * تولید قالب بصورت دستی
  */
 export async function createTemplateManual(request: FastifyRequest<{ Body: templateSchema.CreateTemplateManualRequestType }>) {
-  if (!isValidUuid(request.body.teacherId))
-    throw new AppError('TEMPLATE_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+  if (!isValidUuid(request.body.teacherId)) throw new AppError('TEMPLATE_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
 
-  const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss') // useTz=false در migration
+  const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss')
   const newTemplate: templateSchema.TemplateType = {
     id: uuidv4(),
     name: request.body.name,
@@ -97,8 +107,7 @@ export async function createTemplateManual(request: FastifyRequest<{ Body: templ
  * گرفتن همه قالب های مربی
  */
 export async function getAllTemplatesByTeacherId(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
-  if (!isValidUuid(request.params.id))
-    throw new AppError('TEMPLATE_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+  if (!isValidUuid(request.params.id)) throw new AppError('TEMPLATE_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
   return await templateRepo.getAllTemplatesByTeacherId(request.params)
 }
 
@@ -118,22 +127,20 @@ export async function updateTemplate(request: FastifyRequest<{ Params: generalSc
   const { userId: updaterId, role: updaterRole } = extractSenderData(request)
 
   const currentTemplate = await templateRepo.getTemplateById(request.params)
-  if (!currentTemplate)
-    throw new AppError('TEMPLATE_NOT_FOUND', 'Template not found', 400)
+
+  if (!currentTemplate) throw new AppError('TEMPLATE_NOT_FOUND', 'Template not found', 400)
   const updates = request.body // هر چیزی که به عنوان ورودی وارد شده است، بایستی در جدول قالب ها آپدیت شود
 
   let aclResult = { isOkay: false, reason: '' }
+
   if (updaterRole === 'teacher') {
     aclResult = await checkWithACL(request, { own: (updaterId === currentTemplate.teacherId), ...updates })
-  }
-  else {
+  } else if (updaterRole === 'admin') {
     aclResult = await checkWithACL(request, updates)
   }
-  if (!aclResult.isOkay)
-    throw new AppError('TEMPLATE_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
 
+  if (!aclResult.isOkay) throw new AppError('TEMPLATE_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
   updates.updatedAt = DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-LL-dd HH:mm:ss')
-
   const updated = await templateRepo.updateTemplate(request.params, updates)
 
   auditLogger.update('', { request: setAuditRequest(request), oldData: currentTemplate, newData: updated })
@@ -149,12 +156,12 @@ export async function deleteTemplate(request: FastifyRequest<{ Params: generalSc
   if (!existing)
     throw new AppError('TEMPLATE_NOT_FOUND', 'Template not found', 400)
 
-  // const { role, userId } = extractSenderData(request)
-  // if (role === 'teacher' || role === 'admin') {
-  //   const aclResult = await checkWithACL(request, { own: (existing.teacherId === userId) })
-  //   if (!aclResult.isOkay)
-  //     throw new AppError('PLAN_TEMPLATE_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
-  // }
+  const { role, userId } = extractSenderData(request)
+  if (role === 'teacher' || role === 'admin') {
+    const aclResult = await checkWithACL(request, { own: (existing.teacherId === userId) })
+    if (!aclResult.isOkay)
+      throw new AppError('TEMPLATE_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
+  }
 
   await templateRepo.deleteTemplate(request.params)
   auditLogger.delete('', { request: setAuditRequest(request), oldData: existing, newData: null })

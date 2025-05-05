@@ -135,8 +135,7 @@ export function getExerciseInstructions({ gender, target, mechanics, level, targ
   if (target_muscle_groups.some(item => ['chest', 'back', 'abductors', 'adductors'].includes(item))) {
     repeatsPerSetGround += 2
     repeatsPerSetCeiling += 2
-  }
-  else if (target_muscle_groups.some(item => ['biceps', 'triceps', 'shoulders', 'calves'].includes(item))) {
+  } else if (target_muscle_groups.some(item => ['biceps', 'triceps', 'shoulders', 'calves'].includes(item))) {
     repeatsPerSetGround -= 2
     repeatsPerSetCeiling -= 2
   }

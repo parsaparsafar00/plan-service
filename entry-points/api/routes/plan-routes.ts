@@ -13,7 +13,7 @@ export async function planRoutes(app: FastifyInstance) {
       tags: ['Plan'],
       summary: 'تولید جلسه ای برنامه تمرینی توسط هوش مصنوعی',
       description: `##فقط مربی بایستی قادر باشه که برنامه تولید بکنه `,
-      body: planSchema.GeneratePlanRequest,
+      body: planSchema.GenerateSessionByAIRequest,
       response: {
         200: { content: { 'application/json': { schema: planSchema.SingleSessionResponse } }, description: generalSchema.SuccessResponseDes },
         400: generalSchema.BadRequestError,
@@ -21,7 +21,7 @@ export async function planRoutes(app: FastifyInstance) {
         500: generalSchema.InternalServerError,
       },
     },
-    handler: async (request: FastifyRequest<{ Body: planSchema.GeneratePlanRequestType }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Body: planSchema.GenerateSessionByAIRequestType }>, reply: FastifyReply) => {
       const session = await planUseCase.generateSessionAI(request)
       reply.send({ data: { session }, msgCode: '', msgType: 'success' })
     },
@@ -70,7 +70,7 @@ export async function planRoutes(app: FastifyInstance) {
       },
     },
     handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
-      const plan = await planUseCase.getPlan(request)
+      const plan = await planUseCase.getPlanById(request)
       reply.send({ data: { plan }, msgCode: '', msgType: 'success' })
     },
   })

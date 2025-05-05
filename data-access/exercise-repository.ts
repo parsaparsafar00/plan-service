@@ -1,5 +1,5 @@
 import type { Knex } from 'knex'
-import type { exerciseOutputType, getExerciseType } from '../domain/schemas/exercise-schema.js'
+import type { exerciseOutputType, GetExerciseByNumberRequestType, GetExerciseByNumberListRequestType, exerciseListOutputType, printingRawExerciseType, exerciseListPrintType, exerciseRawOutputType } from '../domain/schemas/exercise-schema.js'
 import { AppError } from '@amard/error-handling'
 
 let knexInstance: Knex
@@ -82,11 +82,41 @@ export function getAllExercisesArray(): ExerciseEntity[] {
 /**
  * دریافت حرکت تمرینی با شماره حرکت
  */
-export async function getExerciseByNumber(data: getExerciseType): Promise<exerciseOutputType | undefined> {
+export async function getExerciseByNumber(input: GetExerciseByNumberRequestType): Promise<exerciseOutputType | undefined> {
   try {
-    return await knexInstance('plan_exercises').where({ number: data.number }).first()
+    return await knexInstance('plan_exercises').where({ number: input.number }).first()
   }
   catch (error) {
     throw new AppError('EXERCISE_DB_QUERY_ERROR', 'Database getExerciseById query error', 500, error)
+  }
+}
+
+/**
+ * دریافت حرکات تمرینی با لیستی از شماره حرکات
+ */
+export async function getExercisesByNumberList(input: GetExerciseByNumberListRequestType): Promise<exerciseListOutputType> {
+  try {
+    // گرفتن لیست شماره حرکت ها 
+    const numberList = input.map(item => item.number);
+
+    return await knexInstance<exerciseRawOutputType>('plan_exercises').whereIn('number', numberList);
+
+  } catch (error) {
+    throw new AppError('EXERCISE_DB_QUERY_ERROR', 'Database getExercisesByNumberList query error', 500, error);
+  }
+}
+
+/**
+ * دریافت حرکات تمرینی با لیستی از شماره حرکات
+ */
+export async function getExercisesByNumberListPrint(input: GetExerciseByNumberListRequestType): Promise<exerciseListPrintType> {
+  try {
+    // گرفتن لیست شماره حرکت ها 
+    const numberList = input.map(item => item.number);
+
+    return await knexInstance<printingRawExerciseType>('plan_exercises').whereIn('number', numberList);
+
+  } catch (error) {
+    throw new AppError('EXERCISE_DB_QUERY_ERROR', 'Database getExercisesByNumberList query error', 500, error);
   }
 }

@@ -1,7 +1,7 @@
 import type { Static } from '@sinclair/typebox'
 import { isoWithoutTimezonePattern } from '@amard/validation'
 import { Type } from '@sinclair/typebox'
-import { sessionInputSchema } from '../schemas/plan-schema.js'
+import { sessionInPlanSchema } from '../schemas/plan-schema.js'
 
 /**
  * ساختار ورودی تولید یک قالب توسط هوش مصنوعی برای برنامه تمرینی
@@ -9,9 +9,27 @@ import { sessionInputSchema } from '../schemas/plan-schema.js'
 export const CreateTemplateByAIRequest = Type.Object({
   teacherId: Type.String({ format: 'uuid' }),
   name: Type.String({ maxLength: 255 }),
-  target: Type.String({ maxLength: 255 }),
+  target: Type.Enum({
+    postural: 'postural',
+    hypertrophy: 'hypertrophy',
+    strength: 'strength',
+    endurance: 'endurance',
+    balance: 'balance',
+    mobility: 'mobility',
+  }),
   level: Type.String({ maxLength: 255 }),
-  muscles: Type.Array(Type.String()),
+  muscles: Type.Array(Type.Enum({
+    fullBody: 'full body',
+    biceps: 'biceps',
+    triceps: 'triceps',
+    lat: 'back and lat',
+    legs: 'legs',
+    abdominals: 'abdominals',
+    trap: 'trap',
+    shoulders: 'shoulders',
+    forearms: 'forearms',
+    chest: 'chest',
+  })),
   description: Type.String(),
   gender: Type.Union([Type.Literal(0), Type.Literal(1)]),
 })
@@ -23,12 +41,30 @@ export type CreateTemplateByAIRequestType = Static<typeof CreateTemplateByAIRequ
 export const CreateTemplateManualRequest = Type.Object({
   teacherId: Type.String({ format: 'uuid' }),
   name: Type.String({ maxLength: 255 }),
-  target: Type.String({ maxLength: 255 }),
+  target: Type.Enum({
+    postural: 'postural',
+    hypertrophy: 'hypertrophy',
+    strength: 'strength',
+    endurance: 'endurance',
+    balance: 'balance',
+    mobility: 'mobility',
+  }),
   level: Type.String({ maxLength: 255 }),
-  muscles: Type.Array(Type.String()),
+  muscles: Type.Array(Type.Enum({
+    fullBody: 'full body',
+    biceps: 'biceps',
+    triceps: 'triceps',
+    lat: 'back and lat',
+    legs: 'legs',
+    abdominals: 'abdominals',
+    trap: 'trap',
+    shoulders: 'shoulders',
+    forearms: 'forearms',
+    chest: 'chest',
+  })),
   description: Type.String(),
   gender: Type.Union([Type.Literal(0), Type.Literal(1)]),
-  session: sessionInputSchema, // بدین معنا که صرفا شماره حرکت و اطلاعات اضافی که مربی در فرم پر میکنه قراره توی یک قالب دستی ذخیره بشه
+  session: sessionInPlanSchema, // بدین معنا که صرفا شماره حرکت و اطلاعات اضافی که مربی در فرم پر میکنه قراره توی یک قالب دستی ذخیره بشه
 })
 export type CreateTemplateManualRequestType = Static<typeof CreateTemplateManualRequest>
 
@@ -41,10 +77,28 @@ export const templateSchema = Type.Object({
   teacherId: Type.String({ format: 'uuid' }),
   description: Type.String(),
   level: Type.String({ maxLength: 255 }),
-  target: Type.String({ maxLength: 255 }),
+  target: Type.Enum({
+    postural: 'postural',
+    hypertrophy: 'hypertrophy',
+    strength: 'strength',
+    endurance: 'endurance',
+    balance: 'balance',
+    mobility: 'mobility',
+  }),
   gender: Type.Union([Type.Literal(0), Type.Literal(1)]),
-  muscles: Type.Array(Type.String()),
-  session: sessionInputSchema,
+  muscles: Type.Array(Type.Enum({
+    fullBody: 'full body',
+    biceps: 'biceps',
+    triceps: 'triceps',
+    lat: 'back and lat',
+    legs: 'legs',
+    abdominals: 'abdominals',
+    trap: 'trap',
+    shoulders: 'shoulders',
+    forearms: 'forearms',
+    chest: 'chest',
+  })),
+  session: sessionInPlanSchema,
   createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
   updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
 })

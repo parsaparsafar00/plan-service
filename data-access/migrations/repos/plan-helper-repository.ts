@@ -1,5 +1,6 @@
 import type { Knex } from 'knex'
 import type { PlanTrainHelperType } from '../../../domain/schemas/train-helper-schema.js'
+import type { IdParamType } from '../../../domain/schemas/plan-general-schema.js'
 import { AppError } from '@amard/error-handling'
 
 let knexInstance: Knex
@@ -11,13 +12,30 @@ export function setKnexInstanceForTrainHelperRepo(instance: Knex) {
 /**
  * تولید برنامه تمرینی جدید در جدول plan_train_helper
  */
-export async function insertPlanTrainHelper(data: PlanTrainHelperType): Promise<PlanTrainHelperType> {
+export async function insertPlanTrainHelper(data: PlanTrainHelperType, trx?: Knex.Transaction): Promise<PlanTrainHelperType> {
   try {
-    // ایجاد سطر جدید
-    const [inserted] = await knexInstance('plan_train_helper').insert(data).returning('*')
-    return inserted
-  }
-  catch (error) {
-    throw new AppError('PLAN_TRAIN_HELPER_DB_INSERT_ERROR', 'Database insertPlanTrainHelper query error', 500, error)
+    // ساخت کوئری بیس
+    const query = knexInstance<PlanTrainHelperType>('plan_train_helper');
+    
+    // اجرای کوئری با تراکنش اگر وجود داشت
+    const [inserted] = await (trx ? query.transacting(trx) : query).insert(data).returning('*');
+    
+    return inserted;
+  } catch (error) {
+    throw new AppError('PLAN_TRAIN_HELPER_DB_INSERT_ERROR', 'خطا در ذخیره اطلاعات کمکی برنامه تمرینی', 500, error instanceof Error ? error.message : String(error));
   }
 }
+
+/**
+ * حذف یک رکورد کمکی
+ */
+export async function deleteHelperById(id: IdParamType): Promise<void> {
+  try {
+    const helperId = id.id
+    await knexInstance('plan_train_helper').where({ id: helperId }).del()
+  }
+  catch (error) {
+    throw new AppError('PLAN_HELPER_DB_ACTION_ERROR', 'Database deleteHelperById query error', 500, error)
+  }
+}
+

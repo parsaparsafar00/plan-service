@@ -15,6 +15,7 @@ import { planRoutes } from './routes/plan-routes.js'
 import { systemRoutes } from './routes/system-routes.js'
 import { techniqueRoutes } from './routes/technique-routes.js'
 import { templateRoutes } from './routes/template-routes.js'
+import { categoryRoutes } from './routes/category-routes.js'
 
 let app: FastifyInstance | undefined
 
@@ -62,6 +63,7 @@ export async function startWebServer(knexInstance: Knex): Promise<FastifyInstanc
   app.register(exerciseRoutes, { prefix: '/v1/plan' })
   app.register(techniqueRoutes, { prefix: '/v1/plan' })
   app.register(templateRoutes, { prefix: '/v1/plan' })
+  app.register(categoryRoutes, { prefix: '/v1/plan' })
 
   // پورت از محیط
   const port = envConfig.get('PlanServicePort')
