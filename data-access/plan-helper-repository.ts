@@ -1,6 +1,5 @@
 import type { Knex } from 'knex'
-import type { PlanTrainHelperType } from '../../../domain/schemas/train-helper-schema.js'
-import type { IdParamType } from '../../../domain/schemas/plan-general-schema.js'
+import type { PlanTrainHelperType } from '../domain/schemas/train-helper-schema.js'
 import { AppError } from '@amard/error-handling'
 
 let knexInstance: Knex
@@ -27,12 +26,11 @@ export async function insertPlanTrainHelper(data: PlanTrainHelperType, trx?: Kne
 }
 
 /**
- * حذف یک رکورد کمکی
+ * حذف یک رکورد کمکی فقط برای ادمین در موارد خاص که بعیده استفاده بشه در حالت عادی
  */
-export async function deleteHelperById(id: IdParamType): Promise<void> {
+export async function deleteHelperById(id: string): Promise<void> {
   try {
-    const helperId = id.id
-    await knexInstance('plan_train_helper').where({ id: helperId }).del()
+    await knexInstance('plan_train_helper').where({ id }).del()
   }
   catch (error) {
     throw new AppError('PLAN_HELPER_DB_ACTION_ERROR', 'Database deleteHelperById query error', 500, error)

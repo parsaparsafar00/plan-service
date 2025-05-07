@@ -6,7 +6,7 @@ import { AppError } from '@amard/error-handling'
 import { auditLogger, setAuditRequest } from '@amard/logger'
 import { DateTime } from 'luxon'
 import { validate as isValidUuid, v4 as uuidv4 } from 'uuid'
-import * as categoryRepository from '../../data-access/migrations/repos/category-repository.js'
+import * as categoryRepository from '../../data-access/category-repository.js'
 
 const internalSvcId = 'internal-service-user-id'
 const internalSvcRole = 'internal-service-user-role'
@@ -33,7 +33,8 @@ export async function createCategory(request: FastifyRequest<{ Body: catSchemas.
     isGlobal = request.body.isGlobal || false
 
     if (!isGlobal) {
-      if (!isValidUuid(teacherId)) throw new AppError('PLAN_CATEGORY_TEACHER_ID_INVALID', 'Teacher ID is inavlid', 400)
+      if (!isValidUuid(teacherId)) 
+        throw new AppError('PLAN_CATEGORY_TEACHER_ID_INVALID', 'Teacher ID is invalid', 400)
     }
   }
 
@@ -85,7 +86,7 @@ export async function getTeacherCategories(request: FastifyRequest<{ Querystring
   if (tokenUserRole === 'admin') {
     teacherId = request.query.id
     if (!isValidUuid(teacherId))
-      throw new AppError('PLAN_CATEGORY_TEACHER_ID_INVALID', 'Teacher ID is inavlid', 400)
+      throw new AppError('PLAN_CATEGORY_TEACHER_ID_INVALID', 'Teacher ID is invalid', 400)
   }
 
   return await categoryRepository.getAllTeacherCategories(teacherId, request.autoQueryData as AutoQueryData)
@@ -137,9 +138,14 @@ export async function deleteCategory(request: FastifyRequest<{ Params: catSchema
       throw new AppError('PLAN_CATEGORY_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
   }
 
+  //----
   // حتی اگه ادمین یه کتگوری گلوبال رو حذف بکنه تابع زیر میگرده یه کتگوری گلوبال دیگه پیدا میکنه و به کاربران اختصاص میده
-  await categoryRepository.changeCategoryToGlobal(currentCategory.id)
+  const generalCategory = await categoryRepository.getGeneralCategory()
+  await categoryRepository.changeCategoryToGlobal(currentCategory.id, generalCategory!.id)
 
   await categoryRepository.deleteCategory(currentCategory.id)
+  //----
+  // میشه اتومیک یا تراکنشی زد
+
   auditLogger.delete('', { request: setAuditRequest(request), oldData: currentCategory, newData: null })
 }

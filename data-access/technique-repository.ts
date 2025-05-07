@@ -1,5 +1,5 @@
 import type { Knex } from 'knex'
-import type * as generalSchema from '../../../domain/schemas/plan-general-schema.js'
+import type * as generalSchema from '../domain/schemas/plan-general-schema.js'
 import type { TechniqueListType, TechniqueType, GetTechnqiuesByIdListType, techniqueInPlanOutputSchemaType, TechniqueInPlanListSchemaType, UpdateTechniquesByIdListType } from '../../../domain/schemas/technique-schema.js'
 import { AppError } from '@amard/error-handling'
 import { DateTime } from 'luxon'
@@ -61,7 +61,7 @@ export async function getTechniquesByTeacherId(teacherId: string): Promise<Techn
 export async function getTechniquesByIdList(input: GetTechnqiuesByIdListType): Promise<TechniqueInPlanListSchemaType | undefined> {
   try {
     // گرفتن لیست آیدی تکنیک ها ها 
-    const idList = input.map(item => item.id);
+    const idList = input.map((item: { id: any }) => item.id);
 
     return await knexInstance<techniqueInPlanOutputSchemaType>('plan_techniques').whereIn('id', idList);
 

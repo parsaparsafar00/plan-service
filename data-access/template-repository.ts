@@ -1,6 +1,6 @@
 import type { Knex } from 'knex'
-import type * as generalPlanSchema from '../../../domain/schemas/plan-general-schema.js'
-import type * as templateSchema from '../../../domain/schemas/template-schema.js'
+import type * as generalPlanSchema from '../domain/schemas/plan-general-schema.js'
+import type * as templateSchema from '../domain/schemas/template-schema.js'
 import { AppError } from '@amard/error-handling'
 
 let knexInstance: Knex

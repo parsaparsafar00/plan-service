@@ -189,12 +189,11 @@ export async function up(knex: Knex): Promise<void> {
   if (!categoryTableExists) {
     await knex.schema.createTable('plan_categories', (table) => {
       table.uuid('id').primary()
-      table.string('teacherId', 36).notNullable()
+      table.string('teacherId', 36).notNullable() //uuid => 36 char
       table.string('title', 255).notNullable()
       table.boolean('isGlobal').notNullable().defaultTo(false)
       table.timestamp('createdAt', { useTz: false }).notNullable()
       table.timestamp('updatedAt', { useTz: false }).notNullable()
-      table.integer('usageTimes').defaultTo(0)
       
       table.index(['teacherId'])
       table.index(['isGlobal'])
@@ -215,7 +214,7 @@ export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropTableIfExists('plan_categories')
 }
 
-// وقتی داریم سیستم تولید میکنیم، باید متوجه بشیم که متد سیستم تکرار تولید شده چیه
+// وقتی داریم سیستم تولید میکنیم، باید متوجه بشیم که متد سیستم تولید شده چیه
 function detectSystemMethod(pattern: number[]):  "descending" | "ascending" | "custom" | "sinusoidal" | "pyramidUp" | "pyramidDown" | "singleSet" {
   if (pattern.length < 2) return 'singleSet'
 

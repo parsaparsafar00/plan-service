@@ -1,5 +1,5 @@
 import type { Knex } from 'knex'
-import type * as generalSchema from '../../../domain/schemas/plan-general-schema.js'
+import type * as generalSchema from '../domain/schemas/plan-general-schema.js'
 import type { SystemListType, SystemType, GetSystemByIdListRequestType, SystemInPlanListSchemaType, systemInPlanOutputSchemaType, UpdateSystemsByIdListType } from '../../../domain/schemas/system-schema.js'
 import { AppError } from '@amard/error-handling'
 import { DateTime } from 'luxon'
@@ -28,7 +28,7 @@ export async function insertPlanSystem(data: SystemType, trx?: Knex.Transaction)
   // بررسی وجود سیستم تکراری (با استفاده از تراکنش اگر وجود داشت)
   const existingRecord = await (trx ? query.transacting(trx) : query)
     .where('abbrName', systemData.abbrName)
-    .where({teacherId: systemData.teacherId})
+    .andWhere({teacherId: systemData.teacherId})
     .first();
 
   if (existingRecord) {
@@ -98,7 +98,7 @@ export async function getAllSystemsByTeacherId(id: generalSchema.IdParamType): P
 export async function getSystemsByIdList(input: GetSystemByIdListRequestType): Promise<SystemInPlanListSchemaType> {
   try {
     // گرفتن لیست آیدی سیستم ها 
-    const idList = input.map(item => item.id);
+    const idList = input.map((item: { id: any }) => item.id);
 
     return await knexInstance<systemInPlanOutputSchemaType>('plan_systems').whereIn('id', idList);
 

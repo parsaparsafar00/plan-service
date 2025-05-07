@@ -1,6 +1,6 @@
 import type { AutoQueryData } from '@amard/auto-query'
 import type { Knex } from 'knex'
-import type { CategoryType } from '../../../domain/schemas/category-schema.js'
+import type { CategoryType } from '../domain/schemas/category-schema.js'
 import { attachAutoQuery } from '@amard/auto-query'
 import { AppError } from '@amard/error-handling'
 
@@ -39,6 +39,7 @@ export async function getCategoryByTitle(teacherId: string, title: string): Prom
   }
 }
 
+// برای ادمین در موارد خاص که میخواد کل کتگوری ها رو ببینه 
 export async function getCategories(autoQueryData: AutoQueryData): Promise<CategoryType[]> {
   try {
     const categories = await knexInstance('plan_categories').modify((qb) => {
@@ -89,5 +90,23 @@ export async function deleteCategory(id: string): Promise<void> {
   }
   catch (error) {
     throw new AppError('PLAN_CATEGORY_DB_ERROR', 'Database deleteCategory error', 500, error)
+  }
+}
+
+export async function changeCategoryToGlobal(currentCatId: string, globalCatId: string): Promise<void> {
+  // این برای یه دونه نیست چون زمانیکه ما توی جدولی 
+  // where
+  // بزنیم
+  // و بعدش 
+  //update
+  // بزنیم
+  // همه چیزایی که با 
+  // where
+  // پیدا شدن رو آپدیت میکنه
+  try {
+    await knexInstance('plan_templates').where({ categoryId: currentCatId }).update({ categoryId: globalCatId })
+  }
+  catch (error) {
+    throw new AppError('USER_CATEGORY_DB_ERROR', 'Database changeCategoryToGlobal error', 500, error)
   }
 }

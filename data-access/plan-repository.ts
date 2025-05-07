@@ -1,12 +1,16 @@
 import type { Knex } from 'knex'
-import type { IdParamType } from '../../../domain/schemas/plan-general-schema.js'
-import type { PlanListType, PlanType } from '../../../domain/schemas/plan-schema.js'
+import type { IdParamType } from '../domain/schemas/plan-general-schema.js'
+import type { PlanListType, PlanType } from '../domain/schemas/plan-schema.js'
 import { AppError } from '@amard/error-handling'
 
 let knexInstance: Knex
 
 export function setKnexInstanceForPlanRepo(instance: Knex) {
   knexInstance = instance
+}
+
+export function getKnexInstanceForPlanRepo() {
+  return knexInstance
 }
 
 /**
@@ -22,7 +26,7 @@ export async function insertPlan(data: PlanType, trx?: Knex.Transaction): Promis
     
     return inserted;
   } catch (error) {
-    throw new AppError('PLAN_DB_INSERT_ERROR', 'خطا در ذخیره برنامه تمرینی', 500, error instanceof Error ? error.message : String(error));
+    throw new AppError('PLAN_DB_INSERT_ERROR', 'Database insertPlan error', 500, error);
   }
 }
 
@@ -77,13 +81,6 @@ export async function deletePlan(id: string): Promise<void> {
     await knexInstance('plan_records').where({ id }).del()
   }
   catch (error) {
-    throw new AppError('PLAN_DB_ACTION_ERROR', 'Database deletePlan query error', 500, error)
+    throw new AppError('PLAN_DB_ERROR', 'Database deletePlan error', 500, error)
   }
-}
-
-/**
- * تولید transaction
- */
-export async function transactionGenerator() {
-    return await knexInstance.transaction()
 }

@@ -11,10 +11,10 @@ import { auditLogger, setAuditRequest } from '@amard/logger'
 import { DateTime } from 'luxon'
 import { validate as isValidUuid, v4 as uuidv4 } from 'uuid'
 import * as exerciseRepo from '../../data-access/exercise-repository.js'
-import * as helperRepo from '../../data-access/migrations/repos/plan-helper-repository.js'
-import * as planRepo from '../../data-access/migrations/repos/plan-repository.js'
-import * as systemRepo from '../../data-access/migrations/repos/system-repository.js'
-import * as techniqueRepo from '../../data-access/migrations/repos/technique-repository.js'
+import * as helperRepo from '../../data-access/plan-helper-repository.js'
+import * as planRepo from '../../data-access/plan-repository.js'
+import * as systemRepo from '../../data-access/system-repository.js'
+import * as techniqueRepo from '../../data-access/technique-repository.js'
 import { AISessionGenerator } from '../../instructions/plan_generator.js'
 import { Value } from '@sinclair/typebox/value';
 
@@ -66,7 +66,7 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
   }
 
   // شروع تراکنش
-  const trx = await planRepo.transactionGenerator();
+  const trx = await planRepo.getKnexInstanceForPlanRepo().transaction();
   const systemObject : systemSchema.UpdateSystemsByIdListType = {
     idList: [],
     countList: []
