@@ -12,13 +12,17 @@ export function setKnexInstanceForPlanRepo(instance: Knex) {
 /**
  * تولید برنامه تمرینی جدید در جدول plan_records
  */
-export async function insertPlan(data: PlanType): Promise<PlanType> {
+export async function insertPlan(data: PlanType, trx?: Knex.Transaction): Promise<PlanType> {
   try {
-    const [inserted] = await knexInstance<PlanType>('plan_records').insert(data).returning('*')
-    return inserted
-  }
-  catch (error) {
-    throw new AppError('PLAN_DB_INSERT_ERROR', 'Database insertPlan query error', 500, error)
+    // ساخت کوئری بیس
+    const query = knexInstance<PlanType>('plan_records');
+    
+    // اجرای کوئری با تراکنش اگر وجود داشت
+    const [inserted] = await (trx ? query.transacting(trx) : query).insert(data).returning('*');
+    
+    return inserted;
+  } catch (error) {
+    throw new AppError('PLAN_DB_INSERT_ERROR', 'خطا در ذخیره برنامه تمرینی', 500, error instanceof Error ? error.message : String(error));
   }
 }
 
@@ -42,14 +46,12 @@ export async function getPlanById(id: IdParamType): Promise<PlanType> {
   try {
     const planId = id.id
     const plan = await knexInstance('plan_records').where({ id: planId }).first()
+    if (!plan) throw new AppError('PLAN_NOT_FOUND', `برنامه با شناسه ${planId} یافت نشد`, 404)
 
-    if (!plan)
-      throw new AppError('PLAN_NOT_FOUND', `برنامه با شناسه ${id} یافت نشد`, 404)
     return plan
   }
   catch (error) {
-    if (error instanceof AppError)
-      throw error
+    if (error instanceof AppError) throw error
     throw new AppError('PLAN_DB_QUERY_ERROR', 'خطای پایگاه داده در دریافت برنامه', 500, error)
   }
 }
@@ -63,7 +65,7 @@ export async function updatePlan(id: string, updates: Partial<PlanType>): Promis
     return updated
   }
   catch (error) {
-    throw new AppError('PLAN_DB_UPDATE_ERROR', 'Database updatePlan query error', 500, error)
+    throw new AppError('PLAN_DB_ACTION_ERROR', 'Database updatePlan query error', 500, error)
   }
 }
 
@@ -75,6 +77,13 @@ export async function deletePlan(id: string): Promise<void> {
     await knexInstance('plan_records').where({ id }).del()
   }
   catch (error) {
-    throw new AppError('PLAN_DB_DELETE_ERROR', 'Database deletePlan query error', 500, error)
+    throw new AppError('PLAN_DB_ACTION_ERROR', 'Database deletePlan query error', 500, error)
   }
+}
+
+/**
+ * تولید transaction
+ */
+export async function transactionGenerator() {
+    return await knexInstance.transaction()
 }

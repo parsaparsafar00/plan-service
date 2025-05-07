@@ -13,7 +13,7 @@ export async function planRoutes(app: FastifyInstance) {
       tags: ['Plan'],
       summary: 'تولید جلسه ای برنامه تمرینی توسط هوش مصنوعی',
       description: `##فقط مربی بایستی قادر باشه که برنامه تولید بکنه `,
-      body: planSchema.GeneratePlanRequest,
+      body: planSchema.GenerateSessionByAIRequest,
       response: {
         200: { content: { 'application/json': { schema: planSchema.SingleSessionResponse } }, description: generalSchema.SuccessResponseDes },
         400: generalSchema.BadRequestError,
@@ -21,11 +21,34 @@ export async function planRoutes(app: FastifyInstance) {
         500: generalSchema.InternalServerError,
       },
     },
-    handler: async (request: FastifyRequest<{ Body: planSchema.GeneratePlanRequestType }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Body: planSchema.GenerateSessionByAIRequestType }>, reply: FastifyReply) => {
       const session = await planUseCase.generateSessionAI(request)
       reply.send({ data: { session }, msgCode: '', msgType: 'success' })
     },
   })
+
+//   /**
+//  * تولید یک جلسه تمرینی بصورت دستی
+//  * POST /v1/plan/generate-session-manual
+//  */
+//   app.post('/generate-session-manual', {
+//     schema: {
+//       tags: ['Plan'],
+//       summary: 'تولید جلسه ای برنامه تمرینی بصورت دستی',
+//       description: `##فقط مربی بایستی قادر باشه که برنامه تولید بکنه `,
+//       body: planSchema.GenerateSessionManuallyRequest,
+//       response: {
+//         200: { content: { 'application/json': { schema: planSchema.SingleSessionResponse } }, description: generalSchema.SuccessResponseDes },
+//         400: generalSchema.BadRequestError,
+//         403: generalSchema.ForbiddenError,
+//         500: generalSchema.InternalServerError,
+//       },
+//     },
+//     handler: async (request: FastifyRequest<{ Body: planSchema.GenerateSessionManuallyRequestType }>, reply: FastifyReply) => {
+//       const session = await planUseCase.generateSessionManual(request)
+//       reply.send({ data: { session }, msgCode: '', msgType: 'success' })
+//     },
+//   })
 
   /**
    * تولید برنامه تمرینی با استفاده از جلسات تولید شده
@@ -70,7 +93,7 @@ export async function planRoutes(app: FastifyInstance) {
       },
     },
     handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
-      const plan = await planUseCase.getPlan(request)
+      const plan = await planUseCase.getPlanById(request)
       reply.send({ data: { plan }, msgCode: '', msgType: 'success' })
     },
   })

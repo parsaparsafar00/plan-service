@@ -7,37 +7,106 @@ import * as generalSchema from '../schemas/plan-general-schema.js'
 // -------------------------------------- اسکیم های مرتبط با برنامه تمرینی --------------------------------------
 
 /**
- * ساختار ورودی یک جلسه تمرینی در تولید برنامه تمرینی
+ * ساختار پارامتر های غیر ضروری برای کی جلسه تمرینی
  */
-export const sessionInputSchema = Type.Object({
+export const optionalSessionParameters = Type.Object({
+  cooldownActivities: Type.Optional(Type.Array(Type.String())),
+  warmupActivities: Type.Optional(Type.Array(Type.String())),
+  cooldownDuration: Type.Optional(Type.String()),
+  warmupDuration: Type.Optional(Type.String()),
+  recoveryTime: Type.Optional(Type.String()),
+  sessionDuration: Type.Optional(Type.String()),
+})
+
+/**
+ * ساختار ورودی های الزامی برای تولید برنامه تمرینی
+ */
+export const coreSessionInputParameters = Type.Object({
   weeks: Type.Array(Type.Number()),
   description: Type.String(),
-  targetMuscles: Type.Array(Type.String()),
-  cooldownActivities: Type.Array(Type.String()),
-  warmupActivities: Type.Array(Type.String()),
-  cooldownDuration: Type.String(),
-  warmupDuration: Type.String(),
-  recoveryTime: Type.String(),
-  sessionDuration: Type.String(),
+  targetMuscles: Type.Array(Type.Enum({
+    fullBody: 'full body',
+    biceps: 'biceps',
+    triceps: 'triceps',
+    lat: 'back and lat',
+    legs: 'legs',
+    abdominals: 'abdominals',
+    trap: 'trap',
+    shoulders: 'shoulders',
+    forearms: 'forearms',
+    chest: 'chest',
+  })),
   exercises: Type.Array(exerciseSchema.exerciseInputSchema),
 })
+
+/**
+ * ساختار ورودی یک جلسه تمرینی در تولید برنامه تمرینی
+ */
+export const sessionInputSchema = Type.Intersect([
+  coreSessionInputParameters,
+  optionalSessionParameters
+]);
+
 export type sessionInputType = Static<typeof sessionInputSchema>
 
 /**
- * ساختار یک جلسه تمرینی
+ * ساختار ورودی های الزامی در یک برنامه تمرینی
  */
-export const sessionOutputSchema = Type.Object({
+export const coreSessionInPlanParameters = Type.Object({
   weeks: Type.Array(Type.Number()),
   description: Type.String(),
-  targetMuscles: Type.Array(Type.String()),
-  cooldownActivities: Type.Array(Type.String()),
-  warmupActivities: Type.Array(Type.String()),
-  cooldownDuration: Type.String(),
-  warmupDuration: Type.String(),
-  recoveryTime: Type.String(),
-  sessionDuration: Type.String(),
+  targetMuscles: Type.Array(Type.Enum({
+    fullBody: 'full body',
+    biceps: 'biceps',
+    triceps: 'triceps',
+    lat: 'back and lat',
+    legs: 'legs',
+    abdominals: 'abdominals',
+    trap: 'trap',
+    shoulders: 'shoulders',
+    forearms: 'forearms',
+    chest: 'chest',
+  })),
+  exercises: Type.Array(exerciseSchema.exerciseOutputInPlanSchema),
+})
+
+/**
+ * ساختار یک جلسه تمرینی در برنامه تمرینی
+ */
+export const sessionInPlanSchema = Type.Intersect([
+  coreSessionInPlanParameters,
+  optionalSessionParameters
+]);
+export type sessionInplanType = Static<typeof sessionInPlanSchema>
+
+/**
+ * پارامتر های الزامی یک جلسه تمرینی در خروجی که کاربر مشاهده میکند
+ */
+export const coreSessionOutputParameters = Type.Object({
+  weeks: Type.Array(Type.Number()),
+  description: Type.String(),
+  targetMuscles: Type.Array(Type.Enum({
+    fullBody: 'full body',
+    biceps: 'biceps',
+    triceps: 'triceps',
+    lat: 'back and lat',
+    legs: 'legs',
+    abdominals: 'abdominals',
+    trap: 'trap',
+    shoulders: 'shoulders',
+    forearms: 'forearms',
+    chest: 'chest',
+  })),
   exercises: Type.Array(exerciseSchema.exerciseOutputSchema),
 })
+
+/**
+ * ساختار یک جلسه تمرینی در خروجی که کاربر مشاهده میکند
+ */
+export const sessionOutputSchema = Type.Intersect([
+  coreSessionOutputParameters,
+  optionalSessionParameters
+]);
 export type sessionOutputType = Static<typeof sessionOutputSchema>
 
 /**
@@ -46,13 +115,19 @@ export type sessionOutputType = Static<typeof sessionOutputSchema>
 export const printSessionOutputSchema = Type.Object({
   weeks: Type.Array(Type.Number()),
   description: Type.String(),
-  targetMuscles: Type.Array(Type.String()),
-  cooldownActivities: Type.Array(Type.String()),
-  warmupActivities: Type.Array(Type.String()),
-  cooldownDuration: Type.String(),
-  warmupDuration: Type.String(),
-  recoveryTime: Type.String(),
-  sessionDuration: Type.String(),
+  targetMuscles: Type.Array(Type.Enum({
+    fullBody: 'full body',
+    biceps: 'biceps',
+    triceps: 'triceps',
+    lat: 'back and lat',
+    legs: 'legs',
+    abdominals: 'abdominals',
+    trap: 'trap',
+    shoulders: 'shoulders',
+    forearms: 'forearms',
+    chest: 'chest',
+  })),
+  optionalSessionParameters,
   exercises: Type.Array(exerciseSchema.printingExerciseOutputSchema),
 })
 export type printSessionOutputType = Static<typeof printSessionOutputSchema>
@@ -65,14 +140,24 @@ export const PlanSchema = Type.Object({
   studentId: Type.String({ format: 'uuid' }),
   teacherId: Type.String({ format: 'uuid' }),
   title: Type.Optional(Type.String({ minLength: 2, maxLength: 255 })),
-  target: Type.String({ minLength: 2, maxLength: 255 }),
+  target: Type.Enum({
+    postural: 'postural',
+    hypertrophy: 'hypertrophy',
+    strength: 'strength',
+    endurance: 'endurance',
+    balance: 'balance',
+    mobility: 'mobility',
+  }),
   description: Type.Optional(Type.String()),
   studentLevel: Type.String({ maxLength: 255 }),
   studentWeight: Type.Number(), // اگر nullable است، می‌توانی Type.Optional(Type.Number()) بگذاری
   studentAge: Type.Number(),
-  status: Type.Optional(Type.String({ maxLength: 30 })), // مثل 'active', 'done'
+  status: Type.Enum({
+    published: 'published',
+    draft: 'draft'
+  }),
   workoutPlan: Type.Object({
-    sessions: Type.Array(sessionInputSchema),
+    sessions: Type.Array(sessionInPlanSchema),
   }),
   createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
   updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
@@ -94,12 +179,22 @@ export const PrintPlanSchema = Type.Object({
   studentId: Type.String({ format: 'uuid' }),
   teacherId: Type.String({ format: 'uuid' }),
   title: Type.Optional(Type.String({ minLength: 2, maxLength: 255 })),
-  target: Type.String({ minLength: 2, maxLength: 255 }),
+  target: Type.Enum({
+    postural: 'postural',
+    hypertrophy: 'hypertrophy',
+    strength: 'strength',
+    endurance: 'endurance',
+    balance: 'balance',
+    mobility: 'mobility',
+  }),
   description: Type.Optional(Type.String()),
   studentLevel: Type.String({ maxLength: 255 }),
   studentWeight: Type.Number(), // اگر nullable است، می‌توانی Type.Optional(Type.Number()) بگذاری
   studentAge: Type.Number(),
-  status: Type.Optional(Type.String({ maxLength: 30 })), // مثل 'active', 'done'
+  status: Type.Enum({
+    published: 'published',
+    draft: 'draft'
+  }),
   workoutPlan: Type.Object({
     sessions: Type.Array(printSessionOutputSchema),
   }),
@@ -115,6 +210,18 @@ export type PrintPlanType = Static<typeof PrintPlanSchema>
  */
 export const UpdatePlanRequest = Type.Partial(PlanSchema)
 export type UpdatePlanRequestType = Static<typeof UpdatePlanRequest>
+
+/**
+ * ساختار درخواست آپدیت وضعیت برنامه تمرینی
+ */
+export const updatePlanStatusSchema = Type.Object({
+  status: Type.Enum({
+    published: 'published',
+    draft: 'draft'
+  }),
+
+})
+export type updatePlanStatusType = Static<typeof updatePlanStatusSchema>
 
 /**
  * ساختار ورودی دریافت یک برنامه تمرینی
@@ -140,14 +247,32 @@ export type CreatePlanSystemRequestType = Static<typeof CreatePlanSystemRequest>
 /**
  * ورودی تولید جلسه تمرینی توسط هوش مصنوعی
  */
-export const GeneratePlanRequest = Type.Object({
+export const GenerateSessionByAIRequest = Type.Object({
   teacherId: Type.String({ format: 'uuid' }),
   description: Type.String(),
+  weeks: Type.Array(Type.Number()),
   exerciseType: Type.String({ minLength: 2, maxLength: 255 }),
-  target: Type.String({ maxLength: 255 }),
-  status: Type.String({ maxLength: 255 }),
+  target: Type.Enum({
+    postural: 'postural',
+    hypertrophy: 'hypertrophy',
+    strength: 'strength',
+    endurance: 'endurance',
+    balance: 'balance',
+    mobility: 'mobility',
+  }),
   injuries: Type.Array(Type.String()),
-  targetMuscles: Type.Array(Type.String()),
+  targetMuscles: Type.Array(Type.Enum({
+    fullBody: 'full body',
+    biceps: 'biceps',
+    triceps: 'triceps',
+    lat: 'back and lat',
+    legs: 'legs',
+    abdominals: 'abdominals',
+    trap: 'trap',
+    shoulders: 'shoulders',
+    forearms: 'forearms',
+    chest: 'chest',
+  })),
   traineeInfo: Type.Object({
     level: Type.String({ maxLength: 255 }),
     age: Type.Optional(Type.Number()),
@@ -155,7 +280,46 @@ export const GeneratePlanRequest = Type.Object({
     gender: Type.Union([Type.Literal(0), Type.Literal(1)]),
   }),
 })
-export type GeneratePlanRequestType = Static<typeof GeneratePlanRequest>
+export type GenerateSessionByAIRequestType = Static<typeof GenerateSessionByAIRequest>
+
+/**
+ * ورودی تولید جلسه تمرینی توسط هوش مصنوعی
+ */
+export const GenerateSessionManuallyRequest = Type.Object({
+  teacherId: Type.String({ format: 'uuid' }),
+  description: Type.String(),
+  weeks: Type.Array(Type.Number()),
+  exerciseType: Type.String({ minLength: 2, maxLength: 255 }),
+  target: Type.Enum({
+    postural: 'postural',
+    hypertrophy: 'hypertrophy',
+    strength: 'strength',
+    endurance: 'endurance',
+    balance: 'balance',
+    mobility: 'mobility',
+  }),
+  injuries: Type.Array(Type.String()),
+  targetMuscles: Type.Array(Type.Enum({
+    fullBody: 'full body',
+    biceps: 'biceps',
+    triceps: 'triceps',
+    lat: 'back and lat',
+    legs: 'legs',
+    abdominals: 'abdominals',
+    trap: 'trap',
+    shoulders: 'shoulders',
+    forearms: 'forearms',
+    chest: 'chest',
+  })),
+  traineeInfo: Type.Object({
+    level: Type.String({ maxLength: 255 }),
+    age: Type.Optional(Type.Number()),
+    weight: Type.Optional(Type.Number()),
+    gender: Type.Union([Type.Literal(0), Type.Literal(1)]),
+  }),
+  session: Type.Array(sessionInputSchema),
+})
+export type GenerateSessionManuallyRequestType = Static<typeof GenerateSessionManuallyRequest>
 
 /**
  * ورودی تولید برنامه تمرینی بر اساس جلسات تولید شده
@@ -168,9 +332,19 @@ export const CreatePlanRequest = Type.Object({
   description: Type.String(),
   studentId: Type.String({ format: 'uuid' }),
   teacherId: Type.String({ format: 'uuid' }),
-  status: Type.String(),
+  status: Type.Enum({
+    published: 'published',
+    draft: 'draft'
+  }),
   studentLevel: Type.String(),
-  target: Type.String(),
+  target: Type.Enum({
+    postural: 'postural',
+    hypertrophy: 'hypertrophy',
+    strength: 'strength',
+    endurance: 'endurance',
+    balance: 'balance',
+    mobility: 'mobility',
+  }),
   studentWeight: Type.Number(),
   studentAge: Type.Number(),
 })

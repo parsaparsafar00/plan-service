@@ -3,22 +3,21 @@ import type * as PlanSchemas from '../domain/schemas/plan-schema.js'
 import { AppError } from '@amard/error-handling'
 import { getAllExercisesArray } from '../data-access/exercise-repository.js'
 import { getExerciseInstructions } from './exercise_instructions.js'
-// import { getPlanInstructions } from './plan_instructions.js' // نیازی به داشتن دستورالعمل های سطح برنامه در نسخه های فعلی نداریم
 import { getSessionInstructions } from './session_instructions.js'
 
 /**
  * تولید حلسه تمرینی توسط هوش مصنوعی بر اساس داده‌های ورودی کاربر و حرکات موجود در متغیر سراسری حرکات
  */
-export function AISessionGenerator(sessionInput: PlanSchemas.GeneratePlanRequestType): PlanSchemas.sessionOutputType {
+export function AISessionGenerator(sessionInput: PlanSchemas.GenerateSessionByAIRequestType): PlanSchemas.sessionOutputType {
   const level = sessionInput.traineeInfo.level
   const age = sessionInput.traineeInfo.age
   const gender = sessionInput.traineeInfo.gender
   const weight = sessionInput.traineeInfo.weight
   const muscleValues = sessionInput.targetMuscles
+  const weeks = sessionInput.weeks
 
   const allExercises = getAllExercisesArray()
-  if (!allExercises || allExercises.length === 0)
-    throw new AppError('PLAN_NO_EXERCISES_FOUND', 'No exercises loaded in memory', 400)
+  if (!allExercises || allExercises.length === 0) throw new AppError('NO_EXERCISES_FOUND', 'No exercises loaded in memory', 400)
 
   const levels = ['novice', 'beginner', 'intermediate', 'advanced', 'expert']
   const userLevelIndex = levels.indexOf(level.toLowerCase())
@@ -34,7 +33,7 @@ export function AISessionGenerator(sessionInput: PlanSchemas.GeneratePlanRequest
 
   const sessionData: PlanSchemas.sessionOutputType = {
     targetMuscles: muscleValues,
-    weeks: [], // هفته ها، صرفا زمانی که قرار باشه برنامه ذخیره بشه، پر میشن. در غیر این صورت نیازی به مقدار داشتنشون نیست
+    weeks: weeks,
     description: '', // وقتی هوش مصنوعی برنامه تولید میکنه، توضیحات خالی خواهد بود
     cooldownActivities: sessionInfo.cooldownActivities,
     warmupActivities: sessionInfo.warmupActivities,
@@ -45,7 +44,6 @@ export function AISessionGenerator(sessionInput: PlanSchemas.GeneratePlanRequest
     exercises: [],
   }
 
-  let chosen_exercises = []
   // منطق فیلترینگ
   const filtered = allExercises.filter((ex) => {
     // فیلتر حرکاتی ک فیلم آموزشی دارند
@@ -79,19 +77,17 @@ export function AISessionGenerator(sessionInput: PlanSchemas.GeneratePlanRequest
         return false
     }
     // فیلتر بر اساس عضلات هدف
-    if (muscleValues.length > 0) {
+    if (muscleValues.length > 0 && muscleValues.indexOf("full body") === -1) {
       for (let i = 0; i <= muscleValues.length - 1; i++) {
         if (muscleValues[i] !== ex.targetMuscleGroup) {
           if (i === muscleValues.length - 1)
             return false
-        }
-        else {
+        } else {
           break
         }
       }
-    }
-    else {
-      return false
+    } else {
+      return true
     }
 
     return true
@@ -101,7 +97,7 @@ export function AISessionGenerator(sessionInput: PlanSchemas.GeneratePlanRequest
   shuffleArray(filtered)
 
   // به ازای هر کدوم از حرکات، باید به تعدادی که دستور داده شده، حرکت انتخاب بشه
-  chosen_exercises = []
+  const chosen_exercises = []
   for (const i in muscleValues) {
     const exercisesForMuscle = filtered.filter(ex => ex.targetMuscleGroup === muscleValues[i] || ex.targetMuscleGroup)
     chosen_exercises.push(...exercisesForMuscle.slice(0, sessionInfo.number_of_exercises_per_muscle_set[i]))
@@ -129,8 +125,7 @@ export function AISessionGenerator(sessionInput: PlanSchemas.GeneratePlanRequest
 
     const restBestweenSets = getRandomMultipleOf5(exInstr.restBetweenSetsGround, exInstr.restBetweenSetsCeiling)
     let weightPercentage
-    if (ex.primaryEquipment === 'bodyweight')
-      weightPercentage = 'وزن بدن'
+    if (ex.primaryEquipment === 'bodyweight') weightPercentage = 'وزن بدن'
     else weightPercentage = getRandomMultipleOf5(exInstr.weightGroundPercentage, exInstr.weightCeilingPercentage).toString()
 
     const exData: exerciseSchema.exerciseOutputType = {
@@ -142,9 +137,11 @@ export function AISessionGenerator(sessionInput: PlanSchemas.GeneratePlanRequest
       shortYoutubeDemonstration: ex.shortYoutubeDemonstration,
       difficultyLevel: ex.difficultyLevel,
       restBetweenSets: restBestweenSets,
-      weightPercentage,
-      system: repeatSystem,
+      weightPercentage: weightPercentage,
+      repeatPattern: repeatSystem,
+      systemId: '',
       systemMethod: 'دلخواه',
+      techniqueId: '',
     }
 
     return exData

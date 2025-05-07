@@ -15,8 +15,7 @@ export function setKnexInstanceForTemplateRepo(instance: Knex) {
 export async function insertTemplate(data: templateSchema.TemplateType): Promise<templateSchema.TemplateType> {
   try {
     // اطمینان از اینکه فیلد muscles به‌درستی به رشته جیسان تبدیل شود
-    if (Array.isArray(data.muscles))
-      data.muscles = JSON.stringify(data.muscles)
+    if (Array.isArray(data.muscles)) data.muscles = JSON.stringify(data.muscles)
 
     const [inserted] = await knexInstance('plan_templates').insert(data).returning('*')
     if (typeof inserted.muscles === 'string')
@@ -36,6 +35,8 @@ export async function getTemplateById(id: generalPlanSchema.IdParamType): Promis
   try {
     const templateId = id.id
     const template = await knexInstance('plan_templates').where({ id: templateId }).first()
+    
+    if (!template) return undefined;
     if (typeof template.muscles === 'string')
       template.muscles = JSON.parse(template.muscles)
     return template
@@ -64,15 +65,14 @@ export async function getAllTemplatesByTeacherId(id: generalPlanSchema.IdParamTy
 export async function updateTemplate(id: generalPlanSchema.IdParamType, updates: templateSchema.UpdateTemplateRequestType): Promise<templateSchema.TemplateType> {
   try {
     const templateId = id.id
-    if (Array.isArray(updates.muscles))
-      updates.muscles = JSON.stringify(updates.muscles)
+    if (Array.isArray(updates.muscles)) updates.muscles = JSON.stringify(updates.muscles)
     const [updated] = await knexInstance('plan_templates').where({ id: templateId }).update(updates).returning('*')
     if (typeof updated.muscles === 'string')
       updated.muscles = JSON.parse(updated.muscles)
     return updated
   }
   catch (error) {
-    throw new AppError('PLAN_TEMPLATES_DB_UPDATE_ERROR', 'Database updateTemplate query error', 500, error)
+    throw new AppError('PLAN_TEMPLATES_DB_ACTION_ERROR', 'Database updateTemplate query error', 500, error)
   }
 }
 

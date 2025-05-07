@@ -6,7 +6,7 @@ import * as techniqueUseCase from '../../../domain/use-cases/technique-use-case.
 export async function techniqueRoutes(app: FastifyInstance) {
   /**
    * ایجاد تکنیک جدید
-   * POST /v1/plan/technique-system
+   * POST /v1/plan/technique-technique
    */
   app.post('/create-technique', {
     schema: {
