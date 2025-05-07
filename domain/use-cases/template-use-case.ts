@@ -34,7 +34,7 @@ export async function createTemplateByAI(request: FastifyRequest<{ Body: templat
     description: request.body.description,
     exerciseType: 'body building',
     target: request.body.target,
-    status: 'published',
+    weeks: [],
     injuries: [],
     targetMuscles: request.body.muscles, // تبدیل به جیسان
     traineeInfo: {
@@ -128,7 +128,7 @@ export async function updateTemplate(request: FastifyRequest<{ Params: generalSc
 
   const currentTemplate = await templateRepo.getTemplateById(request.params)
 
-  if (!currentTemplate) throw new AppError('TEMPLATE_NOT_FOUND', 'Template not found', 400)
+  if (!currentTemplate) throw new AppError('TEMPLATE_NOT_FOUND', 'Template not found', 404)
   const updates = request.body // هر چیزی که به عنوان ورودی وارد شده است، بایستی در جدول قالب ها آپدیت شود
 
   let aclResult = { isOkay: false, reason: '' }
@@ -154,7 +154,7 @@ export async function updateTemplate(request: FastifyRequest<{ Params: generalSc
 export async function deleteTemplate(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
   const existing = await templateRepo.getTemplateById(request.params)
   if (!existing)
-    throw new AppError('TEMPLATE_NOT_FOUND', 'Template not found', 400)
+    throw new AppError('TEMPLATE_NOT_FOUND', 'Template not found', 404)
 
   const { role, userId } = extractSenderData(request)
   if (role === 'teacher' || role === 'admin') {

@@ -120,8 +120,7 @@ export async function getSystemById(id: generalSchema.IdParamType): Promise<Syst
     return system
   }
   catch (error) {
-    if (error instanceof AppError)
-      throw error
+    if (error instanceof AppError) throw error
     throw new AppError('SYSTEM_DB_QUERY_ERROR', 'خطای پایگاه داده در دریافت سیستم', 500, error)
   }
 }

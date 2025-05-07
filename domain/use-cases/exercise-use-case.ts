@@ -9,7 +9,7 @@ import * as exerciseRepo from '../../data-access/exercise-repository.js'
  */
 export async function getExerciseByNumber(request: FastifyRequest<{ Params: exerciseSchema.GetExerciseByNumberRequestType }>) {
   const exercise = await exerciseRepo.getExerciseByNumber(request.params)
-  if (!exercise) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 400)
+  if (!exercise) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 404)
   return exercise
 }
 
@@ -18,7 +18,7 @@ export async function getExerciseByNumber(request: FastifyRequest<{ Params: exer
  */
 export async function getExercisesByNumberList(request: FastifyRequest<{ Params: exerciseSchema.GetExerciseByNumberListRequestType }>) {
   const exercise = await exerciseRepo.getExercisesByNumberList(request.params)
-  if (!exercise) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 400)
+  if (!exercise) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 404)
   return exercise
 }
 

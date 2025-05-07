@@ -62,7 +62,7 @@ export async function createCategory(request: FastifyRequest<{ Body: catSchemas.
 export async function getCategoryById(request: FastifyRequest<{ Params: catSchemas.IdParamType }>): Promise<catSchemas.CategoryType> {
   const capturedCategory = await categoryRepository.getCategoryById(request.params.id)
   if (!capturedCategory)
-    throw new AppError('PLAN_CATEGORY_NOT_FOUND', 'Category not found', 400)
+    throw new AppError('PLAN_CATEGORY_NOT_FOUND', 'Category not found', 404)
 
   const { userId: getterId, role: getterRole } = extractSenderData(request)
   let aclResult = {
@@ -98,7 +98,7 @@ export async function getAllCategories(request: FastifyRequest): Promise<catSche
 export async function updateCategory(request: FastifyRequest<{ Body: catSchemas.UpdateCategoryRequestType, Params: catSchemas.IdParamType }>): Promise<catSchemas.CategoryType> {
   const currentCategory = await categoryRepository.getCategoryById(request.params.id)
   if (!currentCategory) {
-    throw new AppError('PLAN_CATEGORY_NOT_FOUND', 'Category not found', 400)
+    throw new AppError('PLAN_CATEGORY_NOT_FOUND', 'Category not found', 404)
   }
 
   const { userId: updaterId, role: updaterRole } = extractSenderData(request)
@@ -124,7 +124,7 @@ export async function updateCategory(request: FastifyRequest<{ Body: catSchemas.
 export async function deleteCategory(request: FastifyRequest<{ Params: catSchemas.IdParamType }>): Promise<void> {
   const currentCategory = await categoryRepository.getCategoryById(request.params.id)
   if (!currentCategory) {
-    throw new AppError('PLAN_CATEGORY_NOT_FOUND', 'Category not found', 400)
+    throw new AppError('PLAN_CATEGORY_NOT_FOUND', 'Category not found', 404)
   }
   const { userId: removerId, role: removerRole } = extractSenderData(request)
   let aclResult = {

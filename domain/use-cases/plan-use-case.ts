@@ -30,7 +30,7 @@ function extractSenderData(request: FastifyRequest) {
 }
 
 /**
- * تولید جلسه ای برنامه تمرینی
+ * تولید جلسه ای برنامه تمرینی با استفاده از هوش مصنوعی
  */
 export async function generateSessionAI(request: FastifyRequest<{ Body: planSchema.GenerateSessionByAIRequestType }>) : Promise<planSchema.sessionOutputType>  {
 
@@ -236,12 +236,12 @@ export async function getPlanById(request: FastifyRequest<{ Params: generalSchem
         if (!Value.Check(exerciseSchema.exerciseOutputInPlanSchema, exercise)) throw new AppError('INVALID_EXERCISE_SCHEMA', 'Exercise data is invalid', 400);
 
         const exerciseInfo = exercisesInfo.find((info) => {
-          if (!info) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 400)
+          if (!info) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 404)
           return info.number === exercise.number
         });
 
         const systemInfo = systemsInfo.find((sysInfo) => {
-          if (!sysInfo) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 400)
+          if (!sysInfo) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 404)
           return sysInfo.id === exercise.systemId
         });
 
@@ -256,7 +256,7 @@ export async function getPlanById(request: FastifyRequest<{ Params: generalSchem
         let outputExercise = {}
         if (techniquesInfo) { // ممکنه تکنیکی وجود نداشته باشه توی یک برنامه
           const techniqueInfo = techniquesInfo.find((techInfo) => {
-            if (!techInfo) throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 400)
+            if (!techInfo) throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 404)
             return techInfo.id === exercise.techniqueId
           });
           // اسم پارامتر ها رو در ابجکت های تولید سیستم ها و تکنیک ها عوض میکنیم به صورتی که مناسب خروجی نهایی برای کاربر باشه
@@ -284,7 +284,7 @@ export async function getPlanById(request: FastifyRequest<{ Params: generalSchem
           return info.number === exercise.number
         })
 
-        if (!exerciseInfo) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 400)
+        if (!exerciseInfo) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 404)
 
         // پارامتر شماره رو نگهداری میکنیم
         plan.workoutPlan.sessions[Number.parseInt(sessionKey)].exercises[Number.parseInt(exerciseKey)] = { ...exercise, ...exerciseInfo }
@@ -309,92 +309,98 @@ export async function getPrintPlan(request: FastifyRequest<{ Params: generalSche
       throw new AppError('PLAN_ACTION_FORBIDDEN', aclResult.reason, 403)
   }
 
-  // دریافت شماره حرکات از برنامه تمرینی
-  const exerciseNumbers: exerciseSchema.GetExerciseByNumberListRequestType = [];
-  const systemIds: systemSchema.GetSystemByIdListRequestType = [];
-  const techniqueIds: techniqueSchema.GetTechniqueByIdListRequestType = [];
+  try {
+    // دریافت شماره حرکات از برنامه تمرینی
+    const exerciseNumbers: exerciseSchema.GetExerciseByNumberListRequestType = [];
+    const systemIds: systemSchema.GetSystemByIdListRequestType = [];
+    const techniqueIds: techniqueSchema.GetTechniqueByIdListRequestType = [];
 
-  Object.values(plan.workoutPlan.sessions).forEach((session: any) => {
-    Object.values(session.exercises).forEach((exercise: any) => {
-      exerciseNumbers.push({number: exercise.number})
-      systemIds.push({id: exercise.systemId})
-      if (exercise.techniqueId && exercise.techniqueId !== '') techniqueIds.push({id: exercise.techniqueId})
+    Object.values(plan.workoutPlan.sessions).forEach((session: any) => {
+      Object.values(session.exercises).forEach((exercise: any) => {
+        exerciseNumbers.push({number: exercise.number})
+        systemIds.push({id: exercise.systemId})
+        if (exercise.techniqueId && exercise.techniqueId !== '') techniqueIds.push({id: exercise.techniqueId})
+      })
     })
-  })
-  
-  // حال بایستی شماره ها و آیدی ها را به توابع گرفتن اطلاعات بدهیم 
-  const uniqueExerciseNumbers = [...new Set(exerciseNumbers)]
-  const uniqueSystemIds = [...new Set(systemIds)]
-  const uniqueTechniqueIds = [...new Set(techniqueIds)]
+    
+    // حال بایستی شماره ها و آیدی ها را به توابع گرفتن اطلاعات بدهیم 
+    const uniqueExerciseNumbers = [...new Set(exerciseNumbers)]
+    const uniqueSystemIds = [...new Set(systemIds)]
+    const uniqueTechniqueIds = [...new Set(techniqueIds)]
 
-  const exercisesInfo = await exerciseRepo.getExercisesByNumberListPrint(uniqueExerciseNumbers)
-  const systemsInfo = await systemRepo.getSystemsByIdList(uniqueSystemIds)
-  const techniquesInfo = await techniqueRepo.getTechniquesByIdList(uniqueTechniqueIds)
-
-  // به‌روزرسانی حرکات هر جلسه با اطلاعات اضافی
-  Object.entries(plan.workoutPlan.sessions).forEach((session: any) => {
-    Object.entries(session.exercises).forEach(exercise => {
+    const exercisesInfo = await exerciseRepo.getExercisesByNumberListPrint(uniqueExerciseNumbers)
+    const systemsInfo = await systemRepo.getSystemsByIdList(uniqueSystemIds)
+    const techniquesInfo = await techniqueRepo.getTechniquesByIdList(uniqueTechniqueIds)
 
 
-      if (!exercise) throw new Error(`Exercise is invalid`);
+    // به‌روزرسانی حرکات هر جلسه با اطلاعات اضافی
+    Object.entries(plan.workoutPlan.sessions).forEach((session: any) => {
+      Object.entries(session.exercises).forEach(exercise => {
 
-      if (!Value.Check(exerciseSchema.exerciseOutputInPlanSchema, exercise)) throw new AppError('INVALID_EXERCISE_SCHEMA', 'Exercise data is invalid', 400);
-  
-      const exerciseInfo = exercisesInfo.find((info) => {
-        if (!info) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 400)
-        return info.number === exercise.number
-      });
+        // بررسی اسکیم حرکت که در دیتابیس ذخیره شده است
 
-      const systemInfo = systemsInfo.find((sysInfo) => {
-        if (!sysInfo) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 400)
-        return sysInfo.id === exercise.systemId
-      });
-      
-      const modifiedSystemInfo = systemInfo ? {
-        ...systemInfo, systemId: systemInfo.id, 
-        systemMethod: systemInfo.method,
-        systemName: systemInfo.abbrName,
-        systemDescription: systemInfo.description,
-        systemDescIsVisible: systemInfo.descIsVisible
-      } : null
+        if (!exercise) throw new Error(`Exercise is invalid`);
 
-      let modifiedTechniqueInfo
-      if (techniquesInfo) { // ممکنه تکنیکی وجود نداشته باشه توی یک برنامه
-        const techniqueInfo = techniquesInfo.find((techInfo) => {
-          if (!techInfo) throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 400)
-          return techInfo.id === exercise.techniqueId
+        if (!Value.Check(exerciseSchema.exerciseOutputInPlanSchema, exercise)) throw new AppError('INVALID_EXERCISE_SCHEMA', 'Exercise data is invalid', 400);
+
+        const exerciseInfo = exercisesInfo.find((info) => {
+          if (!info) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 404)
+          return info.number === exercise.number
         });
 
-        // اسم پارامتر ها رو در ابجکت های تولید سیستم ها و تکنیک ها عوض میکنیم به صورتی که مناسب خروجی نهایی برای کاربر باشه
-        modifiedTechniqueInfo = techniqueInfo ? {
-          ...techniqueInfo, techniqueId: techniqueInfo.id,
-          techniqueMethod: techniqueInfo.method, 
-          techniqueName: techniqueInfo.name, 
-          techniqueDescription: techniqueInfo.description,
-          techniqueDescIsVisible: techniqueInfo.descIsVisible
-        } : null
-    }
+        const systemInfo = systemsInfo.find((sysInfo) => {
+          if (!sysInfo) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 404)
+          return sysInfo.id === exercise.systemId
+        });
 
-      const outPutExercise = { ...exercise, ...exerciseInfo, ...modifiedSystemInfo, ...modifiedTechniqueInfo } // یکجا کردن اطلاعات اضافه شده از دیتابیس و اطلاعات موجود در برنامه برای حرکات، سیستم ها و تکنیک ها
-      session.exercises.exercise = outPutExercise
-    })
-  })
+        const modifiedSystemInfo = systemInfo ? {
+          ...systemInfo, systemId: systemInfo.id, 
+          systemMethod: systemInfo.method,
+          systemName: systemInfo.abbrName,
+          systemDescription: systemInfo.description,
+          systemDescIsVisible: systemInfo.descIsVisible
+        } : null;
 
-  // به‌روزرسانی حرکات هر جلسه با اطلاعات اضافی
-  Object.entries(plan.workoutPlan.sessions).forEach(([sessionKey, session]: [string, any]) => {
-    Object.entries(session.exercises).forEach(([exerciseKey, exercise]: [string, any]) => {
-      const exerciseInfo = exercisesInfo.find((info) => {
-        if (!info) return false
-        return info.number === exercise.number
+        let outputExercise = {}
+        if (techniquesInfo) { // ممکنه تکنیکی وجود نداشته باشه توی یک برنامه
+          const techniqueInfo = techniquesInfo.find((techInfo) => {
+            if (!techInfo) throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 404)
+            return techInfo.id === exercise.techniqueId
+          });
+          // اسم پارامتر ها رو در ابجکت های تولید سیستم ها و تکنیک ها عوض میکنیم به صورتی که مناسب خروجی نهایی برای کاربر باشه
+          const modifiedTechniqueInfo = techniqueInfo ? {
+            ...techniqueInfo, techniqueId: techniqueInfo.id,
+            techniqueMethod: techniqueInfo.method, 
+            techniqueName: techniqueInfo.name, 
+            techniqueDescription: techniqueInfo.description,
+            techniqueDescIsVisible: techniqueInfo.descIsVisible
+          } : null
+
+          if (modifiedTechniqueInfo) outputExercise = {...modifiedTechniqueInfo}
+      }
+
+        outputExercise = { ...outputExercise, ...exercise, ...exerciseInfo, ...modifiedSystemInfo } // یکجا کردن اطلاعات اضافه شده از دیتابیس و اطلاعات موجود در برنامه برای حرکات، سیستم ها و تکنیک ها
+        session.exercises.exercise = outputExercise
       })
-
-      if (!exerciseInfo) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 400)
-
-      // پارامتر شماره رو نگهداری میکنیم
-      plan.workoutPlan.sessions[Number.parseInt(sessionKey)].exercises[Number.parseInt(exerciseKey)] = { ...exercise, ...exerciseInfo }
     })
-  })
 
+    // به‌روزرسانی حرکات هر جلسه با اطلاعات اضافی
+    Object.entries(plan.workoutPlan.sessions).forEach(([sessionKey, session]: [string, any]) => {
+      Object.entries(session.exercises).forEach(([exerciseKey, exercise]: [string, any]) => {
+        const exerciseInfo = exercisesInfo.find((info) => {
+          if (!info) return false
+          return info.number === exercise.number
+        })
+
+        if (!exerciseInfo) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 404)
+
+        // پارامتر شماره رو نگهداری میکنیم
+        plan.workoutPlan.sessions[Number.parseInt(sessionKey)].exercises[Number.parseInt(exerciseKey)] = { ...exercise, ...exerciseInfo }
+      })
+    })
+  } catch (error) {
+    console.error(error)
+  }
   return plan
 }
 
@@ -414,7 +420,7 @@ export async function updatePlan(request: FastifyRequest<{ Params: generalSchema
 
   const { userId: updaterId, role: updaterRole } = extractSenderData(request)
   const currentPlan = await planRepo.getPlanById(request.params)
-  if (!currentPlan) throw new AppError('PLAN_NOT_FOUND', 'Plan not found', 400)
+  if (!currentPlan) throw new AppError('PLAN_NOT_FOUND', 'Plan not found', 404)
   const updates = request.body //  (به این شرط که در ACL ذکر شده باشه) هر چیزی که به عنوان ورودی وارد شده است، بایستی در جدول برنامه ها آپدیت شود
 
   let aclResult = {isOkay: false, reason: ''}
@@ -422,7 +428,7 @@ export async function updatePlan(request: FastifyRequest<{ Params: generalSchema
   else aclResult = await checkWithACL(request, updates)
 
   if (!aclResult.isOkay) throw new AppError('PLAN_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
-
+                                  
   updates.updatedAt = DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-LL-dd HH:mm:ss')
 
   const updated = await planRepo.updatePlan(currentPlan.id, updates)
@@ -437,14 +443,12 @@ export async function updatePlan(request: FastifyRequest<{ Params: generalSchema
  */
 export async function deletePlan(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
   const existing = await planRepo.getPlanById(request.params)
-  if (!existing)
-    throw new AppError('PLAN_NOT_FOUND', 'Plan not found', 400)
-
+  if (!existing) throw new AppError('PLAN_NOT_FOUND', 'Plan not found', 404)
+  if (existing.status === "paid") throw new AppError('PLANS_ACTION_IS_FORBIDDEN', 'برنامه توسط دانش آموز خریداری شده است و قابل حذف شدن نیست', 400)
   const { role, userId } = extractSenderData(request)
   if (role === 'teacher' || role === 'admin') {
     const aclResult = await checkWithACL(request, { own: (existing.teacherId === userId) })
-    if (!aclResult.isOkay)
-      throw new AppError('PLANS_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
+    if (!aclResult.isOkay) throw new AppError('PLANS_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
   }
 
   await planRepo.deletePlan(existing.id)

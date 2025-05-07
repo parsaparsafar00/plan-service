@@ -152,7 +152,10 @@ export const PlanSchema = Type.Object({
   studentLevel: Type.String({ maxLength: 255 }),
   studentWeight: Type.Number(), // اگر nullable است، می‌توانی Type.Optional(Type.Number()) بگذاری
   studentAge: Type.Number(),
-  status: Type.Optional(Type.String({ maxLength: 30 })), // مثل 'active', 'done'
+  status: Type.Enum({
+    published: 'published',
+    draft: 'draft'
+  }),
   workoutPlan: Type.Object({
     sessions: Type.Array(sessionInPlanSchema),
   }),
@@ -188,7 +191,10 @@ export const PrintPlanSchema = Type.Object({
   studentLevel: Type.String({ maxLength: 255 }),
   studentWeight: Type.Number(), // اگر nullable است، می‌توانی Type.Optional(Type.Number()) بگذاری
   studentAge: Type.Number(),
-  status: Type.Optional(Type.String({ maxLength: 30 })), // مثل 'active', 'done'
+  status: Type.Enum({
+    published: 'published',
+    draft: 'draft'
+  }),
   workoutPlan: Type.Object({
     sessions: Type.Array(printSessionOutputSchema),
   }),
@@ -204,6 +210,18 @@ export type PrintPlanType = Static<typeof PrintPlanSchema>
  */
 export const UpdatePlanRequest = Type.Partial(PlanSchema)
 export type UpdatePlanRequestType = Static<typeof UpdatePlanRequest>
+
+/**
+ * ساختار درخواست آپدیت وضعیت برنامه تمرینی
+ */
+export const updatePlanStatusSchema = Type.Object({
+  status: Type.Enum({
+    published: 'published',
+    draft: 'draft'
+  }),
+
+})
+export type updatePlanStatusType = Static<typeof updatePlanStatusSchema>
 
 /**
  * ساختار ورودی دریافت یک برنامه تمرینی
@@ -242,7 +260,6 @@ export const GenerateSessionByAIRequest = Type.Object({
     balance: 'balance',
     mobility: 'mobility',
   }),
-  status: Type.String({ maxLength: 255 }),
   injuries: Type.Array(Type.String()),
   targetMuscles: Type.Array(Type.Enum({
     fullBody: 'full body',
@@ -266,6 +283,45 @@ export const GenerateSessionByAIRequest = Type.Object({
 export type GenerateSessionByAIRequestType = Static<typeof GenerateSessionByAIRequest>
 
 /**
+ * ورودی تولید جلسه تمرینی توسط هوش مصنوعی
+ */
+export const GenerateSessionManuallyRequest = Type.Object({
+  teacherId: Type.String({ format: 'uuid' }),
+  description: Type.String(),
+  weeks: Type.Array(Type.Number()),
+  exerciseType: Type.String({ minLength: 2, maxLength: 255 }),
+  target: Type.Enum({
+    postural: 'postural',
+    hypertrophy: 'hypertrophy',
+    strength: 'strength',
+    endurance: 'endurance',
+    balance: 'balance',
+    mobility: 'mobility',
+  }),
+  injuries: Type.Array(Type.String()),
+  targetMuscles: Type.Array(Type.Enum({
+    fullBody: 'full body',
+    biceps: 'biceps',
+    triceps: 'triceps',
+    lat: 'back and lat',
+    legs: 'legs',
+    abdominals: 'abdominals',
+    trap: 'trap',
+    shoulders: 'shoulders',
+    forearms: 'forearms',
+    chest: 'chest',
+  })),
+  traineeInfo: Type.Object({
+    level: Type.String({ maxLength: 255 }),
+    age: Type.Optional(Type.Number()),
+    weight: Type.Optional(Type.Number()),
+    gender: Type.Union([Type.Literal(0), Type.Literal(1)]),
+  }),
+  session: Type.Array(sessionInputSchema),
+})
+export type GenerateSessionManuallyRequestType = Static<typeof GenerateSessionManuallyRequest>
+
+/**
  * ورودی تولید برنامه تمرینی بر اساس جلسات تولید شده
  */
 export const CreatePlanRequest = Type.Object({
@@ -276,7 +332,10 @@ export const CreatePlanRequest = Type.Object({
   description: Type.String(),
   studentId: Type.String({ format: 'uuid' }),
   teacherId: Type.String({ format: 'uuid' }),
-  status: Type.String(),
+  status: Type.Enum({
+    published: 'published',
+    draft: 'draft'
+  }),
   studentLevel: Type.String(),
   target: Type.Enum({
     postural: 'postural',

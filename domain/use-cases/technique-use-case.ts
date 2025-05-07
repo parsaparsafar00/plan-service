@@ -52,7 +52,7 @@ export async function createTechnique(request: FastifyRequest<{ Body: techniqueS
 export async function getTechniqueById(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
   const existing = await techniqueRepo.getTechniqueById(request.params)
   if (!existing)
-    throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 400)
+    throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 404)
   return existing
 }
 
@@ -75,7 +75,7 @@ export async function updateTechnique(request: FastifyRequest<{ Params: generalS
   const { userId: updaterId, role: updaterRole } = extractSenderData(request)
 
   const currentTechnique = await techniqueRepo.getTechniqueById(request.params)
-  if (!currentTechnique) throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 400)
+  if (!currentTechnique) throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 404)
     
   const updates = request.body //  (به این شرط که در ACL ذکر شده باشه) هر چیزی که به عنوان ورودی وارد شده است، بایستی در جدول تکنیک ها آپدیت شود
 
@@ -109,7 +109,7 @@ export async function updateTechnique(request: FastifyRequest<{ Params: generalS
 export async function deleteTechnique(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
   const existing = await techniqueRepo.getTechniqueById(request.params)
   if (!existing)
-    throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 400)
+    throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 404)
 
   const { role, userId } = extractSenderData(request)
   if (role === 'teacher' || role === 'admin') {

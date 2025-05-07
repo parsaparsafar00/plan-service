@@ -63,7 +63,7 @@ export async function getAllSystemsByTeacherId(request: FastifyRequest<{ Params:
  */
 export async function getSystemById(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
   const system = await systemRepo.getSystemById(request.params)
-  if (!system) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 400)
+  if (!system) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 404)
   return system
 }
 
@@ -74,7 +74,7 @@ export async function updateSystem(request: FastifyRequest<{ Params: generalSche
   const { userId: updaterId, role: updaterRole } = extractSenderData(request)
 
   const currentSystem = await systemRepo.getSystemById(request.params)
-  if (!currentSystem) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 400)
+  if (!currentSystem) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 404)
   const updates = request.body //  (به این شرط که در ACL ذکر شده باشه) هر چیزی که به عنوان ورودی وارد شده است، بایستی در جدول سیستم ها آپدیت شود
 
   let aclResult = {isOkay: false, reason: ''}
@@ -107,7 +107,7 @@ export async function updateSystem(request: FastifyRequest<{ Params: generalSche
  */
 export async function deleteSystem(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
   const existingSystem = await systemRepo.getSystemById(request.params)
-  if (!existingSystem) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 400)
+  if (!existingSystem) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 404)
 
   const { role, userId } = extractSenderData(request)
   if (role === 'teacher' || role === 'admin') {

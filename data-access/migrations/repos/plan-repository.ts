@@ -46,14 +46,12 @@ export async function getPlanById(id: IdParamType): Promise<PlanType> {
   try {
     const planId = id.id
     const plan = await knexInstance('plan_records').where({ id: planId }).first()
+    if (!plan) throw new AppError('PLAN_NOT_FOUND', `برنامه با شناسه ${planId} یافت نشد`, 404)
 
-    if (!plan)
-      throw new AppError('PLAN_NOT_FOUND', `برنامه با شناسه ${id} یافت نشد`, 404)
     return plan
   }
   catch (error) {
-    if (error instanceof AppError)
-      throw error
+    if (error instanceof AppError) throw error
     throw new AppError('PLAN_DB_QUERY_ERROR', 'خطای پایگاه داده در دریافت برنامه', 500, error)
   }
 }
