@@ -6,7 +6,7 @@ export interface LoadPlan {
   numberOfDropSets: number
 }
 
-export function getPlanInstructions(level: string): LoadPlan {
+export function getPlanInstructions(level: 'novice' | 'beginner' | 'intermediate' | 'advanced' | 'expert'): LoadPlan {
   let loadIncrement = ''
   let deload = ''
   const numberOfSuperSets = 0

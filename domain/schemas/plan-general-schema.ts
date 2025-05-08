@@ -12,6 +12,14 @@ export const IdParam = Type.Object({
 })
 export type IdParamType = Static<typeof IdParam>
 
+/**
+ * پارامتر آیدی مربی در درخواست
+ */
+export const IdQueryTeacher = Type.Object({
+  id: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
+})
+export type IdQueryTeacherType = Static<typeof IdQueryTeacher>
+
 // -------------------------------------- ساختار پاسخ ها --------------------------------------
 
 /**

@@ -12,8 +12,13 @@ export async function systemRoutes(app: FastifyInstance) {
     schema: {
       tags: ['Plan'],
       summary: 'ایجاد سیستم جدید',
-      description: `## مربی و ادمین قادر به تولید سیستم جدید هستند `,
+      description: `
+      ## مربی و ادمین قادر به تولید سیستم جدید هستند 
+      اگر ادمین بخواهد که سیستم جدیدی برای یک مربی تولید بکند بایستی یک شناسه معلم معتبر در کوئری قرار دهد
+      درغیر این صورت اگر شناسه معتبر نباشد یعنی خط تیره وارد شده باشد، ادمین سیستم را بصورت گلوبال تولید میکند 
+      `,
       body: systemSchema.CreatePlanSystemRequest,
+      querystring: generalSchema.IdQueryTeacher,
       response: {
         200: { content: { 'application/json': { schema: systemSchema.SingleSystemResponse } }, description: generalSchema.SuccessResponseDes },
         400: generalSchema.BadRequestError,
@@ -21,7 +26,7 @@ export async function systemRoutes(app: FastifyInstance) {
         500: generalSchema.InternalServerError,
       },
     },
-    handler: async (request: FastifyRequest<{ Body: systemSchema.CreatePlanSystemRequestType }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Body: systemSchema.CreatePlanSystemRequestType,  Querystring: generalSchema.IdQueryTeacherType }>, reply: FastifyReply) => {
       const system = await systemUseCase.createPlanSystem(request)
       reply.send({ data: { system }, msgCode: '', msgType: 'success' })
     },
@@ -58,7 +63,9 @@ export async function systemRoutes(app: FastifyInstance) {
     schema: {
       tags: ['Plan'],
       summary: 'دریافت تمام سیستم های برنامه تمرینی مربی با استفاده از آیدی مربی',
-      description: `ادمین میتونه تمام سیستم ها رو بگیره ولی مربی، فقط سیستم های خودش رو (که توسط خودش یا هوش مصنوعی براش ساخته شده) میتونه بگیره`,
+      description: `## ادمین با قرار دادن آیدی معتبر یک معلم در کوئری میتواند سیستم های آن مربی را مشاهده بکند 
+      ##  معلم میتواند سیستم های خودش را دریافت کند، شناسه معلم از توکن گرفته می شود ولی  در کوئری هم بایستی علامت تیره قرار بگیرد 
+      `,
       params: generalSchema.IdParam,
       response: {
         200: { content: { 'application/json': { schema: systemSchema.MultipleSystemResponse } }, description: generalSchema.SuccessResponseDes },
@@ -81,7 +88,9 @@ export async function systemRoutes(app: FastifyInstance) {
     schema: {
       tags: ['Plan'],
       summary: 'ویرایش سیستم تمرینی',
-      description: `## ادمین برای همه سیستم های همه مربی ها رو میتونه ویرایش کنه مربی فقط سیستم خودش رو میتونه ویرایش کنه`,
+      description: `## ادمین میتواند تمام سیستم ها رو (چه گلوبال ها و چه سیستم های مربوط به مربی ها) رو آپدیت بکنه
+      اما مربی فقط مال خودش رو میتونه آپدیت کنه
+      `,
       params: generalSchema.IdParam,
       body: systemSchema.UpdateSystemRequestSchema,
       response: {
@@ -105,7 +114,7 @@ export async function systemRoutes(app: FastifyInstance) {
     schema: {
       tags: ['Plan'],
       summary: 'حذف سیستم تمرینی',
-      description: `## ادمین میتونه سیستم تمرینی همه رو حذف بکنه، مربی فقط سیستم تمرینی خودش رو میتونه حذف کنه`,
+      description: `## (گلوبال ها رو حق نداره حذف کنه) ادمین میتونه سیستم تمرینی همه رو حذف بکنه، مربی فقط سیستم تمرینی خودش رو میتونه حذف کنه`,
       params: generalSchema.IdParam,
       response: {
         200: { content: { 'application/json': { schema: generalSchema.EmptySuccessResponse } }, description: generalSchema.SuccessResponseDes },

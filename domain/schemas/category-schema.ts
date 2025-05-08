@@ -30,11 +30,6 @@ export const IdParam = Type.Object({
 })
 export type IdParamType = Static<typeof IdParam>
 
-export const IdQueryTeacher = Type.Object({
-  id: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
-})
-export type IdQueryTeacherType = Static<typeof IdQueryTeacher>
-
 export const EmptySuccessResponse = Type.Object({
   data: Type.Object({}),
   msgCode: Type.String(),

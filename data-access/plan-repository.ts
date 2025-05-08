@@ -1,6 +1,7 @@
 import type { Knex } from 'knex'
-import type { IdParamType } from '../domain/schemas/plan-general-schema.js'
-import type { PlanListType, PlanType } from '../domain/schemas/plan-schema.js'
+import type { AutoQueryData } from '@amard/auto-query'
+import { attachAutoQuery } from '@amard/auto-query'
+import type { PlanType } from '../domain/schemas/plan-schema.js'
 import { AppError } from '@amard/error-handling'
 
 let knexInstance: Knex
@@ -19,44 +20,54 @@ export function getKnexInstanceForPlanRepo() {
 export async function insertPlan(data: PlanType, trx?: Knex.Transaction): Promise<PlanType> {
   try {
     // ساخت کوئری بیس
-    const query = knexInstance<PlanType>('plan_records');
+    const query = knexInstance('plan_records');
     
     // اجرای کوئری با تراکنش اگر وجود داشت
     const [inserted] = await (trx ? query.transacting(trx) : query).insert(data).returning('*');
-    
     return inserted;
+
   } catch (error) {
-    throw new AppError('PLAN_DB_INSERT_ERROR', 'Database insertPlan error', 500, error);
+    throw new AppError('PLAN_PLAN_ERROR', 'Database insertPlan query error', 400, error);
   }
 }
 
 /**
  * دریافت تمام برنامه ها بر اساس آیدی مربی
  */
-export async function getPlansByTeacherId(id: IdParamType): Promise<PlanListType | undefined> {
+export async function getPlansByTeacherId(teacherId: string, autoQueryData: AutoQueryData): Promise<PlanType[]> {
   try {
-    const teacherId = id.id
-    return await knexInstance('plan_records').where({ teacherId })
+    return await knexInstance('plan_records').where({ teacherId }).modify((qb) => {
+      attachAutoQuery(qb, autoQueryData)
+    })
   }
   catch (error) {
-    throw new AppError('PLAN_DB_QUERY_ERROR', 'Database getPlansByTeacherId query error', 500, error)
+    throw new AppError('PLAN_PLAN_ERROR', 'Database getPlansByTeacherId query error', 400, error)
   }
 }
 
 /**
  * دریافت برنامه تمرینی (هم پرینتی و هم عادی) با آیدی
  */
-export async function getPlanById(id: IdParamType): Promise<PlanType> {
+export async function getPlanById(id: string): Promise<PlanType | undefined> {
   try {
-    const planId = id.id
-    const plan = await knexInstance('plan_records').where({ id: planId }).first()
-    if (!plan) throw new AppError('PLAN_NOT_FOUND', `برنامه با شناسه ${planId} یافت نشد`, 404)
-
+    const plan = await knexInstance('plan_records').where({ id }).first()
     return plan
   }
   catch (error) {
-    if (error instanceof AppError) throw error
-    throw new AppError('PLAN_DB_QUERY_ERROR', 'خطای پایگاه داده در دریافت برنامه', 500, error)
+    throw new AppError('PLAN_PLAN_ERROR', 'Database getPlanById query error', 400, error)
+  }
+}
+
+// برای ادمین در موارد خاص که میخواد کل برنامه ها رو ببینه
+export async function getAllPlans(autoQueryData: AutoQueryData): Promise<PlanType[]> {
+  try {
+    const plans = await knexInstance('plan_records').modify((qb) => {
+      attachAutoQuery(qb, autoQueryData)
+    })
+    return plans
+  }
+  catch (error) {
+    throw new AppError('PLAN_PLAN_DB_ERROR', 'Database getAllPlans error', 500, error)
   }
 }
 
@@ -65,11 +76,11 @@ export async function getPlanById(id: IdParamType): Promise<PlanType> {
  */
 export async function updatePlan(id: string, updates: Partial<PlanType>): Promise<PlanType> {
   try {
-    const [updated] = await knexInstance<PlanType>('plan_records').where({ id }).update(updates).returning('*')
+    const [updated] = await knexInstance('plan_records').where({ id }).update(updates).returning('*')
     return updated
   }
   catch (error) {
-    throw new AppError('PLAN_DB_ACTION_ERROR', 'Database updatePlan query error', 500, error)
+    throw new AppError('PLAN_PLAN_ERROR', 'Database updatePlan query error', 400, error)
   }
 }
 
@@ -81,6 +92,6 @@ export async function deletePlan(id: string): Promise<void> {
     await knexInstance('plan_records').where({ id }).del()
   }
   catch (error) {
-    throw new AppError('PLAN_DB_ERROR', 'Database deletePlan error', 500, error)
+    throw new AppError('PLAN_PLAN_ERROR', 'Database deletePlan query error', 400, error)
   }
 }

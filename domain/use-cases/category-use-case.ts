@@ -1,6 +1,7 @@
 import type { AutoQueryData } from '@amard/auto-query'
 import type { FastifyRequest } from 'fastify'
 import type * as catSchemas from '../schemas/category-schema.js'
+import type * as generalSchema from '../schemas/plan-general-schema.js'
 import { checkWithACL } from '@amard/access-control'
 import { AppError } from '@amard/error-handling'
 import { auditLogger, setAuditRequest } from '@amard/logger'
@@ -24,7 +25,7 @@ function extractSenderData(request: FastifyRequest) {
   return { role, userId }
 }
 
-export async function createCategory(request: FastifyRequest<{ Body: catSchemas.CreateCategoryRequestType, Querystring: catSchemas.IdQueryTeacherType }>): Promise<catSchemas.CategoryType> {
+export async function createCategory(request: FastifyRequest<{ Body: catSchemas.CreateCategoryRequestType, Querystring: generalSchema.IdQueryTeacherType }>): Promise<catSchemas.CategoryType> {
   const { userId: creatorId, role: creatorRole } = extractSenderData(request)
   let teacherId = creatorId
   let isGlobal = false
@@ -62,17 +63,13 @@ export async function createCategory(request: FastifyRequest<{ Body: catSchemas.
  */
 export async function getCategoryById(request: FastifyRequest<{ Params: catSchemas.IdParamType }>): Promise<catSchemas.CategoryType> {
   const capturedCategory = await categoryRepository.getCategoryById(request.params.id)
-  if (!capturedCategory)
-    throw new AppError('PLAN_CATEGORY_NOT_FOUND', 'Category not found', 404)
+  if (!capturedCategory) throw new AppError('PLAN_CATEGORY_NOT_FOUND', 'Category not found', 404)
 
-  const { userId: getterId, role: getterRole } = extractSenderData(request)
-  let aclResult = {
-    isOkay: false,
-    reason: '',
-  }
+  const { userId: receiverId, role: getterRole } = extractSenderData(request)
+  let aclResult = { isOkay: false, reason: '' }
 
   if (getterRole === 'teacher') {
-    aclResult = await checkWithACL(request, { own: (capturedCategory.teacherId === getterId), isGlobal: (capturedCategory.isGlobal) })
+    aclResult = await checkWithACL(request, { own: (capturedCategory.teacherId === receiverId), isGlobal: (capturedCategory.isGlobal) })
     if (!aclResult.isOkay)
       throw new AppError('PLAN_CATEGORY_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
   }
@@ -80,7 +77,7 @@ export async function getCategoryById(request: FastifyRequest<{ Params: catSchem
   return capturedCategory
 }
 
-export async function getTeacherCategories(request: FastifyRequest<{ Querystring: catSchemas.IdQueryTeacherType }>): Promise<catSchemas.CategoryType[]> {
+export async function getTeacherCategories(request: FastifyRequest<{ Querystring: generalSchema.IdQueryTeacherType }>): Promise<catSchemas.CategoryType[]> {
   const { userId: tokenUserId, role: tokenUserRole } = extractSenderData(request)
   let teacherId = tokenUserId
   if (tokenUserRole === 'admin') {

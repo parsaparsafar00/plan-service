@@ -7,7 +7,7 @@ import { sessionInPlanSchema } from '../schemas/plan-schema.js'
  * ساختار ورودی تولید یک قالب توسط هوش مصنوعی برای برنامه تمرینی
  */
 export const CreateTemplateByAIRequest = Type.Object({
-  teacherId: Type.String({ format: 'uuid' }),
+  teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   name: Type.String({ maxLength: 255 }),
   target: Type.Enum({
     postural: 'postural',
@@ -17,7 +17,13 @@ export const CreateTemplateByAIRequest = Type.Object({
     balance: 'balance',
     mobility: 'mobility',
   }),
-  level: Type.String({ maxLength: 255 }),
+  level: Type.Enum({
+    novice: 'novice',
+    beginner: 'beginner',
+    intermediate: 'intermediate',
+    advanced: 'advanced',
+    expert: 'expert',
+  }),
   muscles: Type.Array(Type.Enum({
     fullBody: 'full body',
     biceps: 'biceps',
@@ -31,7 +37,7 @@ export const CreateTemplateByAIRequest = Type.Object({
     chest: 'chest',
   })),
   description: Type.String(),
-  gender: Type.Union([Type.Literal(0), Type.Literal(1)]),
+  gender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
 })
 export type CreateTemplateByAIRequestType = Static<typeof CreateTemplateByAIRequest>
 
@@ -39,7 +45,7 @@ export type CreateTemplateByAIRequestType = Static<typeof CreateTemplateByAIRequ
  * ساختار ورودی تولید یک قالب بصورت دستی مصنوعی برای برنامه تمرینی
  */
 export const CreateTemplateManualRequest = Type.Object({
-  teacherId: Type.String({ format: 'uuid' }),
+  teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   name: Type.String({ maxLength: 255 }),
   target: Type.Enum({
     postural: 'postural',
@@ -49,7 +55,13 @@ export const CreateTemplateManualRequest = Type.Object({
     balance: 'balance',
     mobility: 'mobility',
   }),
-  level: Type.String({ maxLength: 255 }),
+  level: Type.Enum({
+    novice: 'novice',
+    beginner: 'beginner',
+    intermediate: 'intermediate',
+    advanced: 'advanced',
+    expert: 'expert',
+  }),
   muscles: Type.Array(Type.Enum({
     fullBody: 'full body',
     biceps: 'biceps',
@@ -63,7 +75,7 @@ export const CreateTemplateManualRequest = Type.Object({
     chest: 'chest',
   })),
   description: Type.String(),
-  gender: Type.Union([Type.Literal(0), Type.Literal(1)]),
+  gender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
   session: sessionInPlanSchema, // بدین معنا که صرفا شماره حرکت و اطلاعات اضافی که مربی در فرم پر میکنه قراره توی یک قالب دستی ذخیره بشه
 })
 export type CreateTemplateManualRequestType = Static<typeof CreateTemplateManualRequest>
@@ -74,9 +86,15 @@ export type CreateTemplateManualRequestType = Static<typeof CreateTemplateManual
 export const templateSchema = Type.Object({
   id: Type.String({ format: 'uuid' }),
   name: Type.String({ maxLength: 255 }),
-  teacherId: Type.String({ format: 'uuid' }),
+  teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   description: Type.String(),
-  level: Type.String({ maxLength: 255 }),
+  level: Type.Enum({
+    novice: 'novice',
+    beginner: 'beginner',
+    intermediate: 'intermediate',
+    advanced: 'advanced',
+    expert: 'expert',
+  }),
   target: Type.Enum({
     postural: 'postural',
     hypertrophy: 'hypertrophy',
@@ -85,32 +103,23 @@ export const templateSchema = Type.Object({
     balance: 'balance',
     mobility: 'mobility',
   }),
-  gender: Type.Union([Type.Literal(0), Type.Literal(1)]),
-  muscles: Type.Array(Type.Enum({
-    fullBody: 'full body',
-    biceps: 'biceps',
-    triceps: 'triceps',
-    lat: 'back and lat',
-    legs: 'legs',
-    abdominals: 'abdominals',
-    trap: 'trap',
-    shoulders: 'shoulders',
-    forearms: 'forearms',
-    chest: 'chest',
-  })),
+  gender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
+  muscles: Type.String(),
   session: sessionInPlanSchema,
   createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
   updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
 })
 export type TemplateType = Static<typeof templateSchema>
 
-export const TemplateListSchema = Type.Array(templateSchema)
-export type TemplateListType = Static<typeof TemplateListSchema>
-
 /**
  * ساختار درخواست آپدیت قالب تمرینی
  */
-export const UpdateTemplateRequest = Type.Partial(templateSchema)
+export const UpdateTemplateRequest = Type.Partial(
+  Type.Object({
+    ...templateSchema.properties, // صفات اسکیم قالب رو نگهداری میکنیم
+    muscles: Type.Array(Type.String())
+  })
+);
 export type UpdateTemplateRequestType = Static<typeof UpdateTemplateRequest>
 
 /**

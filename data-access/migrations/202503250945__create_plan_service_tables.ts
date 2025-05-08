@@ -5,28 +5,45 @@ import { AppError } from '@amard/error-handling'
 
 export async function up(knex: Knex): Promise<void> {
   // ساخت جدول plan_records
-  const recordsTableExists = await knex.schema.hasTable('plan_records')
+  const recordsTableExists = await knex.schema.hasTable('plan_records');
   if (!recordsTableExists) {
     await knex.schema.createTable('plan_records', (table) => {
-      table.uuid('id').primary()
-      table.uuid('studentId').notNullable()
-      table.integer('studentAge').notNullable()
-      table.integer('studentWeight').nullable()
-      table.string('studentLevel', 255).notNullable()
-      table.uuid('teacherId').nullable()
-      table.string('title', 255).nullable()
-      table.string('target', 255).notNullable()
-      table.string('status', 30).nullable()
-      table.text('description').nullable()
-      table.jsonb('workoutPlan').nullable().defaultTo('{}') // فیلد برنامه که بصورت جیسان ذخیره میشه
-      table.timestamp('createdAt', { useTz: false }).notNullable()
-      table.timestamp('updatedAt', { useTz: false }).notNullable()
-
+      table.uuid('id').primary();
+      table.uuid('studentId').notNullable();
+      table.integer('studentAge').notNullable();
+      table.integer('studentWeight').nullable();
+      table.enu('studentLevel', [
+        'novice',
+        'beginner',
+        'intermediate',
+        'advanced',
+        'expert'
+      ]).notNullable()
+      table.string('teacherId', 36).notNullable()
+      table.string('title', 255).nullable();
+      table.enu('target', [
+        'postural',
+        'hypertrophy',
+        'strength',
+        'endurance',
+        'balance',
+        'mobility'
+      ]).notNullable();
+      table.enu('status', [
+        'paid',
+        'published',
+        'draft'
+      ]).notNullable();
+      table.text('description').nullable();
+      table.jsonb('workoutPlan').nullable().defaultTo('{}'); // فیلد برنامه که بصورت جیسان ذخیره میشه
+      table.timestamp('createdAt', { useTz: false }).notNullable();
+      table.timestamp('updatedAt', { useTz: false }).notNullable();
+  
       // ایندکس‌ها در صورت نیاز
-      table.index(['studentId'])
-      table.index(['teacherId'])
-      table.index(['status'])
-    })
+      table.index(['studentId']);
+      table.index(['teacherId']);
+      table.index(['status']);
+    });
   }
 
   // ساخت جدول plan_systems
@@ -37,11 +54,14 @@ export async function up(knex: Knex): Promise<void> {
       table.string('abbrName').notNullable() // نام اختصاری تولید شده (توسط خودمان) بر اساس پارامتر های تعیین شده توسط مربی
       table.text('description').nullable()
       table.boolean('descIsVisible').nullable() // آیا نیاز است که توضیحات به دانش آموز نمایش داده شود یا خیر
-      table.uuid('teacherId').nullable()
+      table.string('teacherId', 36).notNullable()
       table.boolean('isGlobal').notNullable().defaultTo(false)
       table.string('method', 255).notNullable() // افزایشی - ثابت - کاهشی - سینوسی  - هرم کامل رو به بالا - هرم کامل رو به پایین - هرم رو به بالا - هرم رو به پایین - دلخواه
-      table.jsonb('repeatPattern').notNullable()
-      table.string('status', 30).nullable()
+      table.string('repeatPattern').notNullable()
+      table.enu('status', [
+        'published',
+        'draft'
+      ]).notNullable()
       table.integer('usageTimes').defaultTo(0)
       table.timestamp('createdAt', { useTz: false }).notNullable()
       table.timestamp('updatedAt', { useTz: false }).notNullable()
@@ -63,11 +83,11 @@ export async function up(knex: Knex): Promise<void> {
           abbrName: `سیستم ${method} ${pattern.toString()}`,
           description: 'سیستم تولید شده توسط هوش مصنوعی',
           descIsVisible: false,
-          teacherId: null,
+          teacherId: '-',
           isGlobal: true,
           method: method,
           repeatPattern: JSON.stringify(pattern),
-          status: 'active',
+          status: 'published',
           createdAt: nowStr,
           updatedAt: nowStr,
         }
@@ -76,7 +96,7 @@ export async function up(knex: Knex): Promise<void> {
       }
       console.log(`✅ Inserted ${patterns.length} system records.`)
     } catch (error) {
-        throw new AppError('PLAN_SYSTEM_DB_INSERT_ERROR', 'خطا در تولید سیستم های از پیش تعریف شده ', 500, error)
+      throw new AppError('PLAN_SYSTEM_DB_INSERT_ERROR', 'Error while inserting pre defined systsms', 500, error)
     }
   }
 
@@ -87,12 +107,20 @@ export async function up(knex: Knex): Promise<void> {
       table.uuid('id').primary()
       table.string('abbrName').notNullable() // نام اختصاری تولید شده (توسط خودمان) بر اساس پارامتر های تعیین شده توسط مربی
       table.string('name', 255).notNullable() // نام تعیین شده توسط مربی
-      table.uuid('teacherId').nullable()
+      table.string('teacherId', 36).notNullable()
       table.text('description').nullable()
       table.boolean('isGlobal').notNullable().defaultTo(false)
       table.boolean('descIsVisible').nullable() // آیا نیاز است که توضیحات به دانش آموز نمایش داده شود یا خیر
-      table.string('method', 255).notNullable() // سوپرست - جاینت ست - دراپ ست - دلخواه
-      table.string('status', 30).nullable()
+      table.enu('method', [
+        'dropset',
+        'giantset',
+        'superset',
+        'custom'
+      ]).notNullable();
+      table.enu('status', [
+        'published',
+        'draft'
+      ]).notNullable();
       table.integer('usageTimes').defaultTo(0)
       table.timestamp('createdAt', { useTz: false }).notNullable()
       table.timestamp('updatedAt', { useTz: false }).notNullable()
@@ -110,12 +138,12 @@ export async function up(knex: Knex): Promise<void> {
         id: uuidv4(),
         abbrName: 'سوپرست پایه',
         name: 'سوپرست (تمرین متوالی بدون استراحت)',
-        teacherId: null,
+        teacherId: '-',
         description: 'انجام دو یا چند حرکت پشت سر هم بدون استراحت بین آنها. مناسب برای افزایش شدت تمرین و صرفه جویی در زمان.',
         isGlobal: true,
         descIsVisible: true,
         method: 'superset',
-        status: 'active',
+        status: 'published',
         usageTimes: 0,
         createdAt: nowStr,
         updatedAt: nowStr
@@ -124,12 +152,12 @@ export async function up(knex: Knex): Promise<void> {
         id: uuidv4(),
         abbrName: 'دراپ ست استاندارد',
         name: 'دراپ ست (کاهش تدریجی وزن)',
-        teacherId: null,
+        teacherId: '-',
         description: 'انجام حرکت با حداکثر وزن ممکن و سپس کاهش وزن و ادامه تمرین بدون استراحت. مناسب برای ایجاد خستگی عضلانی عمیق.',
         isGlobal: true,
         descIsVisible: true,
         method: 'dropset',
-        status: 'active',
+        status: 'published',
         usageTimes: 0,
         createdAt: nowStr,
         updatedAt: nowStr
@@ -138,12 +166,12 @@ export async function up(knex: Knex): Promise<void> {
         id: uuidv4(),
         abbrName: 'جاینت ست ترکیبی',
         name: 'جاینت ست (ترکیب چند حرکت برای یک عضله)',
-        teacherId: null,
+        teacherId: '-',
         description: 'ترکیب 3-4 حرکت مختلف برای یک گروه عضلانی با استراحت کم بین حرکات. مناسب برای حجم دهی شدید.',
         isGlobal: true,
         descIsVisible: true,
         method: 'giantset',
-        status: 'active',
+        status: 'published',
         usageTimes: 0,
         createdAt: nowStr,
         updatedAt: nowStr
@@ -160,11 +188,24 @@ export async function up(knex: Knex): Promise<void> {
       table.uuid('id').primary()
       table.string('name', 255).notNullable() // نام تعیین شده توسط مربی
       table.text('description').nullable()
-      table.uuid('teacherId').notNullable()
-      table.string('target', 255).nullable()
-      table.string('level', 255).nullable()
-      table.smallint('gender').nullable()
-      table.jsonb('muscles').nullable().defaultTo('{}')
+      table.string('teacherId', 36).notNullable()
+      table.enu('target', [
+        'postural',
+        'hypertrophy',
+        'strength',
+        'endurance',
+        'balance',
+        'mobility'
+      ]).notNullable();
+      table.enu('level', [
+        'novice',
+        'beginner',
+        'intermediate',
+        'advanced',
+        'expert'
+      ]).notNullable()
+      table.enu('gender', ['m', 'f']).nullable()
+      table.string('muscles').nullable()
       table.jsonb('session').nullable().defaultTo('{}') // فیلد برنامه که شامل یک جلسه تمرینی هست و بصورت جیسان ذخیره میشه
       table.timestamp('createdAt', { useTz: false }).notNullable()
       table.timestamp('updatedAt', { useTz: false }).notNullable()
@@ -178,6 +219,23 @@ export async function up(knex: Knex): Promise<void> {
       table.uuid('id').primary()
       table.integer('exerciseNumber').notNullable()// اشاره به شماره حرکت در جدول حرکات
       table.uuid('planId').notNullable() // اشاره به شماره برنامه در جدول حرکات
+      table.enu('gender', ['m', 'f']).nullable()
+      table.string('teacherId', 36).notNullable()
+      table.enu('studentLevel', [
+        'novice',
+        'beginner',
+        'intermediate',
+        'advanced',
+        'expert'
+      ]).notNullable()
+      table.enu('target', [
+        'postural',
+        'hypertrophy',
+        'strength',
+        'endurance',
+        'balance',
+        'mobility'
+      ]).notNullable()
       table.timestamp('createdAt', { useTz: false }).notNullable()
       table.timestamp('updatedAt', { useTz: false }).notNullable()
     })

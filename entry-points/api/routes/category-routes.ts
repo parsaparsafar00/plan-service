@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import * as categorySchemas from '../../../domain/schemas/category-schema.js'
+import * as generalSchema from '../../../domain/schemas/plan-general-schema.js'
 import * as categoryUseCase from '../../../domain/use-cases/category-use-case.js'
 
 export async function categoryRoutes(app: FastifyInstance) {
@@ -12,10 +13,10 @@ export async function categoryRoutes(app: FastifyInstance) {
       tags: ['Plan'],
       summary: 'ایجاد کتگوری',
       description: `
-## اگر قرار است **ادمین**، کتگوری ایجاد کند باید یک شناسه معلم معتبر در کوئری قرار دهید
-## اگر قرار است **معلم**، کتگوری را ایجاد کند، شناسه معلم از توکن گرفته میشود ولی باز هم کوئری نباید خالی باشد. متوانید یک علامت تیره - در کوئری قرار دهید
-`,
-      querystring: categorySchemas.IdQueryTeacher,
+      ## اگر قرار است **ادمین**، کتگوری ایجاد کند باید یک شناسه معلم معتبر در کوئری قرار دهید
+      ## اگر قرار است **معلم**، کتگوری را ایجاد کند، شناسه معلم از توکن گرفته میشود ولی باز هم کوئری نباید خالی باشد. متوانید یک علامت تیره - در کوئری قرار دهید
+      `,
+      querystring: generalSchema.IdQueryTeacher,
       body: categorySchemas.CreateCategoryRequest,
       response: {
         200: { content: { 'application/json': { schema: categorySchemas.CategoryResponse } }, description: categorySchemas.SuccessResponseDes },
@@ -25,7 +26,7 @@ export async function categoryRoutes(app: FastifyInstance) {
       },
     },
     handler: async (
-      request: FastifyRequest<{ Body: categorySchemas.CreateCategoryRequestType, Querystring: categorySchemas.IdQueryTeacherType }>,
+      request: FastifyRequest<{ Body: categorySchemas.CreateCategoryRequestType, Querystring: generalSchema.IdQueryTeacherType }>,
       reply: FastifyReply,
     ) => {
       const category = await categoryUseCase.createCategory(request)
@@ -67,8 +68,7 @@ export async function categoryRoutes(app: FastifyInstance) {
     schema: {
       tags: ['Plan'],
       summary: 'گرفتن کتگوری‌های یک معلم',
-      description: `## اگر قرار است **ادمین** کتگوریهای یک معلم را دریافت کند، باید یک شناسه معلم (معتبر) در کوئری قرار دهید ## اگر قرار است **معلم**، کتگوریهای خودش را دریافت کند، شناسه معلم از توکن گرفته میشود ولی باز هم کوئری نباید خالی باشد. متوانید یک علامت تیره - در کوئری قرار دهید
-`,
+      description: `## اگر قرار است **ادمین** کتگوریهای یک معلم را دریافت کند، باید یک شناسه معلم (معتبر) در کوئری قرار دهید ## اگر قرار است **معلم**، کتگوریهای خودش را دریافت کند، شناسه معلم از توکن گرفته میشود ولی باز هم کوئری نباید خالی باشد. میتوان یک علامت تیره - در کوئری قرار داده شود`,
       params: categorySchemas.IdParam,
       response: {
         200: { content: { 'application/json': { schema: categorySchemas.AllCategoriesResponse } }, description: categorySchemas.SuccessResponseDes },
@@ -78,7 +78,7 @@ export async function categoryRoutes(app: FastifyInstance) {
       },
     },
     handler: async (
-      request: FastifyRequest<{ Querystring: categorySchemas.IdQueryTeacherType }>,
+      request: FastifyRequest<{ Querystring: generalSchema.IdQueryTeacherType }>,
       reply: FastifyReply,
     ) => {
       const categories = await categoryUseCase.getTeacherCategories(request)
@@ -116,9 +116,7 @@ export async function categoryRoutes(app: FastifyInstance) {
     schema: {
       tags: ['Plan'],
       summary: 'ویرایش اطلاعات کتگوری',
-      description: `
-## معلم و ادمین میتوانند به این مسیر درخواست بدهند اما گرفتن خروجی محدودیت هایی دارد که در قوانین سطح دسترسی ذکر شده است
-`,
+      description: `## معلم و ادمین میتوانند به این مسیر درخواست بدهند اما گرفتن خروجی محدودیت هایی دارد که در قوانین سطح دسترسی ذکر شده است`,
       params: categorySchemas.IdParam,
       body: categorySchemas.UpdateCategoryRequest,
       response: {

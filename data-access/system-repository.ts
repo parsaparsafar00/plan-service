@@ -1,6 +1,7 @@
 import type { Knex } from 'knex'
-import type * as generalSchema from '../domain/schemas/plan-general-schema.js'
-import type { SystemListType, SystemType, GetSystemByIdListRequestType, SystemInPlanListSchemaType, systemInPlanOutputSchemaType, UpdateSystemsByIdListType } from '../../../domain/schemas/system-schema.js'
+import type { AutoQueryData } from '@amard/auto-query'
+import { attachAutoQuery } from '@amard/auto-query'
+import type { SystemType, systemInPlanOutputType, UpdateSystemsByIdListType } from '../domain/schemas/system-schema.js'
 import { AppError } from '@amard/error-handling'
 import { DateTime } from 'luxon'
 
@@ -13,30 +14,19 @@ export function setKnexInstanceForSystemRepo(instance: Knex) {
 /**
  * تولید سیستم برنامه تمرینی جدید در جدول plan_systems
  */
-export async function insertPlanSystem(data: SystemType, trx?: Knex.Transaction): Promise<SystemType> {
-  // تبدیل repeatPattern به رشته JSON در صورت آرایه بودن
-  const systemData = {
-    ...data,
-    repeatPattern: Array.isArray(data.repeatPattern) 
-      ? JSON.stringify(data.repeatPattern) 
-      : data.repeatPattern
-  };
+export async function insertPlanSystem(systemData: SystemType, trx?: Knex.Transaction): Promise<SystemType> {
 
   // ساخت کوئری بیس
-  const query = knexInstance<SystemType>('plan_systems')
+  const query = knexInstance('plan_systems')
   
   // بررسی وجود سیستم تکراری (با استفاده از تراکنش اگر وجود داشت)
-  const existingRecord = await (trx ? query.transacting(trx) : query)
-    .where('abbrName', systemData.abbrName)
-    .andWhere({teacherId: systemData.teacherId})
-    .first();
+  const existingRecord = await (trx ? query.transacting(trx) : query).where('abbrName', systemData.abbrName).andWhere({teacherId: systemData.teacherId}).first();
 
   if (existingRecord) {
     if (!trx) {
       // درصورتی ارور بده که سیستم توسط هوش مصنوعی تولید شده باشه، در غیر این صورت سیستم رو برگردونه
-      throw new AppError('SYSTEM_ALREADY_EXISTS', 'سیستم با این نام اختصاری از قبل وجود دارد', 409);
+      throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'System already exists', 400);
     } else { 
-      console.log("existing")
       return existingRecord
     }
   }
@@ -45,25 +35,17 @@ export async function insertPlanSystem(data: SystemType, trx?: Knex.Transaction)
     // درج سیستم جدید (با استفاده از تراکنش اگر وجود داشت)
     const [inserted] = await (trx ? query.transacting(trx) : query).insert(systemData).returning('*');
 
-    // تبدیل رشته JSON به آرایه در صورت نیاز
-    const result = {
-      ...inserted,
-      repeatPattern: typeof inserted.repeatPattern === 'string'
-        ? JSON.parse(inserted.repeatPattern)
-        : inserted.repeatPattern
-    };
-
-    return result;
+    return inserted;
   } catch (error) {
     // فقط خطاهای غیرمنتظره دیتابیس را کچ می‌کنیم
-    throw new AppError('SYSTEM_ACTION_ERROR', 'خطا در ذخیره سیستم جدید', 500, error);
+    throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Database insertPlanSystem query error', 400, error);
   }
 }
 
 /**
  * دریافت سیستم با استفاده از نام اختصاری
  */
-export async function getSystemByAbbrName(abbrName: string, teacherId: generalSchema.IdParamType): Promise<SystemType | undefined> {
+export async function getSystemByAbbrName(abbrName: string, teacherId: string): Promise<SystemType | undefined> {
   try {
     return await knexInstance('plan_systems').where(function() {
       this.where('isGlobal', true).orWhere('teacherId', teacherId);
@@ -72,56 +54,60 @@ export async function getSystemByAbbrName(abbrName: string, teacherId: generalSc
     .first();
   }
   catch (error) {
-    throw new AppError('SYSTEMS_DB_ACTION_ERROR', 'Database getSystemByAbbrName query error', 500, error)
+    throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Database getSystemByAbbrName query error', 400, error)
   }
 }
 
 /**
  * دریافت تمام سیستم ها
  */
-export async function getAllSystemsByTeacherId(id: generalSchema.IdParamType): Promise<SystemListType | undefined> {
+export async function getAllSystemsByTeacherId(teacherId: string, autoQueryData: AutoQueryData): Promise<SystemType[]> {
   try {
-    const teacherId = id.id
-
-    return await knexInstance('plan_systems').where(function() {
-      this.where('isGlobal', true).orWhere('teacherId', teacherId);
+    return await knexInstance('plan_systems').where({teacherId: teacherId}).orWhere({isGlobal: true}).modify((qb) => {
+      attachAutoQuery(qb, autoQueryData)
     })
   }
   catch (error) {
-    throw new AppError('SYSTEM_DB_QUERY_ERROR', 'Database getAllSystemsByTeacherId query error', 500, error)
+    throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Database getAllSystemsByTeacherId query error', 400, error)
   }
 }
 
 /**
  * دریافت اطلاعات کامل سیستم های تمرینی با لیستی از آیدی سیستم ها
  */
-export async function getSystemsByIdList(input: GetSystemByIdListRequestType): Promise<SystemInPlanListSchemaType> {
+export async function getSystemsByIdList(idList: string[]): Promise<systemInPlanOutputType[]> {
   try {
-    // گرفتن لیست آیدی سیستم ها 
-    const idList = input.map((item: { id: any }) => item.id);
 
-    return await knexInstance<systemInPlanOutputSchemaType>('plan_systems').whereIn('id', idList);
+    return await knexInstance('plan_systems').whereIn('id', idList);
 
   } catch (error) {
-    throw new AppError('SYSTEM_DB_QUERY_ERROR', 'Database getSystemsByIdList query error', 500, error);
+    throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Database getSystemsByIdList query error', 400, error);
   }
 }
 
 /**
  * دریافت سیستم تمرینی با آیدی
  */
-export async function getSystemById(id: generalSchema.IdParamType): Promise<SystemType | undefined> {
+export async function getSystemById(id: string): Promise<SystemType | undefined> {
   try {
-    const systemId = id.id
-    const system = await knexInstance('plan_systems').where({ id: systemId }).first()
-
-    // اگر repeatPattern به عنوان رشته JSON ذخیره شده، آن را به آرایه بازگردان
-    if (system && typeof system.repeatPattern === 'string') system.repeatPattern = JSON.parse(system.repeatPattern)
-    return system
+    return await knexInstance('plan_systems').where({ id }).first()
   }
   catch (error) {
     if (error instanceof AppError) throw error
-    throw new AppError('SYSTEM_DB_QUERY_ERROR', 'خطای پایگاه داده در دریافت سیستم', 500, error)
+    throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Database getSystemById query error', 400, error)
+  }
+}
+
+// برای ادمین در موارد خاص که میخواد کل سیستم ها رو ببینه
+export async function getAllSystems(autoQueryData: AutoQueryData): Promise<SystemType[]> {
+  try {
+    const plans = await knexInstance('plan_systems').modify((qb) => {
+      attachAutoQuery(qb, autoQueryData)
+    })
+    return plans
+  }
+  catch (error) {
+    throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Database getAllSystems error', 500, error)
   }
 }
 
@@ -130,18 +116,12 @@ export async function getSystemById(id: generalSchema.IdParamType): Promise<Syst
  */
 export async function updateSystem(id: string, updates: Partial<SystemType>): Promise<SystemType | undefined> {
   try {
-    if (Array.isArray(updates.repeatPattern)) updates.repeatPattern = JSON.stringify(updates.repeatPattern)
 
     const [updated] = await knexInstance('plan_systems').where({ id }).update(updates).returning('*')
-
-    // اگر repeatPattern به عنوان رشته JSON ذخیره شده، آن را به آرایه بازگردان
-    if (typeof updated.repeatPattern === 'string')
-      updated.repeatPattern = JSON.parse(updated.repeatPattern)
-
     return updated
   }
   catch (error) {
-    throw new AppError('SYSTEMS_DB_ACTION_ERROR', 'Database updateSystem query error', 500, error)
+    throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Database updateSystem query error', 400, error)
   }
 }
 
@@ -152,7 +132,7 @@ export async function updateSystemUsageTimesByIdList(systemsToUpdate: UpdateSyst
   const { idList, countList } = systemsToUpdate;
   
   if (idList.length === 0 || countList.length === 0 || idList.length !== countList.length) {
-    throw new AppError('INVALID_INPUT', 'Invalid input for update', 400);
+    throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Invalid input for update', 400);
   }
 
   const query = trx ?? knexInstance;
@@ -167,7 +147,7 @@ export async function updateSystemUsageTimesByIdList(systemsToUpdate: UpdateSyst
     const [updated] = await query<SystemType>('plan_systems').where({ id }).increment('usageTimes', count).update('updatedAt', nowStr).returning('*');
 
     if (!updated) {
-      throw new AppError('SYSTEMS_DB_ACTION_ERROR', 'Database updateSystemUsageTimesByIdList query error', 500)
+      throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Database updateSystemUsageTimesByIdList query error', 400)
     }
   }
 
@@ -182,6 +162,6 @@ export async function deleteSystem(id: string): Promise<void> {
     await knexInstance('plan_systems').where({ id }).del()
   }
   catch (error) {
-    throw new AppError('SYSTEM_ACTION_ERROR', 'Database deleteSystem query error', 500, error)
+    throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Database deleteSystem query error', 400, error)
   }
 }

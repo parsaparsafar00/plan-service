@@ -20,6 +20,7 @@ function customCamelCase(str: string): string {
 }
 
 export async function initExerciseTable(knex: Knex): Promise<void> {
+  try {
   const tableExists = await knex.schema.hasTable('plan_exercises')
   if (!tableExists) {
     await knex.schema.createTable('plan_exercises', (table) => {
@@ -30,7 +31,14 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
       table.string('nameFa', 255).notNullable()
       table.text('shortYoutubeDemonstration').nullable()
       table.text('inDepthYoutubeExplanation').nullable()
-      table.string('difficultyLevel', 50).nullable()
+      table.string('mechanics', 255).nullable()
+      table.enu('difficultyLevel', [
+        'novice',
+        'beginner',
+        'intermediate',
+        'advanced',
+        'expert'
+      ]).nullable();
       table.string('targetMuscleGroup', 255).nullable()
       table.string('primeMoverMuscle', 255).nullable()
       table.string('secondaryMuscle', 255).nullable()
@@ -50,10 +58,10 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
       table.string('bodyRegion', 255).nullable()
       table.string('forceType', 255).nullable()
       table.string('laterality', 255).nullable()
-      table.string('exerciseClassification', 255).nullable()
+      table.string('target', 255).nullable()
       table.string('muscleJointTypes', 255).nullable()
       table.integer('priority').nullable()
-      table.integer('gender').nullable()
+      table.enu('gender', ['m', 'f']).nullable();
       table.integer('ageGround').nullable()
       table.integer('ageCeiling').nullable()
       table.integer('weightGround').nullable()
@@ -204,4 +212,7 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
     await knex.batchInsert('plan_exercises', mappedRecords, chunkSize)
     console.log(`✅ Inserted ${mappedRecords.length} records into plan_exercises.`)
   }
+} catch (error) {
+  console.error(error)
+}
 }

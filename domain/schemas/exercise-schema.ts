@@ -8,7 +8,16 @@ export const exerciseOutputInListSchema = Type.Object({
   number: Type.Number(),
   name: Type.String(),
   nameFa: Type.String(),
-  difficultyLevel: Type.Union([Type.String(), Type.Null()]),
+  difficultyLevel: Type.Union([
+    Type.Enum({
+      novice: 'novice',
+      beginner: 'beginner',
+      intermediate: 'intermediate',
+      advanced: 'advanced',
+      expert: 'expert',
+    }),
+    Type.Null(),
+  ]),
   shortYoutubeDemonstration: Type.String(),
 })
 export type exerciseOutputInListType = Static<typeof exerciseOutputInListSchema>
@@ -17,23 +26,9 @@ export type exerciseOutputInListType = Static<typeof exerciseOutputInListSchema>
  * ورودی درخواست گرفتن حرکات بر اساس عضلات هدف
  */
 export const GetExerciseByMuscleRequest = Type.Object({
-  targetMuscles: Type.String(), // آرایه استرینگ شده هست (به این دلیل که درون لینک درخواست هست)
+  targetMuscles: Type.String(), // آرایه استرینگ شده هست (به این دلیل که به عنوان پارامتر هست نه داخل بادی درخواست)
 })
 export type GetExerciseByMuscleType = Static<typeof GetExerciseByMuscleRequest>
-
-/**
- * ورودی درخواست گرفتن حرکات بر اساس شماره حرکت
- */
-export const GetExerciseByNumberRequest = Type.Object({
-  number: Type.Number()
-})
-export type GetExerciseByNumberRequestType = Static<typeof GetExerciseByNumberRequest>
-
-/**
- * ورودی درخواست گرفتن حرکات بر اساس لیستی از شماره حرکات
- */
-export const GetExerciseByNumberListRequest = Type.Array(GetExerciseByNumberRequest)
-export type GetExerciseByNumberListRequestType = Static<typeof GetExerciseByNumberListRequest>
 
 /**
  * ساختار خروجی اطلاعات اضافی یک حرکت وارد شده توسط مربی یا تولید شده توسط هوش مصنوعی
@@ -66,7 +61,16 @@ export const exerciseRawOutputSchema = Type.Object({
   name: Type.String(),
   nameFa: Type.String(),
   mechanics: Type.Union([Type.String(), Type.Null()]),
-  difficultyLevel: Type.Union([Type.String(), Type.Null()]),
+  difficultyLevel: Type.Union([
+    Type.Enum({
+      novice: 'novice',
+      beginner: 'beginner',
+      intermediate: 'intermediate',
+      advanced: 'advanced',
+      expert: 'expert',
+    }),
+    Type.Null(),
+  ]),
   shortYoutubeDemonstration: Type.Optional(Type.Union([Type.String(), Type.Null()])),
 })
 export type exerciseRawOutputType = Static<typeof exerciseRawOutputSchema>
@@ -89,12 +93,6 @@ export const printingRawExerciseSchema = Type.Object({
   number: Type.Number()
 })
 export type printingRawExerciseType = Static<typeof printingRawExerciseSchema>
-
-/**
- * ساختار خروجی اطلاعات لیستی از حرکات 
- */
-export const exerciseListOutputSchema = Type.Array(exerciseRawOutputSchema)
-export type exerciseListOutputType = Static<typeof exerciseListOutputSchema>
 
 /**
  * ساختار خروجی یک حرکت تولید شده توسط سرویس (مخصوص پرینت گرفتن)
@@ -161,7 +159,12 @@ export const exerciseInputSchema = Type.Object({
   systemIsGlobal: Type.Optional(Type.Boolean()),
   techniqueName: Type.Optional(Type.String()),
   techniqueDescription: Type.Optional(Type.String()),
-  techniqueMethod: Type.Optional(Type.String()),
+  techniqueMethod: Type.Optional(Type.Enum({
+    superset: 'superset',
+    giantset: 'giantset',
+    dropset: 'dropset',
+    custom: 'custom'
+  })),
   techniqueId: Type.Union([
     Type.String({ format: 'uuid' }),
     Type.String({ minLength: 0, maxLength: 0 })
@@ -170,11 +173,10 @@ export const exerciseInputSchema = Type.Object({
 })
 export type exerciseInputType = Static<typeof exerciseInputSchema>
 
-/**
- * ساختار خروجی اطلاعات لیستی از حرکات (مخصوص پرینت گرفتن) 
- */
-export const exerciseListPrintSchema = Type.Array(printingRawExerciseSchema)
-export type exerciseListPrintType = Static<typeof exerciseListPrintSchema>
+export const GetExerciseByNumberRequest = Type.Object({
+  number: Type.Number()
+})
+export type GetExerciseByNumberRequestType = Static<typeof GetExerciseByNumberRequest>
 
 // -------------------------------------- ساختار پاسخ ها --------------------------------------
 

@@ -1,4 +1,5 @@
 import type { FastifyRequest } from 'fastify'
+import type { AutoQueryData } from '@amard/auto-query'
 import * as generalSchema from '../schemas/plan-general-schema.js'
 import type * as planSchema from '../schemas/plan-schema.js'
 import type * as systemSchema from '../schemas/system-schema.js'
@@ -45,7 +46,11 @@ export async function generateSessionAI(request: FastifyRequest<{ Body: planSche
 /**
  * (با استفاده از هوش مصنوعی یا بصورت دستی توسط مربی) تولید برنامه تمرینی با استفاده از جلسات از قبل تولید شده
  */
-export async function createPlan(request: FastifyRequest<{ Body: planSchema.CreatePlanRequestType }>) {
+export async function createPlan(request: FastifyRequest<{ Body: planSchema.CreatePlanRequestType, Querystring: generalSchema.IdQueryTeacherType }>) {
+
+  const { role, userId } = extractSenderData(request)
+  if (role !== 'teacher') throw new AppError('PLAN_PLAN_ACTION_IS_FORBIDDEN', 'Only teachers can create plans', 403)
+  
   const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss') // useTz=false در migration
   const newPlan: planSchema.PlanType = {
     id: uuidv4(),
@@ -53,7 +58,7 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
     description: request.body.description,
     studentId: request.body.studentId,
     status: request.body.status,
-    teacherId: request.body.teacherId,
+    teacherId: userId,
     studentLevel: request.body.studentLevel,
     target: request.body.target,
     studentWeight: request.body.studentWeight,
@@ -75,6 +80,7 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
     idList: [],
     countList: []
   };
+
   try {
     await Promise.all(
       request.body.workoutPlan.sessions.flatMap(session =>
@@ -90,8 +96,8 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
               isGlobal: exercise.systemIsGlobal || false,
               descIsVisible: false,
               method: detectSystemMethod(exercise.repeatPattern),
-              repeatPattern: exercise.repeatPattern,
-              status: 'active',
+              repeatPattern: JSON.stringify(exercise.repeatPattern),
+              status: 'published',
               createdAt: nowStr,
               updatedAt: nowStr,
             };
@@ -160,6 +166,10 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
           // ورودی تابع ذخیره اطلاعات مربوط به جدول ترین
           const planTrainInput: trainHelperSchema.PlanTrainHelperType = {
             id: uuidv4(),
+            teacherId: userId,
+            target: request.body.target,
+            studentLevel: request.body.studentLevel,
+            gender: request.body.studentGender,
             planId: inserted.id,
             exerciseNumber: exercise.number,
             createdAt: nowStr,
@@ -183,8 +193,7 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
 
     // برگردادن تراکنش به حالت قبلی
     await trx.rollback();
-    console.error(error)
-    throw new AppError('PLAN_ACTION_FAILED', 'ارور در تولید برنامه تمرینی', 403)
+    throw new AppError('PLAN_PLAN_ACTION_FAILED', 'ارور در تولید برنامه تمرینی', 403)
   }
 }
 
@@ -192,20 +201,22 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
  * دریافت برنامه تمرینی با آیدی
  */
 export async function getPlanById(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
-  const plan = await planRepo.getPlanById(request.params)
+  const plan = await planRepo.getPlanById(request.params.id)
+  if (!plan) return null
 
-  const { role, userId } = extractSenderData(request)
-  if (role === 'teacher' || role === 'student') {
-    const aclResult = await checkWithACL(request, { own: (plan.teacherId === userId) })
-    if (!aclResult.isOkay)
-      throw new AppError('PLAN_ACTION_FORBIDDEN', aclResult.reason, 403)
+  const { userId: receiverId, role: getterRole } = extractSenderData(request)
+  let aclResult = { isOkay: false, reason: '' }
+
+  if (getterRole === 'teacher') {
+    aclResult = await checkWithACL(request, { own: (plan.teacherId === receiverId) })
+    if (!aclResult.isOkay) throw new AppError('PLAN_PLAN_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
   }
 
   try {
     // دریافت شماره حرکات از برنامه تمرینی
-    const exerciseNumbers: exerciseSchema.GetExerciseByNumberListRequestType = [];
-    const systemIds: systemSchema.GetSystemByIdListRequestType = [];
-    const techniqueIds: techniqueSchema.GetTechniqueByIdListRequestType = [];
+    const exerciseNumbers: number[] = [];
+    const systemIds: string[] = [];
+    const techniqueIds: string[] = [];
 
     Object.values(plan.workoutPlan.sessions).forEach((session: any) => {
       Object.values(session.exercises).forEach((exercise: any) => {
@@ -236,12 +247,12 @@ export async function getPlanById(request: FastifyRequest<{ Params: generalSchem
         if (!Value.Check(exerciseSchema.exerciseOutputInPlanSchema, exercise)) throw new AppError('INVALID_EXERCISE_SCHEMA', 'Exercise data is invalid', 400);
 
         const exerciseInfo = exercisesInfo.find((info) => {
-          if (!info) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 404)
+          if (!info) throw new AppError('PLAN_EXERCISE_NOT_FOUND', 'Exercise not found', 404)
           return info.number === exercise.number
         });
 
         const systemInfo = systemsInfo.find((sysInfo) => {
-          if (!sysInfo) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 404)
+          if (!sysInfo) throw new AppError('PLAN_SYSTEM_NOT_FOUND', 'System not found', 404)
           return sysInfo.id === exercise.systemId
         });
 
@@ -256,7 +267,7 @@ export async function getPlanById(request: FastifyRequest<{ Params: generalSchem
         let outputExercise = {}
         if (techniquesInfo) { // ممکنه تکنیکی وجود نداشته باشه توی یک برنامه
           const techniqueInfo = techniquesInfo.find((techInfo) => {
-            if (!techInfo) throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 404)
+            if (!techInfo) throw new AppError('PLAN_TECHNIQUE_NOT_FOUND', 'Technique not found', 404)
             return techInfo.id === exercise.techniqueId
           });
           // اسم پارامتر ها رو در ابجکت های تولید سیستم ها و تکنیک ها عوض میکنیم به صورتی که مناسب خروجی نهایی برای کاربر باشه
@@ -284,7 +295,7 @@ export async function getPlanById(request: FastifyRequest<{ Params: generalSchem
           return info.number === exercise.number
         })
 
-        if (!exerciseInfo) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 404)
+        if (!exerciseInfo) throw new AppError('PLAN_EXERCISE_NOT_FOUND', 'Exercise not found', 404)
 
         // پارامتر شماره رو نگهداری میکنیم
         plan.workoutPlan.sessions[Number.parseInt(sessionKey)].exercises[Number.parseInt(exerciseKey)] = { ...exercise, ...exerciseInfo }
@@ -300,26 +311,27 @@ export async function getPlanById(request: FastifyRequest<{ Params: generalSchem
  * دریافت برنامه پرینتی با آیدی
  */
 export async function getPrintPlan(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
-  const plan = await planRepo.getPlanById(request.params)
+  const plan = await planRepo.getPlanById(request.params.id)
+  if (!plan) return null
 
-  const { role, userId } = extractSenderData(request)
-  if (role === 'teacher' || role === 'student') {
-    const aclResult = await checkWithACL(request, { own: (plan.teacherId === userId) })
+  const { userId: receiverId, role: getterRole } = extractSenderData(request)
+  let aclResult = { isOkay: false, reason: '' }
+  if (getterRole === 'teacher') {
+    aclResult = await checkWithACL(request, { own: (plan.teacherId === receiverId) })
     if (!aclResult.isOkay)
-      throw new AppError('PLAN_ACTION_FORBIDDEN', aclResult.reason, 403)
+      throw new AppError('PLAN_PLAN_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
   }
-
   try {
     // دریافت شماره حرکات از برنامه تمرینی
-    const exerciseNumbers: exerciseSchema.GetExerciseByNumberListRequestType = [];
-    const systemIds: systemSchema.GetSystemByIdListRequestType = [];
-    const techniqueIds: techniqueSchema.GetTechniqueByIdListRequestType = [];
+    const exerciseNumbers: number[] = [];
+    const systemIds: string[] = [];
+    const techniqueIds: string[] = [];
 
     Object.values(plan.workoutPlan.sessions).forEach((session: any) => {
       Object.values(session.exercises).forEach((exercise: any) => {
-        exerciseNumbers.push({number: exercise.number})
-        systemIds.push({id: exercise.systemId})
-        if (exercise.techniqueId && exercise.techniqueId !== '') techniqueIds.push({id: exercise.techniqueId})
+        exerciseNumbers.push(exercise.number)
+        systemIds.push(exercise.systemId)
+        if (exercise.techniqueId && exercise.techniqueId !== '') techniqueIds.push(exercise.techniqueId)
       })
     })
     
@@ -344,12 +356,12 @@ export async function getPrintPlan(request: FastifyRequest<{ Params: generalSche
         if (!Value.Check(exerciseSchema.exerciseOutputInPlanSchema, exercise)) throw new AppError('INVALID_EXERCISE_SCHEMA', 'Exercise data is invalid', 400);
 
         const exerciseInfo = exercisesInfo.find((info) => {
-          if (!info) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 404)
+          if (!info) throw new AppError('PLAN_EXERCISE_NOT_FOUND', 'Exercise not found', 404)
           return info.number === exercise.number
         });
 
         const systemInfo = systemsInfo.find((sysInfo) => {
-          if (!sysInfo) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 404)
+          if (!sysInfo) throw new AppError('PLAN_SYSTEM_NOT_FOUND', 'System not found', 404)
           return sysInfo.id === exercise.systemId
         });
 
@@ -364,7 +376,7 @@ export async function getPrintPlan(request: FastifyRequest<{ Params: generalSche
         let outputExercise = {}
         if (techniquesInfo) { // ممکنه تکنیکی وجود نداشته باشه توی یک برنامه
           const techniqueInfo = techniquesInfo.find((techInfo) => {
-            if (!techInfo) throw new AppError('TECHNIQUE_NOT_FOUND', 'Technique not found', 404)
+            if (!techInfo) throw new AppError('PLAN_TECHNIQUE_NOT_FOUND', 'Technique not found', 404)
             return techInfo.id === exercise.techniqueId
           });
           // اسم پارامتر ها رو در ابجکت های تولید سیستم ها و تکنیک ها عوض میکنیم به صورتی که مناسب خروجی نهایی برای کاربر باشه
@@ -392,7 +404,7 @@ export async function getPrintPlan(request: FastifyRequest<{ Params: generalSche
           return info.number === exercise.number
         })
 
-        if (!exerciseInfo) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 404)
+        if (!exerciseInfo) throw new AppError('PLAN_EXERCISE_NOT_FOUND', 'Exercise not found', 404)
 
         // پارامتر شماره رو نگهداری میکنیم
         plan.workoutPlan.sessions[Number.parseInt(sessionKey)].exercises[Number.parseInt(exerciseKey)] = { ...exercise, ...exerciseInfo }
@@ -408,9 +420,13 @@ export async function getPrintPlan(request: FastifyRequest<{ Params: generalSche
  * گرفتن همه برنامه های تمرینی یک مربی
  */
 export async function getAllPlansByTeacherId(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
-  if (!isValidUuid(request.params.id))
-    throw new AppError('PLAN_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
-  return await planRepo.getPlansByTeacherId(request.params)
+  const { userId: tokenUserId, role: tokenUserRole } = extractSenderData(request)
+  let teacherId = tokenUserId
+  if (tokenUserRole === 'admin') {
+    teacherId = request.params.id // اگر ادمین خواسته که برنامه های یک مربی رو بگیره، قطعا باید در پارامتر ورودی، یک آیدی مربی معتبر را وارد کرده باشه
+    if (!isValidUuid(teacherId)) throw new AppError('PLAN_SYSTEM_TEACHER_ID_INVALID', 'Teacher ID is invalid', 400)
+  }
+  return await planRepo.getPlansByTeacherId(request.params.id, request.autoQueryData as AutoQueryData)
 }
 
 /**
@@ -418,23 +434,21 @@ export async function getAllPlansByTeacherId(request: FastifyRequest<{ Params: g
  */
 export async function updatePlan(request: FastifyRequest<{ Params: generalSchema.IdParamType, Body: planSchema.UpdatePlanRequestType }>) {
 
+  const currentPlan = await planRepo.getPlanById(request.params.id)
+  if (!currentPlan) throw new AppError('PLAN_PLAN_NOT_FOUND', 'Plan not found', 404)
+  const updates = request.body 
+
   const { userId: updaterId, role: updaterRole } = extractSenderData(request)
-  const currentPlan = await planRepo.getPlanById(request.params)
-  if (!currentPlan) throw new AppError('PLAN_NOT_FOUND', 'Plan not found', 404)
-  const updates = request.body //  (به این شرط که در ACL ذکر شده باشه) هر چیزی که به عنوان ورودی وارد شده است، بایستی در جدول برنامه ها آپدیت شود
+  let aclResult = { isOkay: false, reason: ''}
+  if (updaterRole === 'teacher') {
+    aclResult = await checkWithACL(request, { own: (updaterId === currentPlan.teacherId), ...request.body })
+    if (!aclResult.isOkay) throw new AppError('PLAN_PLAN_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
+  }
 
-  let aclResult = {isOkay: false, reason: ''}
-  if (updaterRole === 'teacher') aclResult = await checkWithACL(request, { own: (updaterId === currentPlan.teacherId), ...updates })
-  else aclResult = await checkWithACL(request, updates)
-
-  if (!aclResult.isOkay) throw new AppError('PLAN_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
-                                  
   updates.updatedAt = DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-LL-dd HH:mm:ss')
 
   const updated = await planRepo.updatePlan(currentPlan.id, updates)
-
   auditLogger.update('', { request: setAuditRequest(request), oldData: currentPlan, newData: updated })
-
   return updated
 }
 
@@ -442,13 +456,13 @@ export async function updatePlan(request: FastifyRequest<{ Params: generalSchema
  * حذف برنامه
  */
 export async function deletePlan(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
-  const existing = await planRepo.getPlanById(request.params)
-  if (!existing) throw new AppError('PLAN_NOT_FOUND', 'Plan not found', 404)
-  if (existing.status === "paid") throw new AppError('PLANS_ACTION_IS_FORBIDDEN', 'برنامه توسط دانش آموز خریداری شده است و قابل حذف شدن نیست', 400)
+  const existing = await planRepo.getPlanById(request.params.id)
+  if (!existing) throw new AppError('PLAN_PLAN_NOT_FOUND', 'Plan not found', 404)
+  if (existing.status === "paid") throw new AppError('PLAN_PLAN_ACTION_IS_FORBIDDEN', 'برنامه توسط دانش آموز خریداری شده است و قابل حذف شدن نیست', 400)
   const { role, userId } = extractSenderData(request)
-  if (role === 'teacher' || role === 'admin') {
+  if (role === 'teacher') {
     const aclResult = await checkWithACL(request, { own: (existing.teacherId === userId) })
-    if (!aclResult.isOkay) throw new AppError('PLANS_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
+    if (!aclResult.isOkay) throw new AppError('PLAN_PLAN_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
   }
 
   await planRepo.deletePlan(existing.id)
@@ -458,7 +472,6 @@ export async function deletePlan(request: FastifyRequest<{ Params: generalSchema
 /**
  * توابع کمکی برای تشخیص متد یک سیستم تکرار
  */
-
 function detectSystemMethod(pattern: number[]):  "descending" | "ascending" | "custom" | "sinusoidal" | "pyramidUp" | "pyramidDown" | "singleSet" {
   if (pattern.length < 2) return 'singleSet'
 

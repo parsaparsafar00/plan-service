@@ -1,5 +1,5 @@
 export interface WeekInstructionInput {
-  gender: number
+  gender: 'm' | 'f'
   target: string
   level: string
 }

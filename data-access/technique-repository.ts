@@ -1,6 +1,7 @@
 import type { Knex } from 'knex'
-import type * as generalSchema from '../domain/schemas/plan-general-schema.js'
-import type { TechniqueListType, TechniqueType, GetTechnqiuesByIdListType, techniqueInPlanOutputSchemaType, TechniqueInPlanListSchemaType, UpdateTechniquesByIdListType } from '../../../domain/schemas/technique-schema.js'
+import type { AutoQueryData } from '@amard/auto-query'
+import { attachAutoQuery } from '@amard/auto-query'
+import type { TechniqueType, techniqueInPlanOutputType, UpdateTechniquesByIdListType } from '../domain/schemas/technique-schema.js'
 import { AppError } from '@amard/error-handling'
 import { DateTime } from 'luxon'
 
@@ -26,65 +27,71 @@ export async function insertTechnique(data: TechniqueType): Promise<TechniqueTyp
       const [inserted] = await knexInstance('plan_techniques').insert(data).returning('*');
       return inserted;
     }
-    
-    throw new AppError('TECHNIQUE_ALREADY_EXISTS', 'تکنیک با اطلاعات وارد شده، در سیستم های شما موجود است', 409);
+    throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Technique already exists', 400);
   }
   catch (error) {
-    // اگر ارور بالایی هست، صرفا برش
-    if (error instanceof AppError) {
-      throw error;
-    }
-    
-    console.error('Error in insertTechnique:', error);
-    throw new AppError('TECHNIQUES_DB_ACTION_ERROR', 'خطا در دیتابیس insertTechnique', 500, error);
+    // اگر ارور بالایی هست، صرفا برش گردون
+    if (error instanceof AppError) throw error;
+  
+    throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database insertTechnique query error', 400, error);
   }
 }
 
 /**
  * دریافت تمام تکنیک ها
  */
-export async function getTechniquesByTeacherId(teacherId: string): Promise<TechniqueListType> {
+export async function getTechniquesByTeacherId(teacherId: string, autoQueryData: AutoQueryData): Promise<TechniqueType[]> {
   try {
-
-    return await knexInstance('plan_techniques').where(function() {
-      this.where('isGlobal', true).orWhere('teacherId', teacherId);
+    return await knexInstance('plan_techniques').where({teacherId: teacherId}).orWhere({isGlobal: true}).modify((qb) => {
+      attachAutoQuery(qb, autoQueryData)
     })
   }
   catch (error) {
-    throw new AppError('PLAN_TECHNIQUES_DB_QUERY_ERROR', 'Database getTechniquesByTeacherId query error', 500, error)
+    throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database getTechniquesByTeacherId query error', 400, error)
   }
 }
 
 /**
  * دریافت اطلاعات تکنیک های تمرینی با لیستی از آیدی تکنیک ها
  */
-export async function getTechniquesByIdList(input: GetTechnqiuesByIdListType): Promise<TechniqueInPlanListSchemaType | undefined> {
+export async function getTechniquesByIdList(idList: string[]): Promise<techniqueInPlanOutputType[]> {
   try {
-    // گرفتن لیست آیدی تکنیک ها ها 
-    const idList = input.map((item: { id: any }) => item.id);
 
-    return await knexInstance<techniqueInPlanOutputSchemaType>('plan_techniques').whereIn('id', idList);
+    return await knexInstance('plan_techniques').whereIn('id', idList);
 
   } catch (error) {
-    throw new AppError('TECHNIQUES_DB_QUERY_ERROR', 'Database getTechniquesByIdList query error', 500, error);
+    throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database getTechniquesByIdList query error', 400, error);
   }
 }
 
 /**
  * دریافت تکنیک با آیدی
  */
-export async function getTechniqueById(id: generalSchema.IdParamType): Promise<TechniqueType | undefined> {
+export async function getTechniqueById(techniqueId: string): Promise<TechniqueType | undefined> {
   try {
-    const techniqueId = id.id
     const technique = await knexInstance('plan_techniques').where({ id: techniqueId }).first()
     return technique
   }
   catch (error) {
     if (error instanceof AppError)
       throw error
-    throw new AppError('PLAN_TECHNIQUES_DB_QUERY_ERROR', 'خطای پایگاه داده در دریافت تکنیک', 500, error)
+    throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database getTechniqueById query error', 400, error)
   }
 }
+
+// برای ادمین در موارد خاص که میخواد کل تکنیک ها رو ببینه
+export async function getAllTechniques(autoQueryData: AutoQueryData): Promise<TechniqueType[]> {
+  try {
+    const plans = await knexInstance('plan_techniques').modify((qb) => {
+      attachAutoQuery(qb, autoQueryData)
+    })
+    return plans
+  }
+  catch (error) {
+    throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database getAllTechniques error', 500, error)
+  }
+}
+
 
 /**
  * ویرایش تکنیک
@@ -95,7 +102,7 @@ export async function updateTechnique(id: string, updates: Partial<TechniqueType
     return updated
   }
   catch (error) {
-    throw new AppError('TECHNIQUES_ACTION_ERROR', 'Database updateTechnique query error', 500, error)
+    throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database updateTechnique query error', 400, error)
   }
 }
 
@@ -107,7 +114,7 @@ export async function deleteTechnique(id: string): Promise<void> {
     await knexInstance('plan_techniques').where({ id }).del()
   }
   catch (error) {
-    throw new AppError('TECHNIQUES_ACTION_ERROR', 'Database deleteTechnique query error', 500, error)
+    throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database deleteTechnique query error', 400, error)
   }
 }
 
@@ -115,7 +122,6 @@ export async function deleteTechnique(id: string): Promise<void> {
  * ویرایش تعداد دفعات استفاده از تکنیک بر حسب آیدی مربی 
  */
 export async function updateTechniqueUsageTimesByIdList(techniquesToUpdate: UpdateTechniquesByIdListType, trx?: Knex.Transaction): Promise<TechniqueType[] | undefined> {
-
   const { idList, countList } = techniquesToUpdate;
 
   // بررسی اینکه آیا آیدی ای وجود دارد
@@ -123,7 +129,7 @@ export async function updateTechniqueUsageTimesByIdList(techniquesToUpdate: Upda
     return undefined
   }
   
-  if ( idList.length !== countList.length) throw new AppError('INVALID_INPUT', 'Invalid input for update', 500);
+  if (idList.length !== countList.length) throw new AppError('PLAN_TECHNIQUE_ERROR', 'Invalid input for update', 400);
 
   const query = trx ?? knexInstance; // استفاده از تراکنش یا اتصال اصلی
 
@@ -143,7 +149,7 @@ export async function updateTechniqueUsageTimesByIdList(techniquesToUpdate: Upda
       .returning('*');
 
     if (!updated) {
-      throw new AppError('TECHNIQUES_DB_ACTION_ERROR', 'Database updateTechniqueUsageTimesByIdList query error', 500); // مدیریت خطا
+      throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database updateTechniqueUsageTimesByIdList query error', 400); // مدیریت خطا
     }
 
     updatedTechniques.push(updated); // ذخیره رکورد بروزرسانی شده

@@ -12,7 +12,11 @@ export async function techniqueRoutes(app: FastifyInstance) {
     schema: {
       tags: ['Plan'],
       summary: 'ایجاد تکنیک جدید',
-      description: `## مربی و ادمین قادر به تولید تکنیک جدید هستند `,
+      description: `
+      ## مربی و ادمین قادر به تولید تکنیک جدید هستند 
+      اگر ادمین بخواهد که تکنیک جدیدی برای یک مربی تولید بکند بایستی یک شناسه معلم معتبر در کوئری قرار دهد
+      درغیر این صورت اگر شناسه معتبر نباشد یعنی خط تیره وارد شده باشد، ادمین تکنیک را بصورت گلوبال تولید میکند 
+      `,
       body: techniqueSchema.CreateTechniqueRequest,
       response: {
         200: { content: { 'application/json': { schema: techniqueSchema.SingleTechniqueResponse } }, description: generalSchema.SuccessResponseDes },
@@ -21,7 +25,7 @@ export async function techniqueRoutes(app: FastifyInstance) {
         500: generalSchema.InternalServerError,
       },
     },
-    handler: async (request: FastifyRequest<{ Body: techniqueSchema.CreateTechniqueRequestType }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Body: techniqueSchema.CreateTechniqueRequestType, Querystring: generalSchema.IdQueryTeacherType }>, reply: FastifyReply) => {
       const technique = await techniqueUseCase.createTechnique(request)
       reply.send({ data: { technique }, msgCode: '', msgType: 'success' })
     },
@@ -35,7 +39,9 @@ export async function techniqueRoutes(app: FastifyInstance) {
     schema: {
       tags: ['Plan'],
       summary: 'دریافت تکنیک مربی با استفاده از آیدی ',
-      description: `ادمین میتونه تمام تکنیک ها رو بگیره ولی مربی، فقط تکنیک های خودش رو (که توسط خودش یا هوش مصنوعی براش ساخته شده) میتونه بگیره`,
+      description: `## ادمین با قرار دادن آیدی معتبر یک معلم در کوئری میتواند تکنیک های آن مربی را مشاهده بکند 
+      ##  معلم میتواند تکنیک های خودش را دریافت کند، شناسه معلم از توکن گرفته می شود ولی  در کوئری هم بایستی علامت تیره قرار بگیرد 
+      `,
       params: generalSchema.IdParam,
       response: {
         200: { content: { 'application/json': { schema: techniqueSchema.SingleTechniqueResponse } }, description: generalSchema.SuccessResponseDes },

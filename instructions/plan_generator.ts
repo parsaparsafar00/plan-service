@@ -63,7 +63,7 @@ export function AISessionGenerator(sessionInput: PlanSchemas.GenerateSessionByAI
       return false
 
     // فیلتر بر اساس جنسیت
-    if (ex.gender !== null && ex.gender !== gender)
+    if (ex.gender && ex.gender !== gender)
       return false
 
     // فیلتر بر اساس هدف تمرین شخص
@@ -140,7 +140,7 @@ export function AISessionGenerator(sessionInput: PlanSchemas.GenerateSessionByAI
       weightPercentage: weightPercentage,
       repeatPattern: repeatSystem,
       systemId: '',
-      systemMethod: 'دلخواه',
+      systemMethod: 'custom',
       techniqueId: '',
     }
 

@@ -1,8 +1,8 @@
 export interface SessionInstructionInput {
   age: number | undefined
-  gender: number
+  gender: 'm' | 'f'
   target: string
-  level: string
+  level: 'novice' | 'beginner' | 'intermediate' | 'advanced' | 'expert'
   target_muscle_groups: string[]
 }
 
@@ -32,7 +32,7 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
 
   // دستورالعمل های دوره های ریکاوری ورزشکار
   if (target_muscle_groups.some(item => ['chest', 'back', 'abductors', 'adductors'].includes(item))) {
-    if (gender === 0) {
+    if (gender === 'm') {
       recoveryTime_ceiling = 72
       recoveryTime_ground = 48
     }
@@ -42,7 +42,7 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
     }
   }
   else if (target_muscle_groups.some(item => ['biceps', 'triceps', 'shoulders', 'calves'].includes(item))) {
-    if (gender === 0) {
+    if (gender === 'm') {
       recoveryTime_ceiling = 48
       recoveryTime_ground = 24
     }
@@ -52,7 +52,7 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
     }
   }
   else if (target === 'hypertrophy') {
-    if (gender === 0) {
+    if (gender === 'm') {
       recoveryTime_ceiling = 72
       recoveryTime_ground = 48
     }
@@ -62,7 +62,7 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
     }
   }
   else if (target === 'endurance') {
-    if (gender === 0) {
+    if (gender === 'm') {
       recoveryTime_ceiling = 48
       recoveryTime_ground = 24
     }
@@ -72,7 +72,7 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
     }
   }
   else { // genereal fitness purposes
-    if (gender === 0) {
+    if (gender === 'm') {
       recoveryTime_ceiling = 48
       recoveryTime_ground = 36
     }
@@ -116,7 +116,7 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
   }
   else {
     // level === "advanced" or level === "expert"
-    if (gender === 0) {
+    if (gender === 'm') {
       sessionDuration_ceiling = 90
       sessionDuration_ground = 60
     }
@@ -188,7 +188,7 @@ export function getSessionInstructions({ age, gender, target, level, target_musc
   })
 
   // دستورالعمل های گرم کردن و سرد کردن
-  if (gender === 0) {
+  if (gender === 'm') {
     if (level === 'beginner' || level === 'novice') {
       warmupDuration_ceiling = 10
       warmupDuration_ground = 5

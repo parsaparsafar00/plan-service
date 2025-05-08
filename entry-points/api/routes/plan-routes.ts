@@ -12,7 +12,7 @@ export async function planRoutes(app: FastifyInstance) {
     schema: {
       tags: ['Plan'],
       summary: 'تولید جلسه ای برنامه تمرینی توسط هوش مصنوعی',
-      description: `##فقط مربی بایستی قادر باشه که برنامه تولید بکنه `,
+      description: `##فقط مربی بایستی قادر باشه که جلسه تمرینی توسط هوش مصنوعی تولید بکنه `,
       body: planSchema.GenerateSessionByAIRequest,
       response: {
         200: { content: { 'application/json': { schema: planSchema.SingleSessionResponse } }, description: generalSchema.SuccessResponseDes },
@@ -26,29 +26,6 @@ export async function planRoutes(app: FastifyInstance) {
       reply.send({ data: { session }, msgCode: '', msgType: 'success' })
     },
   })
-
-//   /**
-//  * تولید یک جلسه تمرینی بصورت دستی
-//  * POST /v1/plan/generate-session-manual
-//  */
-//   app.post('/generate-session-manual', {
-//     schema: {
-//       tags: ['Plan'],
-//       summary: 'تولید جلسه ای برنامه تمرینی بصورت دستی',
-//       description: `##فقط مربی بایستی قادر باشه که برنامه تولید بکنه `,
-//       body: planSchema.GenerateSessionManuallyRequest,
-//       response: {
-//         200: { content: { 'application/json': { schema: planSchema.SingleSessionResponse } }, description: generalSchema.SuccessResponseDes },
-//         400: generalSchema.BadRequestError,
-//         403: generalSchema.ForbiddenError,
-//         500: generalSchema.InternalServerError,
-//       },
-//     },
-//     handler: async (request: FastifyRequest<{ Body: planSchema.GenerateSessionManuallyRequestType }>, reply: FastifyReply) => {
-//       const session = await planUseCase.generateSessionManual(request)
-//       reply.send({ data: { session }, msgCode: '', msgType: 'success' })
-//     },
-//   })
 
   /**
    * تولید برنامه تمرینی با استفاده از جلسات تولید شده
@@ -67,7 +44,7 @@ export async function planRoutes(app: FastifyInstance) {
         500: generalSchema.InternalServerError,
       },
     },
-    handler: async (request: FastifyRequest<{ Body: planSchema.CreatePlanRequestType }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Body: planSchema.CreatePlanRequestType, Querystring: generalSchema.IdQueryTeacherType }>, reply: FastifyReply) => {
       const plan = await planUseCase.createPlan(request)
       reply.send({ data: { plan }, msgCode: '', msgType: 'success' })
     },
@@ -83,7 +60,7 @@ export async function planRoutes(app: FastifyInstance) {
     schema: {
       tags: ['Plan'],
       summary: 'دریافت برنامه تمرینی با آیدی',
-      description: `## ادمین میتونه همه برنامه ها رو بگیره مربی و دانش آموز فقط برای خودشون رو میتونن بگیرن`,
+      description: `## ادمین میتونه همه برنامه ها رو بگیره، مربی و دانش آموز فقط برای خودشون رو میتونن بگیرن`,
       params: generalSchema.IdParam,
       response: {
         200: { content: { 'application/json': { schema: planSchema.SinglePlanResponse } }, description: generalSchema.SuccessResponseDes },
@@ -129,7 +106,7 @@ export async function planRoutes(app: FastifyInstance) {
     schema: {
       tags: ['Plan'],
       summary: 'دریافت تمام برنامه های تمرینی با استفاده از آیدی مربی',
-      description: `## ادمین میتونه همه برنامه ها رو بگیره مربی و دانش آموز فقط برای خودشون رو میتونن بگیرن`,
+      description: `## ادمین میتونه همه برنامه ها رو بگیره مربی فقط برای خودشون رو میتونن بگیرن`,
       params: generalSchema.IdParam,
       response: {
         200: { content: { 'application/json': { schema: planSchema.MultiplePlanResponse } }, description: generalSchema.SuccessResponseDes },
@@ -140,7 +117,6 @@ export async function planRoutes(app: FastifyInstance) {
     },
     handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
       const plans = await planUseCase.getAllPlansByTeacherId(request)
-      console.log(plans)
       reply.send({ data: { plans }, msgCode: '', msgType: 'success' })
     },
   })

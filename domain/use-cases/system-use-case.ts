@@ -1,13 +1,14 @@
 import type { FastifyRequest } from 'fastify'
+import type { AutoQueryData } from '@amard/auto-query'
 import type * as generalSchema from '../schemas/plan-general-schema.js'
-import type * as systemSchema from '../schemas/system-schema.js'
+import * as systemSchema from '../schemas/system-schema.js'
 import { AppError } from '@amard/error-handling'
 import { auditLogger, setAuditRequest } from '@amard/logger'
 import { checkWithACL } from '@amard/access-control'
 import { DateTime } from 'luxon'
 import { validate as isValidUuid, v4 as uuidv4 } from 'uuid'
-import * as systemRepo from '../../data-access/migrations/repos/system-repository.js'
-import * as planRepo from '../../data-access/migrations/repos/plan-repository.js'
+import * as systemRepo from '../../data-access/system-repository.js'
+import * as planRepo from '../../data-access/plan-repository.js'
 
 function extractSenderData(request: FastifyRequest) {
   const underJwt = request.underJwt === 'true'
@@ -23,27 +24,40 @@ function extractSenderData(request: FastifyRequest) {
 /**
  * تولید سیستم برنامه تمرینی
  */
-export async function createPlanSystem(request: FastifyRequest<{ Body: systemSchema.CreatePlanSystemRequestType }>) {
-  if (!isValidUuid(request.body.teacherId))
-    throw new AppError('SYSTEM_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+export async function createPlanSystem(request: FastifyRequest<{ Body: systemSchema.CreatePlanSystemRequestType, Querystring: generalSchema.IdQueryTeacherType }>) {
+
+  if (!isValidUuid(request.body.teacherId)) throw new AppError('PLAN_SYSTEM_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+  const { userId: creatorId, role: creatorRole } = extractSenderData(request)
+
+  let isGlobal = false
+  if (creatorRole === 'admin') {
+    const teacherId = request.query.id
+    isGlobal = request.body.isGlobal || false
+
+    if (!isGlobal) {
+      if (!isValidUuid(teacherId))
+        throw new AppError('PLAN_SYSTEM_TEACHER_ID_INVALID', 'Teacher ID is invalid', 400)
+    }
+  }
 
   const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss')
   const newSystem: systemSchema.SystemType = {
     id: uuidv4(),
     abbrName: `سیستم ${request.body.method} ${request.body.repeatPattern}`,
-    teacherId: request.body.teacherId,
+    teacherId: creatorId,
     description: request.body.description,
+    isGlobal: isGlobal,  // اگر مربی، این پارامتر رو روی صحیح هم تنظیم بکنه، سیستم بصورت عمومی ذخیره نخواهد شد چون ما همیشه براش فالس میزنیم
     descIsVisible: request.body.descIsVisible,
     method: request.body.method,
     usageTimes: 0,
-    isGlobal: false,
-    repeatPattern: request.body.repeatPattern,
-    status: 'active',
+    repeatPattern: JSON.stringify(request.body.repeatPattern),
+    status: 'published',
     createdAt: nowStr,
     updatedAt: nowStr,
   }
 
   const inserted = await systemRepo.insertPlanSystem(newSystem)
+  inserted.repeatPattern = JSON.parse(inserted.repeatPattern)
   auditLogger.create('', { request: setAuditRequest(request), oldData: null, newData: inserted })
   return inserted
 }
@@ -52,9 +66,14 @@ export async function createPlanSystem(request: FastifyRequest<{ Body: systemSch
  * گرفتن همه سیستم های برنامه تمرینی
  */
 export async function getAllSystemsByTeacherId(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
-  if (!isValidUuid(request.params.id))
-    throw new AppError('SYSTEM_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
-  const systems = await systemRepo.getAllSystemsByTeacherId(request.params)
+  const { userId: tokenUserId, role: tokenUserRole } = extractSenderData(request)
+  let teacherId = tokenUserId
+  if (tokenUserRole === 'admin') {
+    teacherId = request.params.id // اگر ادمین خواسته که سیستم های یک مربی رو بگیره، قطعا باید در پارامتر ورودی، یک آیدی مربی معتبر را وارد کرده باشه
+    if (!isValidUuid(teacherId))
+      throw new AppError('PLAN_SYSTEM_TEACHER_ID_INVALID', 'Teacher ID is invalid', 400)
+  }
+  const systems = await systemRepo.getAllSystemsByTeacherId(request.params.id, request.autoQueryData as AutoQueryData)
   return systems
 }
 
@@ -62,8 +81,17 @@ export async function getAllSystemsByTeacherId(request: FastifyRequest<{ Params:
  * گرفتن اطلاعات یک سیستم
  */
 export async function getSystemById(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
-  const system = await systemRepo.getSystemById(request.params)
-  if (!system) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 404)
+  const system = await systemRepo.getSystemById(request.params.id)
+  if (!system) throw new AppError('PLAN_SYSTEM_NOT_FOUND', 'System not found', 404)
+
+  const { userId: receiverId, role: getterRole } = extractSenderData(request)
+  let aclResult = { isOkay: false, reason: '' }
+
+  if (getterRole === 'teacher') {
+    aclResult = await checkWithACL(request, { own: (system.teacherId === receiverId), isGlobal: (system.isGlobal) })
+    if (!aclResult.isOkay)
+      throw new AppError('PLANS_SYSTEM_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
+  }
   return system
 }
 
@@ -73,29 +101,30 @@ export async function getSystemById(request: FastifyRequest<{ Params: generalSch
 export async function updateSystem(request: FastifyRequest<{ Params: generalSchema.IdParamType, Body: systemSchema.UpdateSystemRequestType }>) {
   const { userId: updaterId, role: updaterRole } = extractSenderData(request)
 
-  const currentSystem = await systemRepo.getSystemById(request.params)
-  if (!currentSystem) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 404)
-  const updates = request.body //  (به این شرط که در ACL ذکر شده باشه) هر چیزی که به عنوان ورودی وارد شده است، بایستی در جدول سیستم ها آپدیت شود
+  const currentSystem = await systemRepo.getSystemById(request.params.id)
+  if (!currentSystem) throw new AppError('PLAN_SYSTEM_NOT_FOUND', 'System not found', 404)
 
-  let aclResult = {isOkay: false, reason: ''}
-  if (updaterRole === 'teacher') aclResult = await checkWithACL(request, { own: (updaterId === currentSystem.teacherId), ...updates })
-  else aclResult = await checkWithACL(request, updates)
-
-  if (!aclResult.isOkay) throw new AppError('SYSTEM_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
-
-  updates.updatedAt = DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-LL-dd HH:mm:ss')
-
-  let systemRepeatPattern;
-  if (updates.repeatPattern) systemRepeatPattern = updates.repeatPattern
-  else systemRepeatPattern = currentSystem.repeatPattern
-
-  let systemMethod;
-  if (updates.method) systemMethod = updates.method
-  else systemMethod = currentSystem.method
+  let aclResult = { isOkay: false, reason: ''}
+  if (updaterRole === 'teacher') {
+    aclResult = await checkWithACL(request, { own: (updaterId === currentSystem.teacherId), isGlobal: (currentSystem.isGlobal), ...request.body })
+    if (!aclResult.isOkay) throw new AppError('PLAN_SYSTEM_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
+  }
+  const updates = request.body
+  const systemRepeatPattern = updates.repeatPattern ? updates.repeatPattern : JSON.parse(currentSystem.repeatPattern);
+  const systemMethod = updates.method ?? detectSystemMethod(systemRepeatPattern); // اگر متد در ورودی مشخص نشده بود، سیستم را به تابع تشخیص دهنده متد می دهیم تا متد رو تولید بکنه
 
   updates.abbrName = `سیستم ${systemMethod} ${systemRepeatPattern}` // نام اختصاری بایستی آپدیت بشه چون ممکنه سیستم تکرار آپدیت شده باشه
 
-  const updated = await systemRepo.updateSystem(currentSystem.id, updates)
+  //  (به این شرط که در ACL ذکر شده باشه) هر چیزی که به عنوان ورودی وارد شده است، بایستی در جدول سیستم ها آپدیت شود
+  const updateInput: Partial<systemSchema.SystemType> = { // تغییر تایپ ورودی، به این دلیل که ورودی تابع یوز کیس با ورودی تابع ریپو فرق میکنه (در پارامتر تکرار)
+    ...updates,
+    repeatPattern: JSON.stringify(systemRepeatPattern),
+    method: systemMethod,
+    updatedAt: DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-LL-dd HH:mm:ss')
+  };
+  
+  const updated = await systemRepo.updateSystem(currentSystem.id, updateInput)
+  if (updated) updated.repeatPattern = JSON.parse(updated.repeatPattern) // بازگردادن تکرار ها به فرمت آرایه ای
 
   auditLogger.update('', { request: setAuditRequest(request), oldData: currentSystem ?? null, newData: updated ?? null })
 
@@ -106,23 +135,25 @@ export async function updateSystem(request: FastifyRequest<{ Params: generalSche
  * حذف سیستم
  */
 export async function deleteSystem(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
-  const existingSystem = await systemRepo.getSystemById(request.params)
-  if (!existingSystem) throw new AppError('SYSTEM_NOT_FOUND', 'System not found', 404)
+  const existingSystem = await systemRepo.getSystemById(request.params.id)
+  if (!existingSystem) throw new AppError('PLAN_SYSTEM_NOT_FOUND', 'System not found', 404)
 
-  const { role, userId } = extractSenderData(request)
-  if (role === 'teacher' || role === 'admin') {
-    const aclResult = await checkWithACL(request, { own: (existingSystem.teacherId === userId)})
-    if (!aclResult.isOkay) throw new AppError('SYSTEM_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
+  const { userId: removerId, role: removerRole } = extractSenderData(request)
+  let aclResult = {isOkay: false, reason: ''}
+  if (removerRole === 'teacher') {
+    aclResult = await checkWithACL(request, { own: (removerId === existingSystem.teacherId), isGlobal: existingSystem.isGlobal })
+    if (!aclResult.isOkay) throw new AppError('PLAN_SYSTEM_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
   }
 
   // ابتدا باید چک کنیم که آیا سیستم در هیچ برنامه ای از مربی فعلی تا بحال استفاده شده است یا خیر
-  const getPlanInput : generalSchema.IdParamType = {id: existingSystem.teacherId}
-  const plans = await planRepo.getPlansByTeacherId(getPlanInput); 
+  const autoQueryData: AutoQueryData = {sorting: { createdAt: 'desc' }, paging: {}} // مقدار دهی الکی اتوکوئری برای اینکه بتونیم از تابع زیر استفاده کنیم
+  const plans = await planRepo.getPlansByTeacherId(existingSystem.teacherId, autoQueryData) 
   if (!plans) return;
   plans.forEach((plan) => {
     plan.workoutPlan.sessions.forEach((session: any) => {
       Object.entries(session.exercises).forEach(([_ , exercise]: [string, any]) => {
-        if (exercise.systemId && exercise.systemId === request.params.id) throw new AppError('SYSTEM_ACTION_IS_FORBIDDEN', 'سیستم مورد نظر، در برنامه های تولید شده توسط شما استفاده شده است', 403);
+        if (exercise.systemId && exercise.systemId === request.params.id) 
+          throw new AppError('PLAN_SYSTEM_ACTION_IS_FORBIDDEN', 'This system has been used by you in plans you have previously created', 403);
       });
     });
   });
@@ -131,3 +162,48 @@ export async function deleteSystem(request: FastifyRequest<{ Params: generalSche
   auditLogger.delete('', { request: setAuditRequest(request), oldData: existingSystem, newData: null })
 }
 
+// وقتی داریم سیستم تولید میکنیم، باید متوجه بشیم که متد سیستم تولید شده چیه
+function detectSystemMethod(pattern: number[]):  "descending" | "ascending" | "custom" | "sinusoidal" | "pyramidUp" | "pyramidDown" | "singleSet" {
+  if (pattern.length < 2) return 'singleSet'
+
+  const isSymmetric = pattern.join() === [...pattern].reverse().join()
+  const isSameStartEnd = pattern[0] === pattern[pattern.length - 1]
+
+  if (isSameStartEnd && isSymmetric && pattern.length >= 3 && pattern[1] > pattern[0]) {
+    return 'sinusoidal'
+  }
+
+  let peakIndex = pattern.indexOf(Math.max(...pattern))
+  if (
+    peakIndex > 0 &&
+    peakIndex < pattern.length - 1 &&
+    isStrictlyIncreasing(pattern.slice(0, peakIndex + 1)) &&
+    isStrictlyDecreasing(pattern.slice(peakIndex)) &&
+    !isSameStartEnd
+  ) {
+    return 'pyramidUp'
+  }
+
+  let valleyIndex = pattern.indexOf(Math.min(...pattern))
+  if (
+    valleyIndex > 0 && valleyIndex < pattern.length - 1 && isStrictlyDecreasing(pattern.slice(0, valleyIndex + 1)) && isStrictlyIncreasing(pattern.slice(valleyIndex)) && !isSameStartEnd
+  ) {
+    return 'pyramidDown'
+  }
+
+  const isAscending = pattern.every((v, i, a) => i === 0 || v >= a[i - 1]) && pattern.some((v, i, a) => i !== 0 && v > a[i - 1])
+  const isDescending = pattern.every((v, i, a) => i === 0 || v <= a[i - 1]) && pattern.some((v, i, a) => i !== 0 && v < a[i - 1])
+
+  if (isAscending) return 'ascending'
+  if (isDescending) return 'descending'
+
+  return 'custom'
+}
+
+function isStrictlyIncreasing(arr: number[]) {
+  return arr.every((v, i) => i === 0 || v > arr[i - 1])
+}
+
+function isStrictlyDecreasing(arr: number[]) {
+  return arr.every((v, i) => i === 0 || v < arr[i - 1])
+}

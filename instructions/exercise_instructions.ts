@@ -1,5 +1,5 @@
 export interface ExerciseInstructionInput {
-  gender: number // 0 -> male, 1 -> female
+  gender: 'm' | 'f';
   target: string
   mechanics: string
   level: string
@@ -35,7 +35,7 @@ export function getExerciseInstructions({ gender, target, mechanics, level, targ
     numberOfSetsGround = 3
   }
   else if (target === 'strength') {
-    if (gender === 0) {
+    if (gender === 'm') {
       weightCeilingPercentage = 100
       weightGroundPercentage = 80
     }
@@ -48,8 +48,8 @@ export function getExerciseInstructions({ gender, target, mechanics, level, targ
     numberOfSetsGround = 3
   }
   else if (target === 'endurance') {
-    weightCeilingPercentage = gender === 0 ? 60 : 65
-    weightGroundPercentage = gender === 0 ? 40 : 45
+    weightCeilingPercentage = gender === 'm' ? 60 : 65
+    weightGroundPercentage = gender === 'm' ? 40 : 45
     numberOfSetsCeiling = 4
     numberOfSetsGround = 2
   }

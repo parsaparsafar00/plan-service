@@ -1,5 +1,5 @@
 import type { Knex } from 'knex'
-import type { exerciseOutputType, GetExerciseByNumberRequestType, GetExerciseByNumberListRequestType, exerciseListOutputType, printingRawExerciseType, exerciseListPrintType, exerciseRawOutputType } from '../domain/schemas/exercise-schema.js'
+import type { exerciseOutputType, printingRawExerciseType, exerciseRawOutputType } from '../domain/schemas/exercise-schema.js'
 import { AppError } from '@amard/error-handling'
 
 let knexInstance: Knex
@@ -18,7 +18,7 @@ export interface ExerciseEntity {
   nameFa: string
   shortYoutubeDemonstration: string | null
   inDepthYoutubeExplanation: string | null
-  difficultyLevel: string | null
+  difficultyLevel: 'novice' | 'beginner' | 'intermediate' | 'advanced' | 'expert' | null
   targetMuscleGroup: string | null
   primeMoverMuscle: string | null
   secondaryMuscle: string | null
@@ -41,7 +41,7 @@ export interface ExerciseEntity {
   exerciseClassification: string | null
   muscleJointTypes: string | null
   priority: number | null
-  gender: number | null
+  gender: 'm' | 'f' | null
   ageGround: number | null
   ageCeiling: number | null
   weightGround: number | null
@@ -59,8 +59,7 @@ let inMemoryExercises: ExerciseEntity[] = []
  * یکبار از دیتابیس همه‌ی تمرین‌ها را می‌خوانیم و در حافظه ذخیره می‌کنیم
  */
 export async function loadAllExercises(): Promise<void> {
-  if (!knexInstance)
-    throw new AppError('EXERCISE_REPO_DB_NOT_READY', 'Knex instance not set in ExerciseRepo', 500)
+  if (!knexInstance) throw new AppError('PLAN_EXERCISE_ERROR', 'Knex instance not set in ExerciseRepo', 400)
 
   try {
     // انتخاب از جدول plan_exercises
@@ -68,7 +67,7 @@ export async function loadAllExercises(): Promise<void> {
     inMemoryExercises = rows
   }
   catch (error) {
-    throw new AppError('PLAN_EXERCISE_DB_ERROR', 'Database loadAllExercises error', 500, error)
+    throw new AppError('PLAN_EXERCISE_ERROR', 'Database loadAllExercises query error', 400, error)
   }
 }
 
@@ -82,41 +81,37 @@ export function getAllExercisesArray(): ExerciseEntity[] {
 /**
  * دریافت حرکت تمرینی با شماره حرکت
  */
-export async function getExerciseByNumber(input: GetExerciseByNumberRequestType): Promise<exerciseOutputType | undefined> {
+export async function getExerciseByNumber(exerciseNumber: number): Promise<exerciseOutputType | undefined> {
   try {
-    return await knexInstance('plan_exercises').where({ number: input.number }).first()
+    return await knexInstance('plan_exercises').where({ number: exerciseNumber }).first()
   }
   catch (error) {
-    throw new AppError('EXERCISE_DB_QUERY_ERROR', 'Database getExerciseById query error', 500, error)
+    throw new AppError('PLAN_EXERCISE_ERROR', 'Database getExerciseByNumber query error', 400, error)
   }
 }
 
 /**
  * دریافت حرکات تمرینی با لیستی از شماره حرکات
  */
-export async function getExercisesByNumberList(input: GetExerciseByNumberListRequestType): Promise<exerciseListOutputType> {
+export async function getExercisesByNumberList(numberList: number[]): Promise<exerciseRawOutputType[]> {
   try {
-    // گرفتن لیست شماره حرکت ها 
-    const numberList = input.map(item => item.number);
 
-    return await knexInstance<exerciseRawOutputType>('plan_exercises').whereIn('number', numberList);
+    return await knexInstance('plan_exercises').whereIn('number', numberList);
 
   } catch (error) {
-    throw new AppError('EXERCISE_DB_QUERY_ERROR', 'Database getExercisesByNumberList query error', 500, error);
+    throw new AppError('PLAN_EXERCISE_ERROR', 'Database getExercisesByNumberList query error', 400, error);
   }
 }
 
 /**
  * دریافت حرکات تمرینی با لیستی از شماره حرکات
  */
-export async function getExercisesByNumberListPrint(input: GetExerciseByNumberListRequestType): Promise<exerciseListPrintType> {
+export async function getExercisesByNumberListPrint(numberList: number[]): Promise<printingRawExerciseType[]> {
   try {
-    // گرفتن لیست شماره حرکت ها 
-    const numberList = input.map(item => item.number);
 
-    return await knexInstance<printingRawExerciseType>('plan_exercises').whereIn('number', numberList);
+    return await knexInstance('plan_exercises').whereIn('number', numberList);
 
   } catch (error) {
-    throw new AppError('EXERCISE_DB_QUERY_ERROR', 'Database getExercisesByNumberList query error', 500, error);
+    throw new AppError('PLAN_EXERCISE_ERROR', 'Database getExercisesByNumberListPrint query error', 400, error);
   }
 }
