@@ -62,6 +62,7 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
     studentLevel: request.body.studentLevel,
     target: request.body.target,
     studentWeight: request.body.studentWeight,
+    studentGender: request.body.studentGender,
     studentAge: request.body.studentAge,
     workoutPlan: {
       sessions: request.body.workoutPlan.sessions,
@@ -171,6 +172,7 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
             studentLevel: request.body.studentLevel,
             gender: request.body.studentGender,
             planId: inserted.id,
+            score: 0,
             exerciseNumber: exercise.number,
             createdAt: nowStr,
             updatedAt: nowStr,
@@ -344,7 +346,6 @@ export async function getPrintPlan(request: FastifyRequest<{ Params: generalSche
     const systemsInfo = await systemRepo.getSystemsByIdList(uniqueSystemIds)
     const techniquesInfo = await techniqueRepo.getTechniquesByIdList(uniqueTechniqueIds)
 
-
     // به‌روزرسانی حرکات هر جلسه با اطلاعات اضافی
     Object.entries(plan.workoutPlan.sessions).forEach((session: any) => {
       Object.entries(session.exercises).forEach(exercise => {
@@ -447,8 +448,50 @@ export async function updatePlan(request: FastifyRequest<{ Params: generalSchema
 
   updates.updatedAt = DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-LL-dd HH:mm:ss')
 
+  // const trx = await planRepo.getKnexInstanceForPlanRepo().transaction(); // اپدیت رو هم میتونیم بصورت تراکنشی بزنیم که یا باهم انجام بشن یا نشن
+
   const updated = await planRepo.updatePlan(currentPlan.id, updates)
   auditLogger.update('', { request: setAuditRequest(request), oldData: currentPlan, newData: updated })
+
+  if (updates.workoutPlan) { // اگر برنامه تمرینی تغییر کرده است، بایستی حرکاتی که در جدول کمکی ذخیره شده بودند پاک شده، و حرکات جدید جایگزین شوند
+
+    await helperRepo.deleteAllExercisesOfPlan(currentPlan.id) // حذف همه حرکات کمکی که وارد شده بودند
+
+    await Promise.all(
+      updated.workoutPlan.sessions.flatMap(session =>
+        session.exercises?.map(async (exercise) => {
+
+          // ورودی تابع ذخیره اطلاعات مربوط به جدول ترین
+          const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss')
+          const planTrainInput: trainHelperSchema.PlanTrainHelperType = {
+            id: uuidv4(),
+            teacherId: updaterId,
+            target: updated.target,
+            studentLevel: updated.studentLevel,
+            gender: updated.studentGender,
+            planId: updated.id,
+            exerciseNumber: exercise.number,
+            score: 0,  // بایستی امتیاز دهی بشه به حرکات استفاده شده در برنامه (فعلا یک امتیاز اضافه میکنیم)
+            createdAt: nowStr,
+            updatedAt: nowStr,
+          }
+
+          // ایجاد رکورد جدید برای جدول کمکی
+          await helperRepo.insertPlanTrainHelper(planTrainInput)
+        }),
+      )
+    )
+  }
+
+  if (updates.status && updates.status === "paid") {
+    const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss')
+    const planTrainUpdateInput: Partial<trainHelperSchema.PlanTrainHelperType> = {
+      score: 1,  // بایستی امتیاز دهی بشه به حرکات استفاده شده در برنامه (فعلا یک امتیاز اضافه میکنیم)
+      updatedAt: nowStr,
+    }
+    helperRepo.updatePlanTrainHelper(updated.id , planTrainUpdateInput)
+  }
+
   return updated
 }
 

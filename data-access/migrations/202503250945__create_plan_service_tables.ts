@@ -21,6 +21,7 @@ export async function up(knex: Knex): Promise<void> {
       ]).notNullable()
       table.string('teacherId', 36).notNullable()
       table.string('title', 255).nullable();
+      table.enu('studentGender', ['m', 'f']).nullable()
       table.enu('target', [
         'postural',
         'hypertrophy',
@@ -237,6 +238,7 @@ export async function up(knex: Knex): Promise<void> {
         'balance',
         'mobility'
       ]).notNullable()
+      table.integer('score').notNullable().defaultTo(0) // امتیاز یک حرکت در جدول کمکی (اگر پول برنامه پرداخت بشه، یک امتیاز اضافه میشه)
       table.timestamp('createdAt', { useTz: false }).notNullable()
       table.timestamp('updatedAt', { useTz: false }).notNullable()
     })

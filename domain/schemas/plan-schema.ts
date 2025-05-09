@@ -158,6 +158,7 @@ export const PlanSchema = Type.Object({
   }),
   studentWeight: Type.Number(), // اگر nullable است، می‌توانی Type.Optional(Type.Number()) بگذاری
   studentAge: Type.Number(),
+  studentGender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
   status: Type.Enum({
     published: 'published',
     draft: 'draft',
@@ -205,6 +206,7 @@ export const PrintPlanSchema = Type.Object({
     paid: 'paid',
     deleted: 'deleted'
   }),
+  studentGender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
   workoutPlan: Type.Object({
     sessions: Type.Array(printSessionOutputSchema),
   }),
@@ -219,7 +221,6 @@ export type PrintPlanType = Static<typeof PrintPlanSchema>
  * ساختار درخواست آپدیت برنامه تمرینی
  */
 export const UpdatePlanRequest = Type.Partial(PlanSchema)
-
 export type UpdatePlanRequestType = Static<typeof UpdatePlanRequest>
 
 /**

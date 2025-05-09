@@ -38,3 +38,29 @@ export async function deleteHelperById(id: string): Promise<void> {
   }
 }
 
+/**
+ * ویرایش رکورد های جدول کمکی
+ */
+export async function updatePlanTrainHelper(id: string, updates: Partial<PlanTrainHelperType>): Promise<PlanTrainHelperType> {
+  try {
+    const [updated] = await knexInstance('plan_train_helper').where({ planId : id }).update(updates).returning('*')
+    return updated
+  }
+  catch (error) {
+    throw new AppError('PLAN_PLAN_TRAIN_HELPER_ERROR', 'Database updatePlanTrainHelper query error', 400, error)
+  }
+}
+
+/**
+ * حذف رکورد های کمکی وقتی که یک برنامه اپدیت شده (برای اینکه رکورد های جدید باید اینسرت بشن دوباره)
+ */
+export async function deleteAllExercisesOfPlan(id: string): Promise<void> {
+  try {
+    await knexInstance('plan_train_helper').where({ planId: id }).del()
+  }
+  catch (error) {
+    throw new AppError('PLAN_PLAN_TRAIN_HELPER_ERROR', 'Database deleteAllExercisesOfPlan query error', 500, error)
+  }
+}
+
+

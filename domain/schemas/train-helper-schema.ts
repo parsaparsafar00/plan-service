@@ -27,6 +27,7 @@ export const PlanTrainHelperSchema = Type.Object({
   }),
   gender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
   exerciseNumber: Type.Integer(),
+  score: Type.Integer(),
   createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
   updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
 })
