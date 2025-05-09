@@ -36,7 +36,7 @@ export async function insertPlan(data: PlanType, trx?: Knex.Transaction): Promis
  */
 export async function getPlansByTeacherId(teacherId: string, autoQueryData: AutoQueryData): Promise<PlanType[]> {
   try {
-    return await knexInstance('plan_records').where({ teacherId }).modify((qb) => {
+    return await knexInstance('plan_records').where({ teacherId }).andWhereNot({ status: 'deleted' }).modify((qb) => {
       attachAutoQuery(qb, autoQueryData)
     })
   }
@@ -50,7 +50,7 @@ export async function getPlansByTeacherId(teacherId: string, autoQueryData: Auto
  */
 export async function getPlanById(id: string): Promise<PlanType | undefined> {
   try {
-    const plan = await knexInstance('plan_records').where({ id }).first()
+    const plan = await knexInstance('plan_records').where({ id }).andWhereNot({ status: 'deleted' }).first()
     return plan
   }
   catch (error) {
@@ -85,11 +85,17 @@ export async function updatePlan(id: string, updates: Partial<PlanType>): Promis
 }
 
 /**
- * حذف برنامه تمرینی
+ * حذف برنامه تمرینی (صرفا وضعیتش تغیر میکنه و واقعا حذفش نمیکنیم)
  */
-export async function deletePlan(id: string): Promise<void> {
+export async function deletePlan(id: string): Promise<PlanType> {
   try {
+    // بصورت دستی وضعیت حذف شده رو وارد میکنیم، به این علت که کاربری اجازه نداشته باشه مقدار 
+    // deleted 
+    // رو پاس بده به بک اند،
+    const updates = {'status': 'deleted'}
     await knexInstance('plan_records').where({ id }).del()
+    const [updated] = await knexInstance('plan_records').where({ id }).update(updates).returning('*')
+    return updated
   }
   catch (error) {
     throw new AppError('PLAN_PLAN_ERROR', 'Database deletePlan query error', 400, error)

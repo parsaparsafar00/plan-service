@@ -161,7 +161,8 @@ export const PlanSchema = Type.Object({
   status: Type.Enum({
     published: 'published',
     draft: 'draft',
-    paid: 'paid'
+    paid: 'paid',
+    deleted: 'deleted'
   }),
   workoutPlan: Type.Object({
     sessions: Type.Array(sessionInPlanSchema),
@@ -201,7 +202,8 @@ export const PrintPlanSchema = Type.Object({
   status: Type.Enum({
     published: 'published',
     draft: 'draft',
-    paid: 'paid'
+    paid: 'paid',
+    deleted: 'deleted'
   }),
   workoutPlan: Type.Object({
     sessions: Type.Array(printSessionOutputSchema),

@@ -435,8 +435,8 @@ export async function getAllPlansByTeacherId(request: FastifyRequest<{ Params: g
 export async function updatePlan(request: FastifyRequest<{ Params: generalSchema.IdParamType, Body: planSchema.UpdatePlanRequestType }>) {
 
   const currentPlan = await planRepo.getPlanById(request.params.id)
-  if (!currentPlan) throw new AppError('PLAN_PLAN_NOT_FOUND', 'Plan not found', 404)
-  const updates = request.body 
+  if (!currentPlan)  throw new AppError('PLAN_PLAN_NOT_FOUND', 'Plan not found', 404)
+  const updates = request.body
 
   const { userId: updaterId, role: updaterRole } = extractSenderData(request)
   let aclResult = { isOkay: false, reason: ''}
@@ -465,58 +465,99 @@ export async function deletePlan(request: FastifyRequest<{ Params: generalSchema
     if (!aclResult.isOkay) throw new AppError('PLAN_PLAN_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
   }
 
-  await planRepo.deletePlan(existing.id)
-  auditLogger.delete('', { request: setAuditRequest(request), oldData: existing, newData: null })
+  const deletedPlan = await planRepo.deletePlan(existing.id)
+  auditLogger.delete('', { request: setAuditRequest(request), oldData: existing, newData: deletedPlan })
 }
 
 /**
  * توابع کمکی برای تشخیص متد یک سیستم تکرار
  */
-function detectSystemMethod(pattern: number[]):  "descending" | "ascending" | "custom" | "sinusoidal" | "pyramidUp" | "pyramidDown" | "singleSet" {
+// تابع بررسی افزایشی بودن آرایه
+function isStrictlyIncreasing(arr: number[]): boolean {
+  for (let i = 1; i < arr.length; i++) {
+    if (arr[i] <= arr[i - 1]) return false
+  }
+  return true
+}
+
+// تابع بررسی کاهشی بودن آرایه
+function isStrictlyDecreasing(arr: number[]): boolean {
+  for (let i = 1; i < arr.length; i++) {
+    if (arr[i] >= arr[i - 1]) return false
+  }
+  return true
+}
+
+// تابع تشخیص متد سیستم تولید
+function detectSystemMethod(pattern: number[]): "constant" | "descending" | "ascending" | "custom" | "sinusoidal" | "pyramidUp" | "pyramidDown" | "singleSet" {
+  // اگر طول آرایه کمتر از 2 باشد، singleSet است
   if (pattern.length < 2) return 'singleSet'
-
-  const isSymmetric = pattern.join() === [...pattern].reverse().join()
-  const isSameStartEnd = pattern[0] === pattern[pattern.length - 1]
-
-  if (isSameStartEnd && isSymmetric && pattern.length >= 3 && pattern[1] > pattern[0]) {
-    return 'sinusoidal'
+  
+  // بررسی الگوی ثابت (تمام مقادیر یکسان باشند)
+  const firstValue = pattern[0]
+  if (pattern.every(val => val === firstValue)) {
+    return 'constant'
   }
 
-  let peakIndex = pattern.indexOf(Math.max(...pattern))
+  // بررسی الگوهای صعودی و نزولی
+  const isAscending = pattern.every((v, i, a) => i === 0 || v >= a[i - 1])
+  const isStrictAscending = pattern.every((v, i, a) => i === 0 || v > a[i - 1])
+  const isDescending = pattern.every((v, i, a) => i === 0 || v <= a[i - 1])
+  const isStrictDescending = pattern.every((v, i, a) => i === 0 || v < a[i - 1])
+
+  // اولویت با الگوهای صعودی/نزولی دقیق است
+  if (isStrictAscending) return 'ascending'
+  if (isStrictDescending) return 'descending'
+  if (isAscending) return 'ascending' // صعودی غیردقیق
+  if (isDescending) return 'descending' // نزولی غیردقیق
+
+  // بررسی الگوی سینوسی (افزایش و کاهش متناوب)
+  let isSinusoidal = true
+  if (pattern.length >= 3) {
+    let increasing: boolean | null = null
+    for (let i = 1; i < pattern.length; i++) {
+      if (pattern[i] === pattern[i - 1]) {
+        isSinusoidal = false
+        break
+      }
+      if (increasing === null) {
+        increasing = pattern[i] > pattern[i - 1]
+      } else {
+        const currentDirection = pattern[i] > pattern[i - 1]
+        if (currentDirection === increasing) {
+          isSinusoidal = false
+          break
+        }
+        increasing = currentDirection
+      }
+    }
+  } else {
+    isSinusoidal = false
+  }
+  if (isSinusoidal) return 'sinusoidal'
+
+  // بررسی الگوی هرمی صعودی (ابتدا افزایش دقیق تا قله سپس کاهش دقیق)
+  const peakIndex = pattern.indexOf(Math.max(...pattern))
   if (
     peakIndex > 0 &&
     peakIndex < pattern.length - 1 &&
     isStrictlyIncreasing(pattern.slice(0, peakIndex + 1)) &&
-    isStrictlyDecreasing(pattern.slice(peakIndex)) &&
-    !isSameStartEnd
+    isStrictlyDecreasing(pattern.slice(peakIndex))
   ) {
     return 'pyramidUp'
   }
 
-  let valleyIndex = pattern.indexOf(Math.min(...pattern))
+  // بررسی الگوی هرمی نزولی (ابتدا کاهش دقیق تا دره سپس افزایش دقیق)
+  const valleyIndex = pattern.indexOf(Math.min(...pattern))
   if (
     valleyIndex > 0 &&
     valleyIndex < pattern.length - 1 &&
     isStrictlyDecreasing(pattern.slice(0, valleyIndex + 1)) &&
-    isStrictlyIncreasing(pattern.slice(valleyIndex)) &&
-    !isSameStartEnd
+    isStrictlyIncreasing(pattern.slice(valleyIndex))
   ) {
     return 'pyramidDown'
   }
 
-  const isAscending = pattern.every((v, i, a) => i === 0 || v >= a[i - 1]) && pattern.some((v, i, a) => i !== 0 && v > a[i - 1])
-  const isDescending = pattern.every((v, i, a) => i === 0 || v <= a[i - 1]) && pattern.some((v, i, a) => i !== 0 && v < a[i - 1])
-
-  if (isAscending) return 'ascending'
-  if (isDescending) return 'descending'
-
+  // اگر هیچکدام از الگوهای بالا تطابق نداشت، custom است
   return 'custom'
-}
-
-function isStrictlyIncreasing(arr: number[]) {
-  return arr.every((v, i) => i === 0 || v > arr[i - 1])
-}
-
-function isStrictlyDecreasing(arr: number[]) {
-  return arr.every((v, i) => i === 0 || v < arr[i - 1])
 }
