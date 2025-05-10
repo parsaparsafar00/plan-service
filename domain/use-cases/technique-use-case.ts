@@ -1,7 +1,9 @@
 import type { FastifyRequest } from 'fastify'
 import type { AutoQueryData } from '@amard/auto-query'
 import type * as generalSchema from '../schemas/plan-general-schema.js'
+import type * as planSchema from '../schemas/plan-schema.js'
 import type * as techniqueSchema from '../schemas/technique-schema.js'
+import type * as exerciseSchema from '../schemas/exercise-schema.js'
 import { AppError } from '@amard/error-handling'
 import { auditLogger, setAuditRequest } from '@amard/logger'
 import { checkWithACL } from '@amard/access-control'
@@ -109,11 +111,11 @@ export async function updateTechnique(request: FastifyRequest<{ Params: generalS
 
   updates.updatedAt = DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-LL-dd HH:mm:ss')
 
-  let techniqueName;
+  let techniqueName: string;
   if (updates.name) techniqueName = updates.name
   else techniqueName = currentTechnique.name
 
-  let techniqueMethod;
+  let techniqueMethod: string;
   if (updates.method) techniqueMethod = updates.method
   else techniqueMethod = currentTechnique.method
 
@@ -144,9 +146,9 @@ export async function deleteTechnique(request: FastifyRequest<{ Params: generalS
   const plans = await planRepo.getPlansByTeacherId(existing.teacherId, autoQueryData); 
   if (!plans) return;
   
-  plans.forEach((plan) => {
-    plan.workoutPlan.sessions.forEach((session: any) => {
-      Object.entries(session.exercises).forEach(([_ , exercise]: [string, any]) => {
+  plans.forEach((plan: planSchema.PlanType) => {
+    plan.workoutPlan.sessions.forEach((session: planSchema.sessionInplanType) => {
+      Object.values(session.exercises).forEach((exercise: exerciseSchema.exerciseOutputInPlanType) => {
         if (exercise.techniqueId && exercise.techniqueId === request.params.id) {
           throw new AppError('PLAN_TECHNIQUE_ACTION_IS_FORBIDDEN', 'This technique has been used by you in plans you have previously created', 403);
         }

@@ -42,7 +42,6 @@ export const exerciseAugmentedOuputSchema = Type.Object({
     Type.String({ format: 'uuid' }),
     Type.String({ minLength: 0, maxLength: 0 })
   ]),
-  shortYoutubeDemonstration: Type.Union([Type.String(), Type.Null()]) || null,
   techniqueId: Type.Union([
     Type.String({ format: 'uuid' }),
     Type.String({ minLength: 0, maxLength: 0 })
@@ -57,7 +56,7 @@ export type exerciseAugmentedOutputSchemaType = Static<typeof exerciseAugmentedO
  */
 export const exerciseRawOutputSchema = Type.Object({
   number: Type.Number(),
-  id: Type.String(),
+  id: Type.String({ format: 'uuid' }),
   name: Type.String(),
   nameFa: Type.String(),
   mechanics: Type.Union([Type.String(), Type.Null()]),
@@ -71,7 +70,7 @@ export const exerciseRawOutputSchema = Type.Object({
     }),
     Type.Null(),
   ]),
-  shortYoutubeDemonstration: Type.Optional(Type.Union([Type.String(), Type.Null()])),
+  shortYoutubeDemonstration: Type.Union([Type.String(), Type.Null()]),
 })
 export type exerciseRawOutputType = Static<typeof exerciseRawOutputSchema>
 

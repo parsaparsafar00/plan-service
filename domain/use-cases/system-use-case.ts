@@ -2,6 +2,8 @@ import type { FastifyRequest } from 'fastify'
 import type { AutoQueryData } from '@amard/auto-query'
 import type * as generalSchema from '../schemas/plan-general-schema.js'
 import * as systemSchema from '../schemas/system-schema.js'
+import * as exerciseSchema from '../schemas/exercise-schema.js'
+import * as planSchema from '../schemas/plan-schema.js'
 import { AppError } from '@amard/error-handling'
 import { auditLogger, setAuditRequest } from '@amard/logger'
 import { checkWithACL } from '@amard/access-control'
@@ -150,9 +152,9 @@ export async function deleteSystem(request: FastifyRequest<{ Params: generalSche
   const plans = await planRepo.getPlansByTeacherId(existingSystem.teacherId, autoQueryData) 
   if (!plans) return;
   plans.forEach((plan) => {
-    plan.workoutPlan.sessions.forEach((session: any) => {
-      Object.entries(session.exercises).forEach(([_ , exercise]: [string, any]) => {
-        if (exercise.systemId && exercise.systemId === request.params.id) 
+    plan.workoutPlan.sessions.forEach((session: planSchema.sessionInplanType) => {
+      Object.values(session.exercises).forEach((exercise: exerciseSchema.exerciseOutputInPlanType) => {
+        if (exercise.systemId === request.params.id) 
           throw new AppError('PLAN_SYSTEM_ACTION_IS_FORBIDDEN', 'This system has been used by you in plans you have previously created', 403);
       });
     });

@@ -195,6 +195,7 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
 
     // برگردادن تراکنش به حالت قبلی
     await trx.rollback();
+    console.error(error)
     throw new AppError('PLAN_PLAN_ACTION_FAILED', 'ارور در تولید برنامه تمرینی', 403)
   }
 }
@@ -220,11 +221,11 @@ export async function getPlanById(request: FastifyRequest<{ Params: generalSchem
     const systemIds: string[] = [];
     const techniqueIds: string[] = [];
 
-    Object.values(plan.workoutPlan.sessions).forEach((session: any) => {
-      Object.values(session.exercises).forEach((exercise: any) => {
-        exerciseNumbers.push({number: exercise.number})
-        systemIds.push({id: exercise.systemId})
-        if (exercise.techniqueId && exercise.techniqueId !== '') techniqueIds.push({id: exercise.techniqueId})
+    Object.values(plan.workoutPlan.sessions).forEach((session: planSchema.sessionInplanType) => {
+      Object.values(session.exercises).forEach((exercise: exerciseSchema.exerciseOutputInPlanType) => {
+        exerciseNumbers.push(exercise.number)
+        systemIds.push(exercise.systemId)
+        if (exercise.techniqueId && exercise.techniqueId !== '') techniqueIds.push(exercise.techniqueId)
       })
     })
     
@@ -239,8 +240,8 @@ export async function getPlanById(request: FastifyRequest<{ Params: generalSchem
 
 
     // به‌روزرسانی حرکات هر جلسه با اطلاعات اضافی
-    Object.entries(plan.workoutPlan.sessions).forEach((session: any) => {
-      Object.entries(session.exercises).forEach(exercise => {
+    Object.values(plan.workoutPlan.sessions).forEach((session: planSchema.sessionInplanType) => {
+      Object.values(session.exercises).forEach((exercise: exerciseSchema.exerciseOutputInPlanType, index) => {
 
         // بررسی اسکیم حرکت که در دیتابیس ذخیره شده است
 
@@ -259,50 +260,59 @@ export async function getPlanById(request: FastifyRequest<{ Params: generalSchem
         });
 
         const modifiedSystemInfo = systemInfo ? {
-          ...systemInfo, systemId: systemInfo.id, 
+          // حذف پارامتر های اضافی
+          ...((({ id, method, abbrName, description, descIsVisible, ...rest }) => rest)(systemInfo)),
+          // اضافه کردن پارامتر هایی که برای خروجی حرکت تمرینی بهشون نیاز داریم
           systemMethod: systemInfo.method,
           systemName: systemInfo.abbrName,
           systemDescription: systemInfo.description,
           systemDescIsVisible: systemInfo.descIsVisible
         } : null;
 
-        let outputExercise = {}
-        if (techniquesInfo) { // ممکنه تکنیکی وجود نداشته باشه توی یک برنامه
+        let modifiedTechniqueInfo = null;
+        if (techniquesInfo) { 
+          // ممکنه تکنیکی وجود نداشته باشه توی یک برنامه
           const techniqueInfo = techniquesInfo.find((techInfo) => {
-            if (!techInfo) throw new AppError('PLAN_TECHNIQUE_NOT_FOUND', 'Technique not found', 404)
-            return techInfo.id === exercise.techniqueId
+            if (!techInfo) throw new AppError('PLAN_TECHNIQUE_NOT_FOUND', 'Technique not found', 404);
+            return techInfo.id === exercise.techniqueId;
           });
+        
           // اسم پارامتر ها رو در ابجکت های تولید سیستم ها و تکنیک ها عوض میکنیم به صورتی که مناسب خروجی نهایی برای کاربر باشه
-          const modifiedTechniqueInfo = techniqueInfo ? {
-            ...techniqueInfo, techniqueId: techniqueInfo.id,
-            techniqueMethod: techniqueInfo.method, 
-            techniqueName: techniqueInfo.name, 
-            techniqueDescription: techniqueInfo.description,
-            techniqueDescIsVisible: techniqueInfo.descIsVisible
-          } : null
+          modifiedTechniqueInfo = techniqueInfo ? {
+              // حذف پارامتر های اضافی
+              ...((({ id, method, name, description, descIsVisible, ...rest }) => rest)(techniqueInfo)),
+              // اضافه کردن پارامتر هایی که برای خروجی حرکت تمرینی بهشون نیاز داریم
+              techniqueMethod: techniqueInfo.method,
+              techniqueName: techniqueInfo.name,
+              techniqueDescription: techniqueInfo.description,
+              techniqueDescIsVisible: techniqueInfo.descIsVisible,
+          } : null;
+        }
+        const outputExercise: exerciseSchema.exerciseOutputType = {
+          ...modifiedTechniqueInfo,
+          ...modifiedSystemInfo!,
+          ...exerciseInfo!,
+          ...exercise
+        };; // یکجا کردن اطلاعات اضافه شده از دیتابیس و اطلاعات موجود در برنامه برای حرکات، سیستم ها و تکنیک ها
 
-          if (modifiedTechniqueInfo) outputExercise = {...modifiedTechniqueInfo}
-      }
-
-        outputExercise = { ...outputExercise, ...exercise, ...exerciseInfo, ...modifiedSystemInfo } // یکجا کردن اطلاعات اضافه شده از دیتابیس و اطلاعات موجود در برنامه برای حرکات، سیستم ها و تکنیک ها
-        session.exercises.exercise = outputExercise
+        session.exercises[index] = outputExercise
       })
     })
 
-    // به‌روزرسانی حرکات هر جلسه با اطلاعات اضافی
-    Object.entries(plan.workoutPlan.sessions).forEach(([sessionKey, session]: [string, any]) => {
-      Object.entries(session.exercises).forEach(([exerciseKey, exercise]: [string, any]) => {
-        const exerciseInfo = exercisesInfo.find((info) => {
-          if (!info) return false
-          return info.number === exercise.number
-        })
+    // // به‌روزرسانی حرکات هر جلسه با اطلاعات اضافی
+    // Object.entries(plan.workoutPlan.sessions).forEach(([sessionKey, session]: [string, any]) => {
+    //   Object.entries(session.exercises).forEach(([exerciseKey, exercise]: [string, any]) => {
+    //     const exerciseInfo = exercisesInfo.find((info) => {
+    //       if (!info) return false
+    //       return info.number === exercise.number
+    //     })
 
-        if (!exerciseInfo) throw new AppError('PLAN_EXERCISE_NOT_FOUND', 'Exercise not found', 404)
+    //     if (!exerciseInfo) throw new AppError('PLAN_EXERCISE_NOT_FOUND', 'Exercise not found', 404)
 
-        // پارامتر شماره رو نگهداری میکنیم
-        plan.workoutPlan.sessions[Number.parseInt(sessionKey)].exercises[Number.parseInt(exerciseKey)] = { ...exercise, ...exerciseInfo }
-      })
-    })
+    //     // پارامتر شماره رو نگهداری میکنیم
+    //     plan.workoutPlan.sessions[Number.parseInt(sessionKey)].exercises[Number.parseInt(exerciseKey)] = { ...exercise, ...exerciseInfo }
+    //   })
+    // })
   } catch (error) {
     console.error(error)
   }
@@ -329,8 +339,8 @@ export async function getPrintPlan(request: FastifyRequest<{ Params: generalSche
     const systemIds: string[] = [];
     const techniqueIds: string[] = [];
 
-    Object.values(plan.workoutPlan.sessions).forEach((session: any) => {
-      Object.values(session.exercises).forEach((exercise: any) => {
+    Object.values(plan.workoutPlan.sessions).forEach((session: planSchema.sessionInplanType) => {
+      Object.values(session.exercises).forEach((exercise: exerciseSchema.exerciseOutputInPlanType) => {
         exerciseNumbers.push(exercise.number)
         systemIds.push(exercise.systemId)
         if (exercise.techniqueId && exercise.techniqueId !== '') techniqueIds.push(exercise.techniqueId)
@@ -347,8 +357,8 @@ export async function getPrintPlan(request: FastifyRequest<{ Params: generalSche
     const techniquesInfo = await techniqueRepo.getTechniquesByIdList(uniqueTechniqueIds)
 
     // به‌روزرسانی حرکات هر جلسه با اطلاعات اضافی
-    Object.entries(plan.workoutPlan.sessions).forEach((session: any) => {
-      Object.entries(session.exercises).forEach(exercise => {
+    Object.values(plan.workoutPlan.sessions).forEach((session: planSchema.sessionInplanType) => {
+      Object.values(session.exercises).forEach((exercise: exerciseSchema.exerciseOutputInPlanType) => {
 
         // بررسی اسکیم حرکت که در دیتابیس ذخیره شده است
 
@@ -398,8 +408,8 @@ export async function getPrintPlan(request: FastifyRequest<{ Params: generalSche
     })
 
     // به‌روزرسانی حرکات هر جلسه با اطلاعات اضافی
-    Object.entries(plan.workoutPlan.sessions).forEach(([sessionKey, session]: [string, any]) => {
-      Object.entries(session.exercises).forEach(([exerciseKey, exercise]: [string, any]) => {
+    Object.entries(plan.workoutPlan.sessions).forEach(([sessionKey, session]: [string, planSchema.sessionInplanType]) => {
+      Object.entries(session.exercises).forEach(([exerciseKey, exercise]: [string, exerciseSchema.exerciseOutputInPlanType]) => {
         const exerciseInfo = exercisesInfo.find((info) => {
           if (!info) return false
           return info.number === exercise.number

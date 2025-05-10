@@ -1,7 +1,7 @@
 import type { Knex } from 'knex'
 import type { AutoQueryData } from '@amard/auto-query'
 import { attachAutoQuery } from '@amard/auto-query'
-import type {TemplateType, UpdateTemplateRequestType} from '../domain/schemas/template-schema.js'
+import type {TemplateType} from '../domain/schemas/template-schema.js'
 import { AppError } from '@amard/error-handling'
 
 let knexInstance: Knex
