@@ -36,18 +36,28 @@ export type GetExerciseByMuscleType = Static<typeof GetExerciseByMuscleRequest>
 export const exerciseAugmentedOuputSchema = Type.Object({
   restBetweenSets: Type.Number(),
   weightPercentage: Type.String(),
-  repeatPattern: Type.Array(Type.Number()),
-  systemMethod: Type.String(),
   systemId: Type.Union([
     Type.String({ format: 'uuid' }),
     Type.String({ minLength: 0, maxLength: 0 })
   ]),
+  systemDescription: Type.String(),
+  repeatPattern: Type.Array(Type.Number()),
+  systemMethod: Type.String(),
+  systemDescIsVisible: Type.Boolean(),
+  systemName: Type.String(),
   techniqueId: Type.Union([
     Type.String({ format: 'uuid' }),
     Type.String({ minLength: 0, maxLength: 0 })
   ]),
   techniqueName: Type.Optional(Type.String()),
+  techniqueMethod: Type.Optional(Type.Enum({
+    superset: 'superset',
+    giantset: 'giantset',
+    dropset: 'dropset',
+    custom: 'custom'
+  })),
   techniqueDescription: Type.Optional(Type.String()),
+  techniqueDescIsVisible: Type.Optional(Type.Boolean())
 })
 export type exerciseAugmentedOutputSchemaType = Static<typeof exerciseAugmentedOuputSchema>
 
@@ -84,7 +94,7 @@ export const exerciseOutputSchema = Type.Intersect([
 export type exerciseOutputType = Static<typeof exerciseOutputSchema>;
 
 /**
- * ساختار یک حرکت تولید شده توسط سرویس از جدول حرکات (مخصوص پرینت گرفتن)
+ * ساختار اطلاعات اولیه حرکت تولید شده توسط سرویس از جدول حرکات (مخصوص پرینت گرفتن)
  */
 export const printingRawExerciseSchema = Type.Object({
   name: Type.String(),
@@ -102,7 +112,7 @@ export const printingExerciseOutputSchema = Type.Object({
   restBetweenSets: Type.Number(),
   weightPercentage: Type.String(),
   repeatPattern: Type.Array(Type.Number()),
-  systemMethod: Type.String(),
+  techniqueName: Type.Optional(Type.String())
 })
 export type printingExerciseOutputType = Static<typeof printingExerciseOutputSchema>
 

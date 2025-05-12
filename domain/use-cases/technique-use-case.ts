@@ -27,7 +27,6 @@ function extractSenderData(request: FastifyRequest) {
  * تولید تکنیک
  */
 export async function createTechnique(request: FastifyRequest<{ Body: techniqueSchema.CreateTechniqueRequestType, Querystring: generalSchema.IdQueryTeacherType }>) {
-  if (!isValidUuid(request.body.teacherId)) throw new AppError('PLAN_TECHNIQUE_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
   const { userId: creatorId, role: creatorRole } = extractSenderData(request)
 
   let isGlobal = false

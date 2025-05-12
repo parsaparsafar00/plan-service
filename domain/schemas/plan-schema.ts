@@ -132,88 +132,86 @@ export const printSessionOutputSchema = Type.Object({
 })
 export type printSessionOutputType = Static<typeof printSessionOutputSchema>
 
+// اسکیم پایه برای اطلاعات دانشجو
+const StudentInfoSchema = Type.Object({
+  studentId: Type.String({ format: 'uuid' }),
+  studentLevel: Type.Enum({
+    novice: 'novice',
+    beginner: 'beginner',
+    intermediate: 'intermediate',
+    advanced: 'advanced',
+    expert: 'expert',
+  }),
+  studentWeight: Type.Number(),
+  studentAge: Type.Number(),
+  studentGender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
+});
+
+// اسکیم پایه برای اطلاعات اصلی برنامه تمرینی
+const BasePlanSchema = Type.Object({
+  id: Type.String({ format: 'uuid' }),
+  teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
+  title: Type.Optional(Type.String({ minLength: 2, maxLength: 255 })),
+  target: Type.Enum({
+    postural: 'postural',
+    hypertrophy: 'hypertrophy',
+    strength: 'strength',
+    endurance: 'endurance',
+    balance: 'balance',
+    mobility: 'mobility',
+  }),
+  description: Type.Optional(Type.String()),
+  status: Type.Enum({
+    published: 'published',
+    draft: 'draft',
+    paid: 'paid',
+    deleted: 'deleted'
+  }),
+  createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
+  updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
+});
+
 /**
  * اسکیم یک برنامه تمرینی
  */
-export const PlanSchema = Type.Object({
-  id: Type.String({ format: 'uuid' }),
-  studentId: Type.String({ format: 'uuid' }),
-  teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
-  title: Type.Optional(Type.String({ minLength: 2, maxLength: 255 })),
-  target: Type.Enum({
-    postural: 'postural',
-    hypertrophy: 'hypertrophy',
-    strength: 'strength',
-    endurance: 'endurance',
-    balance: 'balance',
-    mobility: 'mobility',
-  }),
-  description: Type.Optional(Type.String()),
-  studentLevel: Type.Enum({
-    novice: 'novice',
-    beginner: 'beginner',
-    intermediate: 'intermediate',
-    advanced: 'advanced',
-    expert: 'expert',
-  }),
-  studentWeight: Type.Number(), // اگر nullable است، می‌توانی Type.Optional(Type.Number()) بگذاری
-  studentAge: Type.Number(),
-  studentGender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
-  status: Type.Enum({
-    published: 'published',
-    draft: 'draft',
-    paid: 'paid',
-    deleted: 'deleted'
-  }),
-  workoutPlan: Type.Object({
-    sessions: Type.Array(sessionInPlanSchema),
-  }),
-  createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
-  updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
-})
-export type PlanType = Static<typeof PlanSchema>
+export const PlanSchema = Type.Composite([
+  BasePlanSchema,
+  StudentInfoSchema,
+  Type.Object({
+    workoutPlan: Type.Object({
+      sessions: Type.Array(sessionInPlanSchema),
+    }),
+  })
+]);
+export type PlanType = Static<typeof PlanSchema>;
 
 /**
- *  اسکیم یک برنامه تمرینی پرینتی
+ * اسکیم یک برنامه تمرینی در خروجی نشان داده شده به کاربر
  */
-export const PrintPlanSchema = Type.Object({
-  // ستون‌های اصلی
-  id: Type.String({ format: 'uuid' }),
-  studentId: Type.String({ format: 'uuid' }),
-  teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
-  title: Type.Optional(Type.String({ minLength: 2, maxLength: 255 })),
-  target: Type.Enum({
-    postural: 'postural',
-    hypertrophy: 'hypertrophy',
-    strength: 'strength',
-    endurance: 'endurance',
-    balance: 'balance',
-    mobility: 'mobility',
-  }),
-  description: Type.Optional(Type.String()),
-  studentLevel: Type.Enum({
-    novice: 'novice',
-    beginner: 'beginner',
-    intermediate: 'intermediate',
-    advanced: 'advanced',
-    expert: 'expert',
-  }),
-  studentWeight: Type.Number(), // اگر nullable است، می‌توانی Type.Optional(Type.Number()) بگذاری
-  studentAge: Type.Number(),
-  status: Type.Enum({
-    published: 'published',
-    draft: 'draft',
-    paid: 'paid',
-    deleted: 'deleted'
-  }),
-  studentGender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
-  workoutPlan: Type.Object({
-    sessions: Type.Array(printSessionOutputSchema),
-  }),
-  createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
-  updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
-})
-export type PrintPlanType = Static<typeof PrintPlanSchema>
+export const PlanOutputSchema = Type.Composite([
+  BasePlanSchema,
+  StudentInfoSchema,
+  Type.Object({
+    workoutPlan: Type.Object({
+      sessions: Type.Array(sessionOutputSchema),
+    }),
+  })
+]);
+export type PlanOutputType = Static<typeof PlanOutputSchema>;
+
+/**
+ * اسکیم یک برنامه تمرینی پرینتی
+ */
+export const PrintPlanSchema = Type.Composite([
+  BasePlanSchema,
+  StudentInfoSchema,
+  Type.Object({
+    workoutPlan: Type.Object({
+      sessions: Type.Array(printSessionOutputSchema),
+    }),
+  })
+]);
+export type PrintPlanType = Static<typeof PrintPlanSchema>;
 
 // -------------------------------------- ساختار ورودی های تولید برنامه تمرینی --------------------------------------
 
@@ -345,7 +343,7 @@ export type planOutputType = Static<typeof planOutputSchema>
  */
 export const SinglePlanResponse = Type.Object({
   data: Type.Object({
-    plan: PlanSchema,
+    plan: PlanOutputSchema,
   }),
   msgCode: Type.String(),
   msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),
@@ -356,7 +354,7 @@ export const SinglePlanResponse = Type.Object({
  */
 export const MultiplePlanResponse = Type.Object({
   data: Type.Object({
-    plans: Type.Array(PlanSchema),
+    plans: Type.Array(PlanOutputSchema),
   }),
   msgCode: Type.String(),
   msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),

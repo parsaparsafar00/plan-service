@@ -28,7 +28,6 @@ function extractSenderData(request: FastifyRequest) {
  */
 export async function createPlanSystem(request: FastifyRequest<{ Body: systemSchema.CreatePlanSystemRequestType, Querystring: generalSchema.IdQueryTeacherType }>) {
 
-  if (!isValidUuid(request.body.teacherId)) throw new AppError('PLAN_SYSTEM_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
   const { userId: creatorId, role: creatorRole } = extractSenderData(request)
 
   let isGlobal = false

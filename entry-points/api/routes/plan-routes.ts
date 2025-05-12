@@ -55,7 +55,6 @@ export async function planRoutes(app: FastifyInstance) {
    * GET /v1/plan/by-id/:id
    * به این معنی هست ک بایستی به طور مستقیم ایدی رو بعد از اسلش وارد بکنی
    */
-
   app.get('/by-id/:id', {
     schema: {
       tags: ['Plan'],
@@ -93,7 +92,7 @@ export async function planRoutes(app: FastifyInstance) {
       },
     },
     handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
-      const plan = await planUseCase.getPrintPlan(request)
+      const plan = await planUseCase.getPrintPlanById(request)
       reply.send({ data: { plan }, msgCode: '', msgType: 'success' })
     },
   })

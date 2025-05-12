@@ -34,7 +34,7 @@ export async function createCategory(request: FastifyRequest<{ Body: catSchemas.
     isGlobal = request.body.isGlobal || false
 
     if (!isGlobal) {
-      if (!isValidUuid(teacherId)) 
+      if (!isValidUuid(teacherId))
         throw new AppError('PLAN_CATEGORY_TEACHER_ID_INVALID', 'Teacher ID is invalid', 400)
     }
   }

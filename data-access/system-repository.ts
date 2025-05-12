@@ -77,9 +77,7 @@ export async function getAllSystemsByTeacherId(teacherId: string, autoQueryData:
  */
 export async function getSystemsByIdList(idList: string[]): Promise<systemInPlanOutputType[]> {
   try {
-
     return await knexInstance('plan_systems').whereIn('id', idList);
-
   } catch (error) {
     throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Database getSystemsByIdList query error', 400, error);
   }

@@ -39,11 +39,12 @@ export async function getExercisesByMuscles(request: FastifyRequest<{ Params: ex
     // فیلتر بر اساس عضلات هدف
     if (muscleValues.length > 0 && muscleValues.indexOf("full body") === -1) {
       for (let i = 0; i <= muscleValues.length - 1; i++) {
-        if (muscleValues[i] !== ex.targetMuscleGroup) {
-          if (i === muscleValues.length - 1)
+        if (muscleValues[i] !== ex.targetMuscleGroup && ex.targetMuscleGroup) {
+          if (i === muscleValues.length - 1) {
             return false
+          }
         } else {
-          break
+          return true
         }
       }
     } else {

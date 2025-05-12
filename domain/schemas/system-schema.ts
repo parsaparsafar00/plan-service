@@ -78,7 +78,7 @@ export const systemInPlanOutputSchema = Type.Object({
     singleSet: 'singleSet',
     constant: 'constant',
   }),
-  repeatPattern: Type.Array(Type.Number()),
+  repeatPattern: Type.String(), // بصورت آرایه ای استرینگ شده ذخیره شده است در جدول سیستم ها
   abbrName: Type.String({ maxLength: 511 }),
 })
 export type systemInPlanOutputType = Static<typeof systemInPlanOutputSchema>
