@@ -34,7 +34,7 @@ export async function getExercisesByMuscles(request: FastifyRequest<{ Params: ex
   const filteredExercises = allExercises.filter((ex) => {
 
     // فیلتر حرکاتی ک فیلم آموزشی دارند
-    if (!ex.shortYoutubeDemonstration || ex.shortYoutubeDemonstration == '' || ex.shortYoutubeDemonstration == null) return false
+    if (!ex.videoDemonstration || ex.videoDemonstration == '' || ex.videoDemonstration == null) return false
 
     // فیلتر بر اساس عضلات هدف
     if (muscleValues.length > 0 && muscleValues.indexOf("full body") === -1) {

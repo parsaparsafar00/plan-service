@@ -47,7 +47,7 @@ export function AISessionGenerator(sessionInput: PlanSchemas.GenerateSessionByAI
   // منطق فیلترینگ
   const filtered = allExercises.filter((ex) => {
     // فیلتر حرکاتی ک فیلم آموزشی دارند
-    if (!ex.shortYoutubeDemonstration || ex.shortYoutubeDemonstration === '' || ex.shortYoutubeDemonstration == null)
+    if (!ex.videoDemonstration || ex.videoDemonstration === '' || ex.videoDemonstration == null)
       return false
 
     // فیلتر بر اساس سن
@@ -134,7 +134,7 @@ export function AISessionGenerator(sessionInput: PlanSchemas.GenerateSessionByAI
       name: ex.name,
       nameFa: ex.nameFa,
       mechanics: ex.mechanics,
-      shortYoutubeDemonstration: ex.shortYoutubeDemonstration,
+      videoDemonstration: ex.videoDemonstration,
       difficultyLevel: ex.difficultyLevel,
       restBetweenSets: restBestweenSets,
       weightPercentage: weightPercentage,

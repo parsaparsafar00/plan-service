@@ -1,6 +1,7 @@
 import type { AutoQueryData } from '@amard/auto-query'
 import type { Knex } from 'knex'
 import type { CategoryType } from '../domain/schemas/category-schema.js'
+import type { TemplateType } from '../domain/schemas/template-schema.js'
 import { attachAutoQuery } from '@amard/auto-query'
 import { AppError } from '@amard/error-handling'
 
@@ -52,7 +53,7 @@ export async function getCategories(autoQueryData: AutoQueryData): Promise<Categ
   }
 }
 
-export async function getAllTeacherCategories(teacherId: string, autoQueryData: AutoQueryData): Promise<CategoryType[]> {
+export async function getCategoriesByTeacherId(teacherId: string, autoQueryData: AutoQueryData): Promise<CategoryType[]> {
   try {
     const categories = await knexInstance('plan_categories').where({ teacherId }).orWhere({ isGlobal: true }).modify((qb) => {
       attachAutoQuery(qb, autoQueryData)
@@ -60,7 +61,7 @@ export async function getAllTeacherCategories(teacherId: string, autoQueryData: 
     return categories
   }
   catch (error) {
-    throw new AppError('PLAN_CATEGORY_DB_ERROR', 'Database getAllTeacherCategories error', 500, error)
+    throw new AppError('PLAN_CATEGORY_DB_ERROR', 'Database getCategoriesByTeacherId error', 500, error)
   }
 }
 
@@ -93,18 +94,16 @@ export async function deleteCategory(id: string): Promise<void> {
   }
 }
 
-export async function changeCategoryToGlobal(currentCatId: string, globalCatId: string): Promise<void> {
+export async function changeCategoryToGlobal(currentCatId: string, globalCatId: string): Promise<TemplateType[]> {
   // این برای یه دونه نیست چون زمانیکه ما توی جدولی 
   // where
-  // بزنیم
-  // و بعدش 
-  //update
-  // بزنیم
+  // و بعدش بزنیم
+  // update
   // همه چیزایی که با 
   // where
   // پیدا شدن رو آپدیت میکنه
   try {
-    await knexInstance('plan_templates').where({ categoryId: currentCatId }).update({ categoryId: globalCatId })
+    return await knexInstance('plan_templates').where({ categoryId: currentCatId }).update({ categoryId: globalCatId })
   }
   catch (error) {
     throw new AppError('USER_CATEGORY_DB_ERROR', 'Database changeCategoryToGlobal error', 500, error)

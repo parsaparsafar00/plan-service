@@ -2,6 +2,7 @@ import type { Static } from '@sinclair/typebox'
 import { isoWithoutTimezonePattern } from '@amard/validation'
 import { Type } from '@sinclair/typebox'
 import { sessionInPlanSchema } from '../schemas/plan-schema.js'
+import * as generalSchema from '../schemas/plan-general-schema.js'
 
 /**
  * ساختار ورودی تولید یک قالب توسط هوش مصنوعی برای برنامه تمرینی
@@ -9,33 +10,9 @@ import { sessionInPlanSchema } from '../schemas/plan-schema.js'
 export const CreateTemplateByAIRequest = Type.Object({
   teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   name: Type.String({ maxLength: 255 }),
-  target: Type.Enum({
-    postural: 'postural',
-    hypertrophy: 'hypertrophy',
-    strength: 'strength',
-    endurance: 'endurance',
-    balance: 'balance',
-    mobility: 'mobility',
-  }),
-  level: Type.Enum({
-    novice: 'novice',
-    beginner: 'beginner',
-    intermediate: 'intermediate',
-    advanced: 'advanced',
-    expert: 'expert',
-  }),
-  muscles: Type.Array(Type.Enum({
-    fullBody: 'full body',
-    biceps: 'biceps',
-    triceps: 'triceps',
-    lat: 'back and lat',
-    legs: 'legs',
-    abdominals: 'abdominals',
-    trap: 'trap',
-    shoulders: 'shoulders',
-    forearms: 'forearms',
-    chest: 'chest',
-  })),
+  target: generalSchema.targetEnum,
+  level: generalSchema.levelEnum,
+  muscles: generalSchema.targetMusclesEnum,
   description: Type.String(),
   gender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
 })
@@ -47,36 +24,13 @@ export type CreateTemplateByAIRequestType = Static<typeof CreateTemplateByAIRequ
 export const CreateTemplateManualRequest = Type.Object({
   teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   name: Type.String({ maxLength: 255 }),
-  target: Type.Enum({
-    postural: 'postural',
-    hypertrophy: 'hypertrophy',
-    strength: 'strength',
-    endurance: 'endurance',
-    balance: 'balance',
-    mobility: 'mobility',
-  }),
-  level: Type.Enum({
-    novice: 'novice',
-    beginner: 'beginner',
-    intermediate: 'intermediate',
-    advanced: 'advanced',
-    expert: 'expert',
-  }),
-  muscles: Type.Array(Type.Enum({
-    fullBody: 'full body',
-    biceps: 'biceps',
-    triceps: 'triceps',
-    lat: 'back and lat',
-    legs: 'legs',
-    abdominals: 'abdominals',
-    trap: 'trap',
-    shoulders: 'shoulders',
-    forearms: 'forearms',
-    chest: 'chest',
-  })),
+  target: generalSchema.targetEnum,
+  level: generalSchema.levelEnum,
+  muscles: generalSchema.targetMusclesEnum,
   description: Type.String(),
   gender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
   session: sessionInPlanSchema, // بدین معنا که صرفا شماره حرکت و اطلاعات اضافی که مربی در فرم پر میکنه قراره توی یک قالب دستی ذخیره بشه
+  categoryId: Type.Union([ Type.Null(), Type.String({ format: 'uuid' })]) // (بصورت یک رشته خالی پاس داده بشه) یک قالب میتونه دسته بندی نداشته باشه
 })
 export type CreateTemplateManualRequestType = Static<typeof CreateTemplateManualRequest>
 
@@ -88,24 +42,12 @@ export const templateSchema = Type.Object({
   name: Type.String({ maxLength: 255 }),
   teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   description: Type.String(),
-  level: Type.Enum({
-    novice: 'novice',
-    beginner: 'beginner',
-    intermediate: 'intermediate',
-    advanced: 'advanced',
-    expert: 'expert',
-  }),
-  target: Type.Enum({
-    postural: 'postural',
-    hypertrophy: 'hypertrophy',
-    strength: 'strength',
-    endurance: 'endurance',
-    balance: 'balance',
-    mobility: 'mobility',
-  }),
+  level: generalSchema.levelEnum,
+  target: generalSchema.targetEnum,
   gender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
   muscles: Type.String(),
   session: sessionInPlanSchema,
+  categoryId: Type.Union([ Type.Null(), Type.String({ format: 'uuid' })]),
   createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
   updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
 })

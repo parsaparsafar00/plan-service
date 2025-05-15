@@ -37,6 +37,7 @@ export async function planRoutes(app: FastifyInstance) {
       summary: 'تولید برنامه جدید',
       description: `##فقط مربی بایستی قادر باشه که برنامه تولید بکنه `,
       body: planSchema.CreatePlanRequest,
+      querystring: generalSchema.IdQueryTeacher,
       response: {
         200: { content: { 'application/json': { schema: planSchema.SinglePlanResponse } }, description: generalSchema.SuccessResponseDes },
         400: generalSchema.BadRequestError,

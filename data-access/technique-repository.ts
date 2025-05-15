@@ -1,7 +1,7 @@
 import type { Knex } from 'knex'
 import type { AutoQueryData } from '@amard/auto-query'
 import { attachAutoQuery } from '@amard/auto-query'
-import type { TechniqueType, techniqueInPlanOutputType, UpdateTechniquesByIdListType } from '../domain/schemas/technique-schema.js'
+import type { TechniqueType, UpdateTechniquesByIdListType } from '../domain/schemas/technique-schema.js'
 import { AppError } from '@amard/error-handling'
 import { DateTime } from 'luxon'
 
@@ -12,33 +12,36 @@ export function setKnexInstanceForTechniqueRepo(instance: Knex) {
 }
 
 /**
- * تولید تکنیک جدید در جدول plan_techniques
+ * تولید تکنیک جدید در جدول تکنیک ها
  */
 export async function insertTechnique(data: TechniqueType): Promise<TechniqueType> {
   try {
-    const existingRecord = await knexInstance('plan_techniques')
-      .where(function() {
-        this.where('isGlobal', true).orWhere('teacherId', data.teacherId);
-      })
-      .andWhere('abbrName', data.abbrName)
-      .first();
-
-    if (!existingRecord) {
-      const [inserted] = await knexInstance('plan_techniques').insert(data).returning('*');
-      return inserted;
-    }
-    throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Technique already exists', 400);
+    const [inserted] = await knexInstance('plan_techniques').insert(data).returning('*');
+    return inserted;
   }
-  catch (error) {
-    // اگر ارور بالایی هست، صرفا برش گردون
-    if (error instanceof AppError) throw error;
-  
+  catch (error) {  
     throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database insertTechnique query error', 400, error);
   }
 }
 
 /**
- * دریافت تمام تکنیک ها
+ * دریافت تکنیک بر اساس نام اختصاری تکنیک
+ */
+export async function getTechniqueByAbbrName(teacherId: string, abbrName: string): Promise<TechniqueType | undefined> {
+  try {
+    return await knexInstance('plan_techniques').where(function() {
+      this.where('isGlobal', true).orWhere({teacherId});
+    })
+    .andWhere({abbrName})
+    .first();
+  }
+  catch (error) {
+    throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database getTechniqueByAbbrName query error', 400, error)
+  }
+}
+
+/**
+ * دریافت تمام تکنیک های یک مربی
  */
 export async function getTechniquesByTeacherId(teacherId: string, autoQueryData: AutoQueryData): Promise<TechniqueType[]> {
   try {
@@ -54,11 +57,9 @@ export async function getTechniquesByTeacherId(teacherId: string, autoQueryData:
 /**
  * دریافت اطلاعات تکنیک های تمرینی با لیستی از آیدی تکنیک ها
  */
-export async function getTechniquesByIdList(idList: string[]): Promise<techniqueInPlanOutputType[]> {
+export async function getTechniquesByIdList(idList: string[]): Promise<Pick<TechniqueType, 'id'| 'name' | 'description' | 'descIsVisible' | 'method'>[]> {
   try {
-
     return await knexInstance('plan_techniques').whereIn('id', idList);
-
   } catch (error) {
     throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database getTechniquesByIdList query error', 400, error);
   }
@@ -69,8 +70,7 @@ export async function getTechniquesByIdList(idList: string[]): Promise<technique
  */
 export async function getTechniqueById(techniqueId: string): Promise<TechniqueType | undefined> {
   try {
-    const technique = await knexInstance('plan_techniques').where({ id: techniqueId }).first()
-    return technique
+    return await knexInstance('plan_techniques').where({ id: techniqueId }).first()
   }
   catch (error) {
     if (error instanceof AppError)
@@ -82,16 +82,14 @@ export async function getTechniqueById(techniqueId: string): Promise<TechniqueTy
 // برای ادمین در موارد خاص که میخواد کل تکنیک ها رو ببینه
 export async function getAllTechniques(autoQueryData: AutoQueryData): Promise<TechniqueType[]> {
   try {
-    const plans = await knexInstance('plan_techniques').modify((qb) => {
+    return await knexInstance('plan_techniques').modify((qb) => {
       attachAutoQuery(qb, autoQueryData)
     })
-    return plans
   }
   catch (error) {
     throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database getAllTechniques error', 500, error)
   }
 }
-
 
 /**
  * ویرایش تکنیک

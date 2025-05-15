@@ -29,7 +29,7 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
       table.primary(['number', 'id']) // composite primary key
       table.string('name', 255).notNullable()
       table.string('nameFa', 255).notNullable()
-      table.text('shortYoutubeDemonstration').nullable()
+      table.text('videoDemonstration').nullable()
       table.text('inDepthYoutubeExplanation').nullable()
       table.string('mechanics', 255).nullable()
       table.enu('difficultyLevel', [
@@ -90,7 +90,7 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
       'name',
       'nameFa',
       'inDepthYoutubeExplanation',
-      'shortYoutubeDemonstration',
+      'videoDemonstration',
       'targetMuscleGroup',
       'difficultyLevel',
       'primaryEquipment',
@@ -129,7 +129,7 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
 
         // ذخیره ستون‌های اصلی
         if (columnsToKeep.has(key)) {
-          if (key === 'inDepthYoutubeExplanation' || key === 'shortYoutubeDemonstration') {
+          if (key === 'inDepthYoutubeExplanation' || key === 'videoDemonstration') {
             const hyperlink = cell.hyperlink || null
             const value = typeof cell.value === 'string' ? cell.value.trim() : null
             rowData[key] = hyperlink || value
@@ -191,7 +191,7 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
       id: uuidv4(),
       name: row.name || '',
       nameFa: row.nameFa || '',
-      shortYoutubeDemonstration: row.shortYoutubeDemonstration,
+      videoDemonstration: row.videoDemonstration,
       inDepthYoutubeExplanation: row.inDepthYoutubeExplanation,
       difficultyLevel: row.difficultyLevel ? row.difficultyLevel.toLowerCase() : null,
       targetMuscleGroup: row.targetMuscleGroup ? row.targetMuscleGroup.toLowerCase() : null,

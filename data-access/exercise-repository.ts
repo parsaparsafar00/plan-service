@@ -1,5 +1,5 @@
 import type { Knex } from 'knex'
-import type { exerciseOutputType, printingRawExerciseType, exerciseRawOutputType } from '../domain/schemas/exercise-schema.js'
+import type { exerciseOutputType, exerciseRawOutputType } from '../domain/schemas/exercise-schema.js'
 import { AppError } from '@amard/error-handling'
 
 let knexInstance: Knex
@@ -16,7 +16,7 @@ export interface ExerciseEntity {
   id: string
   name: string
   nameFa: string
-  shortYoutubeDemonstration: string | null
+  videoDemonstration: string | null
   inDepthYoutubeExplanation: string | null
   difficultyLevel: 'novice' | 'beginner' | 'intermediate' | 'advanced' | 'expert' | null
   targetMuscleGroup: string | null
@@ -106,7 +106,7 @@ export async function getExercisesByNumberList(numberList: number[]): Promise<ex
 /**
  * دریافت حرکات تمرینی با لیستی از شماره حرکات
  */
-export async function getExercisesByNumberListPrint(numberList: number[]): Promise<printingRawExerciseType[]> {
+export async function getExercisesByNumberListPrint(numberList: number[]): Promise<Pick<exerciseOutputType, 'name' | 'nameFa' | 'number'>[]> {
   try {
 
     return await knexInstance('plan_exercises').whereIn('number', numberList);

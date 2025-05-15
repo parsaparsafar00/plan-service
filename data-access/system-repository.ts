@@ -1,7 +1,7 @@
 import type { Knex } from 'knex'
 import type { AutoQueryData } from '@amard/auto-query'
 import { attachAutoQuery } from '@amard/auto-query'
-import type { SystemType, systemInPlanOutputType, UpdateSystemsByIdListType } from '../domain/schemas/system-schema.js'
+import type { SystemType, UpdateSystemsByIdListType } from '../domain/schemas/system-schema.js'
 import { AppError } from '@amard/error-handling'
 import { DateTime } from 'luxon'
 
@@ -12,24 +12,12 @@ export function setKnexInstanceForSystemRepo(instance: Knex) {
 }
 
 /**
- * تولید سیستم برنامه تمرینی جدید در جدول plan_systems
+ * تولید سیستم برنامه تمرینی جدید در جدول سیستم ها
  */
 export async function insertPlanSystem(systemData: SystemType, trx?: Knex.Transaction): Promise<SystemType> {
 
   // ساخت کوئری بیس
   const query = knexInstance('plan_systems')
-  
-  // بررسی وجود سیستم تکراری (با استفاده از تراکنش اگر وجود داشت)
-  const existingRecord = await (trx ? query.transacting(trx) : query).where('abbrName', systemData.abbrName).andWhere({teacherId: systemData.teacherId}).first();
-
-  if (existingRecord) {
-    if (!trx) {
-      // درصورتی ارور بده که سیستم توسط هوش مصنوعی تولید شده باشه، در غیر این صورت سیستم رو برگردونه
-      throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'System already exists', 400);
-    } else { 
-      return existingRecord
-    }
-  }
 
   try {
     // درج سیستم جدید (با استفاده از تراکنش اگر وجود داشت)
@@ -59,7 +47,7 @@ export async function getSystemByAbbrName(abbrName: string, teacherId: string): 
 }
 
 /**
- * دریافت تمام سیستم ها
+ * دریافت تمام سیستم های مربی
  */
 export async function getAllSystemsByTeacherId(teacherId: string, autoQueryData: AutoQueryData): Promise<SystemType[]> {
   try {
@@ -75,7 +63,7 @@ export async function getAllSystemsByTeacherId(teacherId: string, autoQueryData:
 /**
  * دریافت اطلاعات کامل سیستم های تمرینی با لیستی از آیدی سیستم ها
  */
-export async function getSystemsByIdList(idList: string[]): Promise<systemInPlanOutputType[]> {
+export async function getSystemsByIdList(idList: string[]): Promise<Pick<SystemType, 'id'| 'description' | 'descIsVisible' | 'method' | 'repeatPattern' | 'abbrName'>[]> {
   try {
     return await knexInstance('plan_systems').whereIn('id', idList);
   } catch (error) {

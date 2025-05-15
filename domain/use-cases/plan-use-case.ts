@@ -90,7 +90,7 @@ export async function createPlan(request: FastifyRequest<{ Body: planSchema.Crea
             const systemInput: systemSchema.SystemType = {
               id: uuidv4(),
               abbrName: `سیستم ${exercise.systemMethod} ${exercise.repeatPattern.toString()}`,
-              teacherId: request.body.teacherId,
+              teacherId: userId,
               description: '',
               usageTimes: 0,
               isGlobal: exercise.systemIsGlobal || false,

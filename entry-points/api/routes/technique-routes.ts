@@ -18,6 +18,7 @@ export async function techniqueRoutes(app: FastifyInstance) {
       درغیر این صورت اگر شناسه معتبر نباشد یعنی خط تیره وارد شده باشد، ادمین تکنیک را بصورت گلوبال تولید میکند 
       `,
       body: techniqueSchema.CreateTechniqueRequest,
+      querystring: generalSchema.IdQueryTeacher,
       response: {
         200: { content: { 'application/json': { schema: techniqueSchema.SingleTechniqueResponse } }, description: generalSchema.SuccessResponseDes },
         400: generalSchema.BadRequestError,

@@ -27,10 +27,15 @@ function extractSenderData(request: FastifyRequest) {
  * تولید قالب توسط هوش مصنوعی
  */
 export async function createTemplateByAI(request: FastifyRequest<{ Body: templateSchema.CreateTemplateByAIRequestType }>) {
-  if (!isValidUuid(request.body.teacherId)) throw new AppError('PLAN_TEMPLATE_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+
+  const { userId: creatorId, role: creatorRole } = extractSenderData(request)
+  if (creatorRole === 'admin') {
+    if (!isValidUuid(creatorId))
+      throw new AppError('PLAN_PLAN_TEACHER_ID_INVALID', 'Teacher ID is invalid', 400)
+  }
 
   const generateSessionByAIInput: planSchema.GenerateSessionByAIRequestType = {
-    teacherId: request.body.teacherId,
+    teacherId: creatorId,
     description: request.body.description,
     exerciseType: 'body building',
     target: request.body.target,
@@ -61,13 +66,14 @@ export async function createTemplateByAI(request: FastifyRequest<{ Body: templat
   const newTemplate: templateSchema.TemplateType = {
     id: uuidv4(),
     name: request.body.name,
-    teacherId: request.body.teacherId,
+    teacherId: creatorId,
     description: request.body.description,
     level: request.body.level,
     target: request.body.target,
     muscles: JSON.stringify(request.body.muscles),
     gender: request.body.gender,
     session: transformedSession,
+    categoryId: null,
     createdAt: nowStr,
     updatedAt: nowStr,
   }
@@ -84,20 +90,25 @@ export async function createTemplateByAI(request: FastifyRequest<{ Body: templat
  * تولید قالب بصورت دستی
  */
 export async function createTemplateManual(request: FastifyRequest<{ Body: templateSchema.CreateTemplateManualRequestType }>) {
-  if (!isValidUuid(request.body.teacherId))
-    throw new AppError('PLAN_TEMPLATE_OWNER_ID_INVALID', 'Teacher ID is invalid', 400)
+
+  const { userId: creatorId, role: creatorRole } = extractSenderData(request)
+  if (creatorRole === 'admin') {
+    if (!isValidUuid(creatorId))
+      throw new AppError('PLAN_PLAN_TEACHER_ID_INVALID', 'Teacher ID is invalid', 400)
+  }
 
   const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss')
   const newTemplate: templateSchema.TemplateType = {
     id: uuidv4(),
     name: request.body.name,
-    teacherId: request.body.teacherId,
+    teacherId: creatorId,
     description: request.body.description,
     level: request.body.level,
     target: request.body.target,
     muscles: JSON.stringify(request.body.muscles),
     gender: request.body.gender,
     session: request.body.session,
+    categoryId: request.body.categoryId,
     createdAt: nowStr,
     updatedAt: nowStr,
   }
@@ -131,29 +142,20 @@ export async function getTemplateById(request: FastifyRequest<{ Params: generalS
  * ویرایش قالب تمرینی
  */
 export async function updateTemplate(request: FastifyRequest<{ Params: generalSchema.IdParamType, Body: templateSchema.UpdateTemplateRequestType }>) {
-  const { userId: updaterId, role: updaterRole } = extractSenderData(request)
+  const existingTemplate = await templateRepo.getTemplateById(request.params.id)
+  if (!existingTemplate) throw new AppError('PLAN_TEMPLATE_NOT_FOUND', 'Template not found', 404)
 
-  const currentTemplate = await templateRepo.getTemplateById(request.params.id)
-
-  if (!currentTemplate) throw new AppError('TEMPLATE_NOT_FOUND', 'Template not found', 404)
-  const updates = request.body // هر چیزی که به عنوان ورودی وارد شده است، بایستی در جدول قالب ها آپدیت شود
-
-  let aclResult = { isOkay: false, reason: '' }
-  if (updaterRole === 'teacher') {
-    aclResult = await checkWithACL(request, { own: (updaterId === currentTemplate.teacherId), ...updates })
+  const { userId: removerId, role: removerRole } = extractSenderData(request)
+  let aclResult = {isOkay: false, reason: ''}
+  if (removerRole === 'teacher') {
+    aclResult = await checkWithACL(request, { own: (removerId === existingTemplate.teacherId) })
+    if (!aclResult.isOkay) throw new AppError('PLAN_TEMPLATE_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
   }
 
-  const updateInput: Partial<templateSchema.TemplateType> = { // تغییر تایپ ورودی، به این دلیل که ورودی تابع یوز کیس با ورودی تابع ریپو فرق میکنه (در پارامتر تکرار)
-    ...updates,
-    muscles: updates.muscles ? JSON.stringify(updates.muscles): currentTemplate.muscles,
-    updatedAt: DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-LL-dd HH:mm:ss')
-  };
-
-
   if (!aclResult.isOkay) throw new AppError('PLAN_TEMPLATE_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
-  const updated = await templateRepo.updateTemplate(request.params.id, updateInput)
+  const updated = await templateRepo.deleteTemplate(request.params.id)
 
-  auditLogger.update('', { request: setAuditRequest(request), oldData: currentTemplate, newData: updated || null })
+  auditLogger.update('', { request: setAuditRequest(request), oldData: existingTemplate, newData: null })
 
   return updated
 }

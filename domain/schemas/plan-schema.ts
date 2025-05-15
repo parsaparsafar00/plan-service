@@ -7,7 +7,7 @@ import * as generalSchema from '../schemas/plan-general-schema.js'
 // -------------------------------------- اسکیم های مرتبط با برنامه تمرینی --------------------------------------
 
 /**
- * ساختار پارامتر های غیر ضروری برای کی جلسه تمرینی
+ * ساختار پارامتر های غیر ضروری یک جلسه برای تولید جلسه تمرینی
  */
 export const optionalSessionParameters = Type.Object({
   cooldownActivities: Type.Optional(Type.Array(Type.String())),
@@ -18,130 +18,79 @@ export const optionalSessionParameters = Type.Object({
   sessionDuration: Type.Optional(Type.String()),
 })
 
-/**
- * ساختار ورودی های الزامی برای تولید برنامه تمرینی
- */
-export const coreSessionInputParameters = Type.Object({
+// -------------------- پارامترهای مشترک بین تمام ساختارها --------------------
+const commonSessionProperties = {
   weeks: Type.Array(Type.Number()),
   description: Type.String(),
-  targetMuscles: Type.Array(Type.Enum({
-    fullBody: 'full body',
-    biceps: 'biceps',
-    triceps: 'triceps',
-    lat: 'back and lat',
-    legs: 'legs',
-    abdominals: 'abdominals',
-    trap: 'trap',
-    shoulders: 'shoulders',
-    forearms: 'forearms',
-    chest: 'chest',
-  })),
-  exercises: Type.Array(exerciseSchema.exerciseInputSchema),
-})
+  targetMuscles: Type.Array(generalSchema.targetMusclesEnum),
+};
 
 /**
- * ساختار ورودی یک جلسه تمرینی در تولید برنامه تمرینی
+ * پارامترهای الزامی ورودی برای تولید برنامه تمرینی
+ */
+export const coreSessionInputParameters = Type.Object({
+  ...commonSessionProperties,
+  exercises: Type.Array(exerciseSchema.exerciseInputSchema),
+});
+
+/**
+ * ساختار کامل ورودی جلسه تمرینی
  */
 export const sessionInputSchema = Type.Intersect([
   coreSessionInputParameters,
   optionalSessionParameters
 ]);
-
-export type sessionInputType = Static<typeof sessionInputSchema>
+export type sessionInputType = Static<typeof sessionInputSchema>;
 
 /**
- * ساختار ورودی های الزامی در یک برنامه تمرینی
+ * پارامترهای الزامی جلسه در برنامه نهایی
  */
 export const coreSessionInPlanParameters = Type.Object({
-  weeks: Type.Array(Type.Number()),
-  description: Type.String(),
-  targetMuscles: Type.Array(Type.Enum({
-    fullBody: 'full body',
-    biceps: 'biceps',
-    triceps: 'triceps',
-    lat: 'back and lat',
-    legs: 'legs',
-    abdominals: 'abdominals',
-    trap: 'trap',
-    shoulders: 'shoulders',
-    forearms: 'forearms',
-    chest: 'chest',
-  })),
+  ...commonSessionProperties,
   exercises: Type.Array(exerciseSchema.exerciseOutputInPlanSchema),
-})
+});
 
 /**
- * ساختار یک جلسه تمرینی در برنامه تمرینی
+ * ساختار کامل جلسه در برنامه نهایی
  */
 export const sessionInPlanSchema = Type.Intersect([
   coreSessionInPlanParameters,
   optionalSessionParameters
 ]);
-export type sessionInplanType = Static<typeof sessionInPlanSchema>
+export type sessionInplanType = Static<typeof sessionInPlanSchema>;
 
 /**
- * پارامتر های الزامی یک جلسه تمرینی در خروجی که کاربر مشاهده میکند
+ * پارامترهای الزامی خروجی برای نمایش به کاربر
  */
 export const coreSessionOutputParameters = Type.Object({
-  weeks: Type.Array(Type.Number()),
-  description: Type.String(),
-  targetMuscles: Type.Array(Type.Enum({
-    fullBody: 'full body',
-    biceps: 'biceps',
-    triceps: 'triceps',
-    lat: 'back and lat',
-    legs: 'legs',
-    abdominals: 'abdominals',
-    trap: 'trap',
-    shoulders: 'shoulders',
-    forearms: 'forearms',
-    chest: 'chest',
-  })),
+  ...commonSessionProperties,
   exercises: Type.Array(exerciseSchema.exerciseOutputSchema),
-})
+});
 
 /**
- * ساختار یک جلسه تمرینی در خروجی که کاربر مشاهده میکند
+ * ساختار خروجی یک جلسه تمرینی عادی
  */
 export const sessionOutputSchema = Type.Intersect([
   coreSessionOutputParameters,
   optionalSessionParameters
 ]);
-export type sessionOutputType = Static<typeof sessionOutputSchema>
+export type sessionOutputType = Static<typeof sessionOutputSchema>;
 
 /**
- * ساختار خروجی یک جلسه تمرینی پرینتی
+ * ساختار خروجی پرینتی یک جلسه تمرینی
  */
 export const printSessionOutputSchema = Type.Object({
-  weeks: Type.Array(Type.Number()),
-  description: Type.String(),
-  targetMuscles: Type.Array(Type.Enum({
-    fullBody: 'full body',
-    biceps: 'biceps',
-    triceps: 'triceps',
-    lat: 'back and lat',
-    legs: 'legs',
-    abdominals: 'abdominals',
-    trap: 'trap',
-    shoulders: 'shoulders',
-    forearms: 'forearms',
-    chest: 'chest',
-  })),
-  // optionalSessionParameters, // فعلا اطلاعات اضافه جلسه رو توی برنامه پرینتی نمیزنیم
+  ...commonSessionProperties,
   exercises: Type.Array(exerciseSchema.printingExerciseOutputSchema),
-})
-export type printSessionOutputType = Static<typeof printSessionOutputSchema>
+});
+export type printSessionOutputType = Static<typeof printSessionOutputSchema>;
 
-// اسکیم پایه برای اطلاعات دانشجو
+/**
+ * اسکیم پایه اطلاعات شاگرد، استفاده شده در ورودی و خروجی برنامه ها
+ */
 const StudentInfoSchema = Type.Object({
   studentId: Type.String({ format: 'uuid' }),
-  studentLevel: Type.Enum({
-    novice: 'novice',
-    beginner: 'beginner',
-    intermediate: 'intermediate',
-    advanced: 'advanced',
-    expert: 'expert',
-  }),
+  studentLevel: generalSchema.levelEnum,
   studentWeight: Type.Number(),
   studentAge: Type.Number(),
   studentGender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
@@ -152,14 +101,7 @@ const BasePlanSchema = Type.Object({
   id: Type.String({ format: 'uuid' }),
   teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   title: Type.Optional(Type.String({ minLength: 2, maxLength: 255 })),
-  target: Type.Enum({
-    postural: 'postural',
-    hypertrophy: 'hypertrophy',
-    strength: 'strength',
-    endurance: 'endurance',
-    balance: 'balance',
-    mobility: 'mobility',
-  }),
+  target: generalSchema.targetEnum,
   description: Type.Optional(Type.String()),
   status: Type.Enum({
     published: 'published',
@@ -222,63 +164,18 @@ export const UpdatePlanRequest = Type.Partial(PlanSchema)
 export type UpdatePlanRequestType = Static<typeof UpdatePlanRequest>
 
 /**
- * ساختار ورودی دریافت یک برنامه تمرینی
- */
-export const getPlanSchema = Type.Object({
-  id: generalSchema.IdParam,
-  print: Type.Boolean(),
-})
-export type getPlanType = Static<typeof getPlanSchema>
-
-/**
- * ساختار ورودی تولید سیستم برنامه تمرینی
- */
-export const CreatePlanSystemRequest = Type.Object({
-  teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
-  description: Type.String(),
-  descIsVisible: Type.Boolean(),
-  method: Type.String({ maxLength: 255 }),
-  repeatPattern: Type.Array(Type.Number()),
-})
-export type CreatePlanSystemRequestType = Static<typeof CreatePlanSystemRequest>
-
-/**
- * ورودی تولید جلسه تمرینی توسط هوش مصنوعی
+ * پارامتر های ورودی جهت تولید جلسه تمرینی توسط هوش مصنوعی
  */
 export const GenerateSessionByAIRequest = Type.Object({
   teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   description: Type.String(),
   weeks: Type.Array(Type.Number()),
   exerciseType: Type.String({ minLength: 2, maxLength: 255 }),
-  target: Type.Enum({
-    postural: 'postural',
-    hypertrophy: 'hypertrophy',
-    strength: 'strength',
-    endurance: 'endurance',
-    balance: 'balance',
-    mobility: 'mobility',
-  }),
+  target: generalSchema.targetEnum,
   injuries: Type.Array(Type.String()),
-  targetMuscles: Type.Array(Type.Enum({
-    fullBody: 'full body',
-    biceps: 'biceps',
-    triceps: 'triceps',
-    lat: 'back and lat',
-    legs: 'legs',
-    abdominals: 'abdominals',
-    trap: 'trap',
-    shoulders: 'shoulders',
-    forearms: 'forearms',
-    chest: 'chest',
-  })),
+  targetMuscles: generalSchema.targetMusclesEnum,
   traineeInfo: Type.Object({
-    level: Type.Enum({
-      novice: 'novice',
-      beginner: 'beginner',
-      intermediate: 'intermediate',
-      advanced: 'advanced',
-      expert: 'expert',
-    }),
+    level: generalSchema.levelEnum,
     age: Type.Optional(Type.Number()),
     weight: Type.Optional(Type.Number()),
     gender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
@@ -302,21 +199,8 @@ export const CreatePlanRequest = Type.Object({
     draft: 'draft'
   }),
   studentGender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
-  studentLevel: Type.Enum({
-    novice: 'novice',
-    beginner: 'beginner',
-    intermediate: 'intermediate',
-    advanced: 'advanced',
-    expert: 'expert',
-  }),
-  target: Type.Enum({
-    postural: 'postural',
-    hypertrophy: 'hypertrophy',
-    strength: 'strength',
-    endurance: 'endurance',
-    balance: 'balance',
-    mobility: 'mobility',
-  }),
+  studentLevel: generalSchema.levelEnum,
+  target: generalSchema.targetEnum,
   studentWeight: Type.Number(),
   studentAge: Type.Number(),
 })
@@ -325,11 +209,11 @@ export type CreatePlanRequestType = Static<typeof CreatePlanRequest>
 // -------------------------------------- ساختار خروجی های یک برنامه تمرینی --------------------------------------
 
 /**
- * ساختار خروجی یک برنامه تمرینی
+ * ساختار خروجی یک برنامه تمرینی (تفاوتش با 
+ * planSchema
+ * در این است که اونجا جلسات اسکیمشون فرق داشته)
  */
 export const planOutputSchema = Type.Object({
-  // load: Type.String(),
-  // deload: Type.String(),
   workoutPlan: Type.Object({
     sessions: Type.Array(sessionOutputSchema),
   }),

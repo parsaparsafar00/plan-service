@@ -40,10 +40,16 @@ export async function createTechnique(request: FastifyRequest<{ Body: techniqueS
     }
   }
 
+  // بررسی تکراری بودن
+  const abbrName = `تکنیک ${request.body.method} ${request.body.name}`
+  const existing = await techniqueRepo.getTechniqueByAbbrName(request.query.id, abbrName) // آیدی مربی از داخل کوئری گرفته میشه
+  if (existing)
+    throw new AppError('PLAN_TECHNIQUE_ALREADY_EXISTS', 'Technique already exists', 400)
+
   const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss') // useTz=false در migration
   const newTechnique: techniqueSchema.TechniqueType = {
     id: uuidv4(),
-    abbrName: `تکنیک ${request.body.method} ${request.body.name}`,
+    abbrName: abbrName,
     name: request.body.name,
     usageTimes: 0,
     isGlobal: isGlobal,  // اگر مربی، این پارامتر رو روی صحیح هم تنظیم بکنه، تکنیک بصورت عمومی ذخیره نخواهد شد چون ما همیشه براش فالس میزنیم

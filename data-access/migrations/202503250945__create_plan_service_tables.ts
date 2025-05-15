@@ -74,16 +74,16 @@ export async function up(knex: Knex): Promise<void> {
     })
 
     // تولید سیستم های آماده
-    const nowStr = DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-MM-dd HH:mm:ss')
+    const nowStr = DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-MM-dd HH:mm:ss');
     try {
-      const patterns = generateThreeLengthRepeatPatterns()
-      for (const pattern of patterns) {
-        const method = detectSystemMethod(pattern)
-
-        const system = {
+      const patterns = generateThreeLengthRepeatPatterns();
+      const systems = patterns.map(pattern => {
+        const method = detectSystemMethod(pattern);
+        
+        return {
           id: uuidv4(),
           abbrName: `سیستم ${method} ${pattern.toString()}`,
-          description: 'سیستم تولید شده توسط هوش مصنوعی',
+          description: '',
           descIsVisible: false,
           teacherId: '-',
           isGlobal: true,
@@ -92,13 +92,14 @@ export async function up(knex: Knex): Promise<void> {
           status: 'published',
           createdAt: nowStr,
           updatedAt: nowStr,
-        }
+        };
+      });
 
-        await knex('plan_systems').insert(system)
-      }
-      console.log(`✅ Inserted ${patterns.length} system records.`)
+      // استفاده از insert دسته‌ای
+      await knex.batchInsert('plan_systems', systems, 50); // 50 = اندازه هر دسته
+      console.log(`✅ Inserted ${systems.length} system records in batch.`);
     } catch (error) {
-      throw new AppError('PLAN_SYSTEM_DB_INSERT_ERROR', 'Error while inserting pre defined systsms', 500, error)
+      throw new AppError('PLAN_SYSTEM_DB_INSERT_ERROR', 'Error while inserting pre defined systems', 500, error);
     }
   }
 
@@ -207,6 +208,7 @@ export async function up(knex: Knex): Promise<void> {
         'expert'
       ]).notNullable()
       table.enu('gender', ['m', 'f']).nullable()
+      table.uuid('categoryId').nullable().defaultTo(null)
       table.string('muscles').nullable()
       table.jsonb('session').nullable().defaultTo('{}') // فیلد برنامه که شامل یک جلسه تمرینی هست و بصورت جیسان ذخیره میشه
       table.timestamp('createdAt', { useTz: false }).notNullable()

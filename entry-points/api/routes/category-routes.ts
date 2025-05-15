@@ -68,8 +68,9 @@ export async function categoryRoutes(app: FastifyInstance) {
     schema: {
       tags: ['Plan'],
       summary: 'گرفتن کتگوری‌های یک معلم',
-      description: `## اگر قرار است **ادمین** کتگوریهای یک معلم را دریافت کند، باید یک شناسه معلم (معتبر) در کوئری قرار دهید ## اگر قرار است **معلم**، کتگوریهای خودش را دریافت کند، شناسه معلم از توکن گرفته میشود ولی باز هم کوئری نباید خالی باشد. میتوان یک علامت تیره - در کوئری قرار داده شود`,
-      params: categorySchemas.IdParam,
+      description: `## اگر قرار است **ادمین** کتگوریهای یک معلم را دریافت کند، باید یک شناسه معلم (معتبر) در کوئری قرار دهد
+       ## اگر قرار است **معلم**، کتگوریهای خودش را دریافت کند، شناسه معلم از توکن گرفته میشود ولی باز هم کوئری نباید خالی باشد. میتوان یک علامت تیره - در کوئری قرار داده شود`,
+      params: generalSchema.IdParam,
       response: {
         200: { content: { 'application/json': { schema: categorySchemas.AllCategoriesResponse } }, description: categorySchemas.SuccessResponseDes },
         400: categorySchemas.BadRequestError,
@@ -78,10 +79,10 @@ export async function categoryRoutes(app: FastifyInstance) {
       },
     },
     handler: async (
-      request: FastifyRequest<{ Querystring: generalSchema.IdQueryTeacherType }>,
+      request: FastifyRequest<{ Params: generalSchema.IdParamType }>,
       reply: FastifyReply,
     ) => {
-      const categories = await categoryUseCase.getTeacherCategories(request)
+      const categories = await categoryUseCase.getCategoriesByTeacherId(request)
       reply.send({ data: { categories }, msgCode: '', msgType: 'success' })
     },
   })
@@ -94,7 +95,7 @@ export async function categoryRoutes(app: FastifyInstance) {
     schema: {
       tags: ['Plan'],
       summary: 'لیست کلیه کتگوری‌ها',
-      description: `## چیز خاصی ندارد جز سطح دسترسی`,
+      description: `## فقط ادمین میتونه همه کتگوری هارو بگیره`,
       response: {
         200: { content: { 'application/json': { schema: categorySchemas.AllCategoriesResponse } }, description: categorySchemas.SuccessResponseDes },
         400: categorySchemas.BadRequestError,

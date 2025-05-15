@@ -2,6 +2,61 @@ import type { Static } from '@sinclair/typebox'
 import { getCodesByServiceAndStatus } from '@amard/message-manager'
 import { Type } from '@sinclair/typebox'
 
+// -------------------------------------- ساختار پارامتر ها با مقادیر از قبل مشخص شده --------------------------------------
+
+// عضلات مورد استفاده در سرویس
+export const targetMusclesEnum = Type.Array(Type.Enum({
+  fullBody: 'full body',
+  biceps: 'biceps',
+  triceps: 'triceps',
+  lat: 'back and lat',
+  legs: 'legs',
+  abdominals: 'abdominals',
+  trap: 'trap',
+  shoulders: 'shoulders',
+  forearms: 'forearms',
+  chest: 'chest',
+}))
+
+// هدف برنامه و شاگرد ها
+export const targetEnum = Type.Enum({
+  postural: 'postural',
+  hypertrophy: 'hypertrophy',
+  strength: 'strength',
+  endurance: 'endurance',
+  balance: 'balance',
+  mobility: 'mobility',
+})
+
+// سطح حرکات و شاگرد ها
+export const levelEnum = Type.Enum({
+  novice: 'novice',
+  beginner: 'beginner',
+  intermediate: 'intermediate',
+  advanced: 'advanced',
+  expert: 'expert',
+})
+
+// روش های سیستم های تکرار
+export const systemMethodEnum = Type.Enum({
+  descending: 'descending',
+  ascending: 'ascending',
+  custom: 'custom',
+  sinusoidal: 'sinusoidal',
+  pyramidUp: 'pyramidUp',
+  pyramidDown: 'pyramidDown',
+  singleSet: 'singleSet',
+  constant: 'constant',
+})
+
+// روش های تکنیک ها
+export const techniqueMethodEnum = Type.Enum({
+  superset: 'superset',
+  giantset: 'giantset',
+  dropset: 'dropset',
+  custom: 'custom'
+})
+
 // -------------------------------------- ساختار ورودی ها --------------------------------------
 
 /**

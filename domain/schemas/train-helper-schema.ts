@@ -1,6 +1,7 @@
 import type { Static } from '@sinclair/typebox'
 import { isoWithoutTimezonePattern } from '@amard/validation'
 import { Type } from '@sinclair/typebox'
+import * as generalSchema from '../schemas/plan-general-schema.js'
 
 /**
  * اسکیم tain helper
@@ -10,21 +11,8 @@ export const PlanTrainHelperSchema = Type.Object({
   id: Type.String({ format: 'uuid' }),
   planId: Type.String({ format: 'uuid' }),
   teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
-  studentLevel: Type.Enum({
-    novice: 'novice',
-    beginner: 'beginner',
-    intermediate: 'intermediate',
-    advanced: 'advanced',
-    expert: 'expert',
-  }),
-  target: Type.Enum({
-    postural: 'postural',
-    hypertrophy: 'hypertrophy',
-    strength: 'strength',
-    endurance: 'endurance',
-    balance: 'balance',
-    mobility: 'mobility',
-  }),
+  studentLevel: generalSchema.levelEnum,
+  target: generalSchema.targetEnum,
   gender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
   exerciseNumber: Type.Integer(),
   score: Type.Integer(),

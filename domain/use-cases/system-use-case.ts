@@ -41,6 +41,12 @@ export async function createPlanSystem(request: FastifyRequest<{ Body: systemSch
     }
   }
 
+  // بررسی تکراری بودن
+  const abbrName = `سیستم ${request.body.method} ${request.body.repeatPattern}`
+  const existing = await systemRepo.getSystemByAbbrName(request.query.id, abbrName) // آیدی مربی از داخل کوئری گرفته میشه
+  if (existing)
+    throw new AppError('PLAN_SYSTEM_ALREADY_EXISTS', 'System already exists', 400)
+
   const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss')
   const newSystem: systemSchema.SystemType = {
     id: uuidv4(),

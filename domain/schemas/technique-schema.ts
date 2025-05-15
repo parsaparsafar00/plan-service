@@ -1,6 +1,7 @@
 import type { Static } from '@sinclair/typebox'
 import { isoWithoutTimezonePattern } from '@amard/validation'
 import { Type } from '@sinclair/typebox'
+import * as generalSchema from '../schemas/plan-general-schema.js'
 
 /**
  * اسکیم یک تکنیک در برنامه تمرینی
@@ -14,12 +15,7 @@ export const TechniqueSchema = Type.Object({
   usageTimes: Type.Number() || 0,
   descIsVisible: Type.Boolean(),
   isGlobal: Type.Boolean(),
-  method: Type.Enum({
-    superset: 'superset',
-    giantset: 'giantset',
-    dropset: 'dropset',
-    custom: 'custom'
-  }),
+  method: generalSchema.techniqueMethodEnum,
   status: Type.Enum({
     published: 'published',
     draft: 'draft'
@@ -30,35 +26,13 @@ export const TechniqueSchema = Type.Object({
 export type TechniqueType = Static<typeof TechniqueSchema>
 
 /**
- * اسکیم تکنیک در خروجی یک برنامه تمرینی
- */
-export const techniqueInPlanOutputSchema = Type.Object({
-  id: Type.String({ format: 'uuid' }),
-  name: Type.String({ maxLength: 255 }),
-  description: Type.String(),
-  descIsVisible: Type.Boolean(),
-  method: Type.Enum({
-    superset: 'superset',
-    giantset: 'giantset',
-    dropset: 'dropset',
-    custom: 'custom'
-  }),
-})
-export type techniqueInPlanOutputType = Static<typeof techniqueInPlanOutputSchema>
-
-/**
  * ساختار ورودی تولید تکنیک برنامه تمرینی
  */
 export const CreateTechniqueRequest = Type.Object({
   teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   description: Type.String(),
   name: Type.String({ maxLength: 255 }),
-  method: Type.Enum({
-    superset: 'superset',
-    giantset: 'giantset',
-    dropset: 'dropset',
-    custom: 'custom'
-  }),
+  method: generalSchema.techniqueMethodEnum,
   descIsVisible: Type.Boolean(),
   isGlobal: Type.Boolean()
 })
