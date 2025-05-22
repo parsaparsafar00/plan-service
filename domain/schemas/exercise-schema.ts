@@ -16,23 +16,17 @@ export type GetExerciseByMuscleType = Static<typeof GetExerciseByMuscleRequest>
 export const exerciseAugmentedOuputSchema = Type.Object({
   restBetweenSets: Type.Number(),
   weightPercentage: Type.String(),
-  systemId: Type.Union([
-    Type.String({ format: 'uuid' }),
-    Type.String({ minLength: 0, maxLength: 0 })
-  ]),
+  systemNumber: Type.Union([Type.Null(), Type.Number()]), // ممکنه وقتی داریم یک حرکت رو به عنوان خروجی نشون میدیم هنوز سیستمی براش در نظر گرفته نشده باشه که شماره داشته باشه
   systemDescription: Type.String(),
   repeatPattern: Type.Array(Type.Number()),
-  systemMethod: generalSchema.systemMethodEnum,
+  systemMethodName: Type.String(),
+  systemMethodNumber: Type.Number(),
   systemDescIsVisible: Type.Boolean(),
-  systemName: Type.String(),
-  techniqueId: Type.Union([
-    Type.String({ format: 'uuid' }),
-    Type.String({ minLength: 0, maxLength: 0 })
-  ]),
+  techniqueId: Type.Union([Type.String({ format: 'uuid' }), Type.String({ minLength: 0, maxLength: 0 })]),
   techniqueName: Type.Optional(Type.String()),
   techniqueMethod: Type.Optional(generalSchema.techniqueMethodEnum),
   techniqueDescription: Type.Optional(Type.String()),
-  techniqueDescIsVisible: Type.Optional(Type.Boolean())
+  techniqueDescIsVisible: Type.Optional(Type.Boolean()),
 })
 export type exerciseAugmentedOutputSchemaType = Static<typeof exerciseAugmentedOuputSchema>
 
@@ -45,10 +39,7 @@ export const exerciseRawOutputSchema = Type.Object({
   name: Type.String(),
   nameFa: Type.String(),
   mechanics: Type.Union([Type.String(), Type.Null()]),
-  difficultyLevel: Type.Union([
-    generalSchema.levelEnum,
-    Type.Null(),
-  ]),
+  difficultyLevel: Type.Union([generalSchema.levelEnum, Type.Null()]),
   videoDemonstration: Type.Union([Type.String(), Type.Null()]),
 })
 export type exerciseRawOutputType = Static<typeof exerciseRawOutputSchema>
@@ -56,11 +47,8 @@ export type exerciseRawOutputType = Static<typeof exerciseRawOutputSchema>
 /**
  * ساختار خروجی یک حرکت تولید شده توسط سرویس
  */
-export const exerciseOutputSchema = Type.Intersect([
-  exerciseRawOutputSchema,
-  exerciseAugmentedOuputSchema
-]);
-export type exerciseOutputType = Static<typeof exerciseOutputSchema>;
+export const exerciseOutputSchema = Type.Intersect([exerciseRawOutputSchema, exerciseAugmentedOuputSchema])
+export type exerciseOutputType = Static<typeof exerciseOutputSchema>
 
 /**
  * ساختار خروجی یک حرکت تولید شده توسط سرویس (مخصوص پرینت گرفتن)
@@ -71,7 +59,7 @@ export const printingExerciseOutputSchema = Type.Object({
   restBetweenSets: Type.Number(),
   weightPercentage: Type.String(),
   repeatPattern: Type.Array(Type.Number()),
-  techniqueName: Type.Optional(Type.String())
+  techniqueName: Type.Optional(Type.String()),
 })
 export type printingExerciseOutputType = Static<typeof printingExerciseOutputSchema>
 
@@ -82,14 +70,8 @@ export const exerciseOutputInPlanSchema = Type.Object({
   number: Type.Number(),
   restBetweenSets: Type.Number(),
   weightPercentage: Type.String(),
-  systemId: Type.Union([
-    Type.String({ format: 'uuid' }),
-    Type.String({ minLength: 0, maxLength: 0 })
-  ]),
-  techniqueId: Type.Union([
-    Type.String({ format: 'uuid' }),
-    Type.String({ minLength: 0, maxLength: 0 })
-  ]),
+  systemNumber: Type.Union([Type.Number(), Type.Null()]), // این اسکیم در حرکات هر قالب هم استفاده میشه و چون توی قالب ها، ما شماره سیستم رو ذخیره نمیکنیم، اونجا نال میزنیمش تا یسره بعدا همه سیستم ها رو ذخیره کنیم
+  techniqueId: Type.Union([Type.String({ format: 'uuid' }), Type.String({ minLength: 0, maxLength: 0 })]),
 })
 export type exerciseOutputInPlanType = Static<typeof exerciseOutputInPlanSchema>
 
@@ -101,30 +83,26 @@ export const exerciseInputSchema = Type.Object({
   restBetweenSets: Type.Number(),
   weightPercentage: Type.String(),
   repeatPattern: Type.Array(Type.Number()),
-  systemMethod: Type.Optional(generalSchema.systemMethodEnum),
-  systemId: Type.Union([
-    Type.String({ format: 'uuid' }),
-    Type.String({ minLength: 0, maxLength: 0 })
-  ]),
+  systemMethodNumber: Type.Number(), // نام متد بایستی حتما تعریف شده باشه
+  systemNumber: Type.Number(),
   systemIsGlobal: Type.Optional(Type.Boolean()),
   techniqueName: Type.Optional(Type.String()),
   techniqueDescription: Type.Optional(Type.String()),
   techniqueMethod: Type.Optional(generalSchema.techniqueMethodEnum),
-  techniqueId: Type.Union([
-    Type.String({ format: 'uuid' }),
-    Type.String({ minLength: 0, maxLength: 0 })
-  ]),
+  techniqueId: Type.Union([Type.String({ format: 'uuid' }), Type.String({ minLength: 0, maxLength: 0 })]),
   techniqueIsGlobal: Type.Optional(Type.Boolean()),
 })
 export type exerciseInputType = Static<typeof exerciseInputSchema>
 
 /**
- * ساختار ورودی گرفتن یک حرکت تمرینی با استفاده از شماره حرکت
+ * اسکیم حرکات در لیستی که مربی میخواد حرکات مورد نظرش رو براساس تعداد دفعات استفاده خودش به راحتی پیدا بکنه
  */
-export const GetExerciseByNumberRequest = Type.Object({
-  number: Type.Number()
+export const ExercisesAndUsageTimesSchema = Type.Object({
+  exerciseNumber: Type.Number(),
+  usageCount: Type.Number(),
 })
-export type GetExerciseByNumberRequestType = Static<typeof GetExerciseByNumberRequest>
+
+export type ExercisesAndUsageTimesType = Static<typeof ExercisesAndUsageTimesSchema>
 
 // -------------------------------------- ساختار پاسخ ها --------------------------------------
 
@@ -141,6 +119,15 @@ export const SingleExerciseResponse = Type.Object({
 export const SingleRawExerciseResponse = Type.Object({
   data: Type.Object({
     exercise: exerciseRawOutputSchema,
+  }),
+  msgCode: Type.String(),
+  msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),
+})
+
+// پاسخ موفق به یک درخواست دریافت حرکات و تعداد استفادشون
+export const ExercisesAndUsageTimesResponseSchema = Type.Object({
+  data: Type.Object({
+    exercises: Type.Array(ExercisesAndUsageTimesSchema),
   }),
   msgCode: Type.String(),
   msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),

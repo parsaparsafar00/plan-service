@@ -1,9 +1,11 @@
+import * as generalSchema from '../domain/schemas/plan-general-schema.js'
+
 export interface SessionInstructionInput {
   age: number | undefined
   gender: 'm' | 'f'
   target: string
   level: 'novice' | 'beginner' | 'intermediate' | 'advanced' | 'expert'
-  target_muscle_groups: string[]
+  target_muscle_groups: typeof generalSchema.targetMusclesEnum
 }
 
 export interface SessionInstructionResult {

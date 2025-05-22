@@ -37,7 +37,6 @@ export async function planRoutes(app: FastifyInstance) {
       summary: 'تولید برنامه جدید',
       description: `##فقط مربی بایستی قادر باشه که برنامه تولید بکنه `,
       body: planSchema.CreatePlanRequest,
-      querystring: generalSchema.IdQueryTeacher,
       response: {
         200: { content: { 'application/json': { schema: planSchema.SinglePlanResponse } }, description: generalSchema.SuccessResponseDes },
         400: generalSchema.BadRequestError,
@@ -45,7 +44,7 @@ export async function planRoutes(app: FastifyInstance) {
         500: generalSchema.InternalServerError,
       },
     },
-    handler: async (request: FastifyRequest<{ Body: planSchema.CreatePlanRequestType, Querystring: generalSchema.IdQueryTeacherType }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Body: planSchema.CreatePlanRequestType }>, reply: FastifyReply) => {
       const plan = await planUseCase.createPlan(request)
       reply.send({ data: { plan }, msgCode: '', msgType: 'success' })
     },
@@ -139,7 +138,7 @@ export async function planRoutes(app: FastifyInstance) {
         500: generalSchema.InternalServerError,
       },
     },
-    handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType, Body: planSchema.UpdatePlanRequestType }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType; Body: planSchema.UpdatePlanRequestType }>, reply: FastifyReply) => {
       const plan = await planUseCase.updatePlan(request)
       reply.send({ data: { plan }, msgCode: '', msgType: 'success' })
     },

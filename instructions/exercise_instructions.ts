@@ -1,5 +1,5 @@
 export interface ExerciseInstructionInput {
-  gender: 'm' | 'f';
+  gender: 'm' | 'f'
   target: string
   mechanics: string
   level: string
@@ -33,27 +33,23 @@ export function getExerciseInstructions({ gender, target, mechanics, level, targ
     weightGroundPercentage = 65
     numberOfSetsCeiling = 6
     numberOfSetsGround = 3
-  }
-  else if (target === 'strength') {
+  } else if (target === 'strength') {
     if (gender === 'm') {
       weightCeilingPercentage = 100
       weightGroundPercentage = 80
-    }
-    else {
+    } else {
       weightCeilingPercentage = 95
       weightGroundPercentage = 80
     }
 
     numberOfSetsCeiling = 5
     numberOfSetsGround = 3
-  }
-  else if (target === 'endurance') {
+  } else if (target === 'endurance') {
     weightCeilingPercentage = gender === 'm' ? 60 : 65
     weightGroundPercentage = gender === 'm' ? 40 : 45
     numberOfSetsCeiling = 4
     numberOfSetsGround = 2
-  }
-  else {
+  } else {
     numberOfSetsCeiling = 4
     numberOfSetsGround = 3
     weightCeilingPercentage = 70
@@ -65,68 +61,55 @@ export function getExerciseInstructions({ gender, target, mechanics, level, targ
     if (level === 'beginner' || level === 'novice') {
       repeatsPerSetGround = 12
       repeatsPerSetCeiling = 15
-    }
-    else if (level === 'intermediate') {
+    } else if (level === 'intermediate') {
       repeatsPerSetGround = 6
       repeatsPerSetCeiling = 12
-    }
-    else {
+    } else {
       repeatsPerSetGround = 1
       repeatsPerSetCeiling = 5
     }
-  }
-  else if (target === 'endurance') {
+  } else if (target === 'endurance') {
     if (level === 'beginner' || level === 'novice') {
       repeatsPerSetGround = 12
       repeatsPerSetCeiling = 20
-    }
-    else if (level === 'intermediate') {
+    } else if (level === 'intermediate') {
       repeatsPerSetGround = 15
       repeatsPerSetCeiling = 25
-    }
-    else {
+    } else {
       repeatsPerSetGround = 20
       repeatsPerSetCeiling = 30
     }
-  }
-  else if (target === 'hypertrophy') {
+  } else if (target === 'hypertrophy') {
     if (level === 'beginner' || level === 'novice') {
       repeatsPerSetGround = 10
       repeatsPerSetCeiling = 15
-    }
-    else if (level === 'intermediate') {
+    } else if (level === 'intermediate') {
       repeatsPerSetGround = 8
       repeatsPerSetCeiling = 12
-    }
-    else {
+    } else {
       repeatsPerSetGround = 6
       repeatsPerSetCeiling = 12
     }
-  }
-  else if (target === 'balance' || target === 'postural') {
+  } else if (target === 'balance' || target === 'postural') {
     if (level === 'beginner' || level === 'novice') {
       repeatsPerSetGround = 10
       repeatsPerSetCeiling = 15
-    }
-    else if (level === 'intermediate') {
+    } else if (level === 'intermediate') {
       repeatsPerSetGround = 12
       repeatsPerSetCeiling = 20
-    }
-    else {
+    } else {
       repeatsPerSetGround = 15
       repeatsPerSetCeiling = 25
     }
-  }
-  else { // target === 'mobility'
+  } else {
+    // target === 'mobility'
     if (level === 'beginner' || level === 'novice') {
       repeatsPerSetGround = 8
       repeatsPerSetCeiling = 12
-    }
-    else if (level === 'intermediate') {
+    } else if (level === 'intermediate') {
       repeatsPerSetGround = 10
       repeatsPerSetCeiling = 15
-    }
-    else {
+    } else {
       repeatsPerSetGround = 12
       repeatsPerSetCeiling = 20
     }
@@ -135,8 +118,7 @@ export function getExerciseInstructions({ gender, target, mechanics, level, targ
   if (target_muscle_groups.some(item => ['chest', 'back', 'abductors', 'adductors'].includes(item))) {
     repeatsPerSetGround += 2
     repeatsPerSetCeiling += 2
-  }
-  else if (target_muscle_groups.some(item => ['biceps', 'triceps', 'shoulders', 'calves'].includes(item))) {
+  } else if (target_muscle_groups.some(item => ['biceps', 'triceps', 'shoulders', 'calves'].includes(item))) {
     repeatsPerSetGround -= 2
     repeatsPerSetCeiling -= 2
   }
@@ -147,42 +129,36 @@ export function getExerciseInstructions({ gender, target, mechanics, level, targ
       if (repeatsPerSetGround <= 5) {
         restBetweenSetsCeiling = 300
         restBetweenSetsGround = 180
-      }
-      else {
+      } else {
         restBetweenSetsCeiling = 240
         restBetweenSetsGround = 120
       }
-    }
-    else { // mechanics === 'isolation'
+    } else {
+      // mechanics === 'isolation'
       restBetweenSetsCeiling = 120
       restBetweenSetsGround = 60
     }
-  }
-  else if (target === 'hypertrophy') {
+  } else if (target === 'hypertrophy') {
     if (repeatsPerSetGround >= 6 && repeatsPerSetCeiling <= 12) {
       restBetweenSetsCeiling = 60
       restBetweenSetsGround = 30
-    }
-    else {
+    } else {
       restBetweenSetsCeiling = 45
       restBetweenSetsGround = 30
     }
-  }
-  else if (target === 'endurance') {
+  } else if (target === 'endurance') {
     if (repeatsPerSetGround > 12) {
       restBetweenSetsCeiling = 60
       restBetweenSetsGround = 20
-    }
-    else {
+    } else {
       restBetweenSetsCeiling = 90
       restBetweenSetsGround = 30
     }
-  }
-  else if (target === 'balance' || target === 'postural') {
+  } else if (target === 'balance' || target === 'postural') {
     restBetweenSetsCeiling = 60
     restBetweenSetsGround = 30
-  }
-  else { // target === 'mobility'
+  } else {
+    // target === 'mobility'
     restBetweenSetsCeiling = 60
     restBetweenSetsGround = 20
   }

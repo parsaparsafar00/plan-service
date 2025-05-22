@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid'
 // کمل کیس بدون استفاده از کتابخانه های نود جی اس
 function customCamelCase(str: string): string {
   return str
-    .replace(/[\-*#]/g, ' ')
+    .replace(/[-*#]/g, ' ')
     .replace(/[^\w\s]/g, '')
     .trim()
     .split(/\s+/)
@@ -77,7 +77,7 @@ export async function initExerciseTable(knex: Knex): Promise<void> {
     const headerRow = sheet.getRow(1)
     const rawHeaders = (headerRow.values as string[]).slice(1) // حذف مقدار null اولیه
     const toCamel = (s: string) =>
-      customCamelCase(s.replace(/[\-*#]/g, '').replace(/[^\w\s]/g, '').trim())
+      customCamelCase(s.replace(/[-*#]/g, '').replace(/[^\w\s]/g, '').trim())
 
     const renamedHeaders = rawHeaders.map(toCamel)
 

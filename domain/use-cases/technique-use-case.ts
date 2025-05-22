@@ -51,7 +51,6 @@ export async function createTechnique(request: FastifyRequest<{ Body: techniqueS
     id: uuidv4(),
     abbrName: abbrName,
     name: request.body.name,
-    usageTimes: 0,
     isGlobal: isGlobal,  // اگر مربی، این پارامتر رو روی صحیح هم تنظیم بکنه، تکنیک بصورت عمومی ذخیره نخواهد شد چون ما همیشه براش فالس میزنیم
     teacherId: creatorId,
     description: request.body.description,
@@ -149,13 +148,12 @@ export async function deleteTechnique(request: FastifyRequest<{ Params: generalS
   // ابتدا باید چک کنیم که آیا تکنیک در هیچ برنامه ای از مربی فعلی تا بحال استفاده شده است یا خیر
   const autoQueryData: AutoQueryData  = {sorting: { createdAt: 'desc' },paging: {}} // مقدار دهی الکی اتوکوئری برای اینکه بتونیم از تابع زیر استفاده کنیم
   const plans = await planRepo.getPlansByTeacherId(existing.teacherId, autoQueryData); 
-  if (!plans) return;
   
   plans.forEach((plan: planSchema.PlanType) => {
     plan.workoutPlan.sessions.forEach((session: planSchema.sessionInplanType) => {
       Object.values(session.exercises).forEach((exercise: exerciseSchema.exerciseOutputInPlanType) => {
         if (exercise.techniqueId && exercise.techniqueId === request.params.id) {
-          throw new AppError('PLAN_TECHNIQUE_ACTION_IS_FORBIDDEN', 'This technique has been used by you in plans you have previously created', 403);
+          throw new AppError('PLAN_TECHNIQUE_ACTION_IS_FORBIDDEN', 'This technique has been used by this teacher in plans previously', 403);
         }
       });
     });

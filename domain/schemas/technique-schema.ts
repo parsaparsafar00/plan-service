@@ -12,13 +12,12 @@ export const TechniqueSchema = Type.Object({
   name: Type.String({ maxLength: 255 }),
   teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   description: Type.String(),
-  usageTimes: Type.Number() || 0,
   descIsVisible: Type.Boolean(),
   isGlobal: Type.Boolean(),
   method: generalSchema.techniqueMethodEnum,
   status: Type.Enum({
     published: 'published',
-    draft: 'draft'
+    draft: 'draft',
   }),
   createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
   updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
@@ -34,7 +33,7 @@ export const CreateTechniqueRequest = Type.Object({
   name: Type.String({ maxLength: 255 }),
   method: generalSchema.techniqueMethodEnum,
   descIsVisible: Type.Boolean(),
-  isGlobal: Type.Boolean()
+  isGlobal: Type.Boolean(),
 })
 export type CreateTechniqueRequestType = Static<typeof CreateTechniqueRequest>
 
@@ -49,8 +48,8 @@ export type UpdateTechniqueRequestType = Static<typeof UpdateTechniqueRequest>
  */
 export const UpdateTechniquesByIdListSchema = Type.Object({
   idList: Type.Array(Type.String({ format: 'uuid' }), { minItems: 0 }), // ممکنه لیست آیدی ها خالی باشه، یعنی هیچ تکنیکی استفاده نشده باشه
-  countList: Type.Array(Type.Number(), { minItems: 0 })
-});
+  countList: Type.Array(Type.Number(), { minItems: 0 }),
+})
 export type UpdateTechniquesByIdListType = Static<typeof UpdateTechniquesByIdListSchema>
 
 /**

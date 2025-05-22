@@ -20,14 +20,13 @@ export function getKnexInstanceForPlanRepo() {
 export async function insertPlan(data: PlanType, trx?: Knex.Transaction): Promise<PlanType> {
   try {
     // ساخت کوئری بیس
-    const query = knexInstance('plan_records');
-    
-    // اجرای کوئری با تراکنش اگر وجود داشت
-    const [inserted] = await (trx ? query.transacting(trx) : query).insert(data).returning('*');
-    return inserted;
+    const query = knexInstance('plan_records')
 
+    // اجرای کوئری با تراکنش اگر وجود داشت
+    const [inserted] = await (trx ? query.transacting(trx) : query).insert(data).returning('*')
+    return inserted
   } catch (error) {
-    throw new AppError('PLAN_PLAN_ERROR', 'Database insertPlan query error', 400, error);
+    throw new AppError('PLAN_PLAN_ERROR', 'Database insertPlan query error', 400, error)
   }
 }
 
@@ -36,11 +35,13 @@ export async function insertPlan(data: PlanType, trx?: Knex.Transaction): Promis
  */
 export async function getPlansByTeacherId(teacherId: string, autoQueryData: AutoQueryData): Promise<PlanType[]> {
   try {
-    return await knexInstance('plan_records').where({ teacherId }).andWhereNot({ status: 'deleted' }).modify((qb) => {
-      attachAutoQuery(qb, autoQueryData)
-    })
-  }
-  catch (error) {
+    return await knexInstance('plan_records')
+      .where({ teacherId })
+      .andWhereNot({ status: 'deleted' })
+      .modify(qb => {
+        attachAutoQuery(qb, autoQueryData)
+      })
+  } catch (error) {
     throw new AppError('PLAN_PLAN_ERROR', 'Database getPlansByTeacherId query error', 400, error)
   }
 }
@@ -52,8 +53,7 @@ export async function getPlanById(id: string): Promise<PlanType | undefined> {
   try {
     const plan = await knexInstance('plan_records').where({ id }).andWhereNot({ status: 'deleted' }).first()
     return plan
-  }
-  catch (error) {
+  } catch (error) {
     throw new AppError('PLAN_PLAN_ERROR', 'Database getPlanById query error', 400, error)
   }
 }
@@ -61,12 +61,10 @@ export async function getPlanById(id: string): Promise<PlanType | undefined> {
 // برای ادمین در موارد خاص که میخواد کل برنامه ها رو ببینه
 export async function getAllPlans(autoQueryData: AutoQueryData): Promise<PlanType[]> {
   try {
-    const plans = await knexInstance('plan_records').modify((qb) => {
+    return await knexInstance('plan_records').modify(qb => {
       attachAutoQuery(qb, autoQueryData)
     })
-    return plans
-  }
-  catch (error) {
+  } catch (error) {
     throw new AppError('PLAN_PLAN_DB_ERROR', 'Database getAllPlans error', 500, error)
   }
 }
@@ -78,8 +76,7 @@ export async function updatePlan(id: string, updates: Partial<PlanType>): Promis
   try {
     const [updated] = await knexInstance('plan_records').where({ id }).update(updates).returning('*')
     return updated
-  }
-  catch (error) {
+  } catch (error) {
     throw new AppError('PLAN_PLAN_ERROR', 'Database updatePlan query error', 400, error)
   }
 }
@@ -89,15 +86,14 @@ export async function updatePlan(id: string, updates: Partial<PlanType>): Promis
  */
 export async function deletePlan(id: string): Promise<PlanType> {
   try {
-    // بصورت دستی وضعیت حذف شده رو وارد میکنیم، به این علت که کاربری اجازه نداشته باشه مقدار 
-    // deleted 
+    // بصورت دستی وضعیت حذف شده رو وارد میکنیم، به این علت که کاربری اجازه نداشته باشه مقدار
+    // deleted
     // رو پاس بده به بک اند،
-    const updates = {'status': 'deleted'}
+    const updates = { status: 'deleted' }
     await knexInstance('plan_records').where({ id }).del()
     const [updated] = await knexInstance('plan_records').where({ id }).update(updates).returning('*')
     return updated
-  }
-  catch (error) {
+  } catch (error) {
     throw new AppError('PLAN_PLAN_ERROR', 'Database deletePlan query error', 400, error)
   }
 }

@@ -25,10 +25,7 @@ export async function categoryRoutes(app: FastifyInstance) {
         500: categorySchemas.InternalServerError,
       },
     },
-    handler: async (
-      request: FastifyRequest<{ Body: categorySchemas.CreateCategoryRequestType, Querystring: generalSchema.IdQueryTeacherType }>,
-      reply: FastifyReply,
-    ) => {
+    handler: async (request: FastifyRequest<{ Body: categorySchemas.CreateCategoryRequestType; Querystring: generalSchema.IdQueryTeacherType }>, reply: FastifyReply) => {
       const category = await categoryUseCase.createCategory(request)
       reply.send({ data: { category }, msgCode: '', msgType: 'success' })
     },
@@ -51,10 +48,7 @@ export async function categoryRoutes(app: FastifyInstance) {
         500: categorySchemas.InternalServerError,
       },
     },
-    handler: async (
-      request: FastifyRequest<{ Params: categorySchemas.IdParamType }>,
-      reply: FastifyReply,
-    ) => {
+    handler: async (request: FastifyRequest<{ Params: categorySchemas.IdParamType }>, reply: FastifyReply) => {
       const category = await categoryUseCase.getCategoryById(request)
       reply.send({ data: { category }, msgCode: '', msgType: 'success' })
     },
@@ -78,10 +72,7 @@ export async function categoryRoutes(app: FastifyInstance) {
         500: categorySchemas.InternalServerError,
       },
     },
-    handler: async (
-      request: FastifyRequest<{ Params: generalSchema.IdParamType }>,
-      reply: FastifyReply,
-    ) => {
+    handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
       const categories = await categoryUseCase.getCategoriesByTeacherId(request)
       reply.send({ data: { categories }, msgCode: '', msgType: 'success' })
     },
@@ -127,10 +118,7 @@ export async function categoryRoutes(app: FastifyInstance) {
         500: categorySchemas.InternalServerError,
       },
     },
-    handler: async (
-      request: FastifyRequest<{ Params: categorySchemas.IdParamType, Body: categorySchemas.UpdateCategoryRequestType }>,
-      reply: FastifyReply,
-    ) => {
+    handler: async (request: FastifyRequest<{ Params: categorySchemas.IdParamType; Body: categorySchemas.UpdateCategoryRequestType }>, reply: FastifyReply) => {
       const category = await categoryUseCase.updateCategory(request)
       reply.send({ data: { category }, msgCode: '', msgType: 'success' })
     },
@@ -157,10 +145,7 @@ export async function categoryRoutes(app: FastifyInstance) {
         500: categorySchemas.InternalServerError,
       },
     },
-    handler: async (
-      request: FastifyRequest<{ Params: categorySchemas.IdParamType }>,
-      reply: FastifyReply,
-    ) => {
+    handler: async (request: FastifyRequest<{ Params: categorySchemas.IdParamType }>, reply: FastifyReply) => {
       await categoryUseCase.deleteCategory(request)
       reply.send({ data: {}, msgCode: '', msgType: 'success' })
     },

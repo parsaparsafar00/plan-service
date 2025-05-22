@@ -1,9 +1,8 @@
 import type { Knex } from 'knex'
 import type { AutoQueryData } from '@amard/auto-query'
 import { attachAutoQuery } from '@amard/auto-query'
-import type { TechniqueType, UpdateTechniquesByIdListType } from '../domain/schemas/technique-schema.js'
+import type { TechniqueType } from '../domain/schemas/technique-schema.js'
 import { AppError } from '@amard/error-handling'
-import { DateTime } from 'luxon'
 
 let knexInstance: Knex
 
@@ -114,44 +113,4 @@ export async function deleteTechnique(id: string): Promise<void> {
   catch (error) {
     throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database deleteTechnique query error', 400, error)
   }
-}
-
-/**
- * ویرایش تعداد دفعات استفاده از تکنیک بر حسب آیدی مربی 
- */
-export async function updateTechniqueUsageTimesByIdList(techniquesToUpdate: UpdateTechniquesByIdListType, trx?: Knex.Transaction): Promise<TechniqueType[] | undefined> {
-  const { idList, countList } = techniquesToUpdate;
-
-  // بررسی اینکه آیا آیدی ای وجود دارد
-  if (idList.length === 0 || countList.length === 0) {
-    return undefined
-  }
-  
-  if (idList.length !== countList.length) throw new AppError('PLAN_TECHNIQUE_ERROR', 'Invalid input for update', 400);
-
-  const query = trx ?? knexInstance; // استفاده از تراکنش یا اتصال اصلی
-
-  const updatedTechniques: TechniqueType[] = []; // برای ذخیره رکوردهای بروزرسانی شده
-
-  // تکرار بر روی آیدی ها و بروزرسانی هر رکورد
-  for (let i = 0; i < idList.length; i++) {
-    const techniqueId = idList[i]; // ID تکنیک
-    const count = countList[i]; // تعداد مربوط به ID
-    const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss')
-
-    // اجرای بروزرسانی
-    const [updated] = await query<TechniqueType>('plan_techniques')
-      .where({ id: techniqueId})
-      .increment('usageTimes', count)
-      .update('updatedAt', nowStr) // بروزرسانی زمان آخرین به‌روزرسانی
-      .returning('*');
-
-    if (!updated) {
-      throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database updateTechniqueUsageTimesByIdList query error', 400); // مدیریت خطا
-    }
-
-    updatedTechniques.push(updated); // ذخیره رکورد بروزرسانی شده
-  }
-
-  return updatedTechniques.length > 0 ? updatedTechniques : undefined; // بازگشت رکوردهای بروزرسانی شده
 }

@@ -22,8 +22,8 @@ export const optionalSessionParameters = Type.Object({
 const commonSessionProperties = {
   weeks: Type.Array(Type.Number()),
   description: Type.String(),
-  targetMuscles: Type.Array(generalSchema.targetMusclesEnum),
-};
+  targetMuscles: generalSchema.targetMusclesEnum,
+}
 
 /**
  * پارامترهای الزامی ورودی برای تولید برنامه تمرینی
@@ -31,16 +31,13 @@ const commonSessionProperties = {
 export const coreSessionInputParameters = Type.Object({
   ...commonSessionProperties,
   exercises: Type.Array(exerciseSchema.exerciseInputSchema),
-});
+})
 
 /**
  * ساختار کامل ورودی جلسه تمرینی
  */
-export const sessionInputSchema = Type.Intersect([
-  coreSessionInputParameters,
-  optionalSessionParameters
-]);
-export type sessionInputType = Static<typeof sessionInputSchema>;
+export const sessionInputSchema = Type.Intersect([coreSessionInputParameters, optionalSessionParameters])
+export type sessionInputType = Static<typeof sessionInputSchema>
 
 /**
  * پارامترهای الزامی جلسه در برنامه نهایی
@@ -48,16 +45,13 @@ export type sessionInputType = Static<typeof sessionInputSchema>;
 export const coreSessionInPlanParameters = Type.Object({
   ...commonSessionProperties,
   exercises: Type.Array(exerciseSchema.exerciseOutputInPlanSchema),
-});
+})
 
 /**
  * ساختار کامل جلسه در برنامه نهایی
  */
-export const sessionInPlanSchema = Type.Intersect([
-  coreSessionInPlanParameters,
-  optionalSessionParameters
-]);
-export type sessionInplanType = Static<typeof sessionInPlanSchema>;
+export const sessionInPlanSchema = Type.Intersect([coreSessionInPlanParameters, optionalSessionParameters])
+export type sessionInplanType = Static<typeof sessionInPlanSchema>
 
 /**
  * پارامترهای الزامی خروجی برای نمایش به کاربر
@@ -65,16 +59,13 @@ export type sessionInplanType = Static<typeof sessionInPlanSchema>;
 export const coreSessionOutputParameters = Type.Object({
   ...commonSessionProperties,
   exercises: Type.Array(exerciseSchema.exerciseOutputSchema),
-});
+})
 
 /**
  * ساختار خروجی یک جلسه تمرینی عادی
  */
-export const sessionOutputSchema = Type.Intersect([
-  coreSessionOutputParameters,
-  optionalSessionParameters
-]);
-export type sessionOutputType = Static<typeof sessionOutputSchema>;
+export const sessionOutputSchema = Type.Intersect([coreSessionOutputParameters, optionalSessionParameters])
+export type sessionOutputType = Static<typeof sessionOutputSchema>
 
 /**
  * ساختار خروجی پرینتی یک جلسه تمرینی
@@ -82,8 +73,8 @@ export type sessionOutputType = Static<typeof sessionOutputSchema>;
 export const printSessionOutputSchema = Type.Object({
   ...commonSessionProperties,
   exercises: Type.Array(exerciseSchema.printingExerciseOutputSchema),
-});
-export type printSessionOutputType = Static<typeof printSessionOutputSchema>;
+})
+export type printSessionOutputType = Static<typeof printSessionOutputSchema>
 
 /**
  * اسکیم پایه اطلاعات شاگرد، استفاده شده در ورودی و خروجی برنامه ها
@@ -94,7 +85,7 @@ const StudentInfoSchema = Type.Object({
   studentWeight: Type.Number(),
   studentAge: Type.Number(),
   studentGender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
-});
+})
 
 // اسکیم پایه برای اطلاعات اصلی برنامه تمرینی
 const BasePlanSchema = Type.Object({
@@ -107,11 +98,11 @@ const BasePlanSchema = Type.Object({
     published: 'published',
     draft: 'draft',
     paid: 'paid',
-    deleted: 'deleted'
+    deleted: 'deleted',
   }),
   createdAt: Type.String({ pattern: isoWithoutTimezonePattern }),
   updatedAt: Type.String({ pattern: isoWithoutTimezonePattern }),
-});
+})
 
 /**
  * اسکیم یک برنامه تمرینی
@@ -123,9 +114,9 @@ export const PlanSchema = Type.Composite([
     workoutPlan: Type.Object({
       sessions: Type.Array(sessionInPlanSchema),
     }),
-  })
-]);
-export type PlanType = Static<typeof PlanSchema>;
+  }),
+])
+export type PlanType = Static<typeof PlanSchema>
 
 /**
  * اسکیم یک برنامه تمرینی در خروجی نشان داده شده به کاربر
@@ -137,9 +128,9 @@ export const PlanOutputSchema = Type.Composite([
     workoutPlan: Type.Object({
       sessions: Type.Array(sessionOutputSchema),
     }),
-  })
-]);
-export type PlanOutputType = Static<typeof PlanOutputSchema>;
+  }),
+])
+export type PlanOutputType = Static<typeof PlanOutputSchema>
 
 /**
  * اسکیم یک برنامه تمرینی پرینتی
@@ -151,9 +142,9 @@ export const PrintPlanSchema = Type.Composite([
     workoutPlan: Type.Object({
       sessions: Type.Array(printSessionOutputSchema),
     }),
-  })
-]);
-export type PrintPlanType = Static<typeof PrintPlanSchema>;
+  }),
+])
+export type PrintPlanType = Static<typeof PrintPlanSchema>
 
 // -------------------------------------- ساختار ورودی های تولید برنامه تمرینی --------------------------------------
 
@@ -196,7 +187,7 @@ export const CreatePlanRequest = Type.Object({
   teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   status: Type.Enum({
     published: 'published',
-    draft: 'draft'
+    draft: 'draft',
   }),
   studentGender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
   studentLevel: generalSchema.levelEnum,
@@ -209,7 +200,7 @@ export type CreatePlanRequestType = Static<typeof CreatePlanRequest>
 // -------------------------------------- ساختار خروجی های یک برنامه تمرینی --------------------------------------
 
 /**
- * ساختار خروجی یک برنامه تمرینی (تفاوتش با 
+ * ساختار خروجی یک برنامه تمرینی (تفاوتش با
  * planSchema
  * در این است که اونجا جلسات اسکیمشون فرق داشته)
  */

@@ -36,10 +36,10 @@ export interface ExerciseEntity {
   movementPattern2: string | null
   movementPattern3: string | null
   bodyRegion: string | null
-  forceType: string | null
-  laterality: string | null
-  exerciseClassification: string | null
-  muscleJointTypes: string | null
+  // forceType: string | null
+  // laterality: string | null
+  // exerciseClassification: string | null
+  // muscleJointTypes: string | null
   priority: number | null
   gender: 'm' | 'f' | null
   ageGround: number | null
@@ -51,12 +51,12 @@ export interface ExerciseEntity {
 }
 
 /**
- * آرایه‌ای گلوبال از همه تمرین‌ها، جهت جستجو و فیلتر در مموری
+ * آرایه‌ای گلوبال از همه حرکات جهت جستجو و فیلتر در مموری
  */
 let inMemoryExercises: ExerciseEntity[] = []
 
 /**
- * یکبار از دیتابیس همه‌ی تمرین‌ها را می‌خوانیم و در حافظه ذخیره می‌کنیم
+ * یکبار از دیتابیس همه‌ی حرکات را می‌خوانیم و در حافظه ذخیره می‌کنیم
  */
 export async function loadAllExercises(): Promise<void> {
   if (!knexInstance) throw new AppError('PLAN_EXERCISE_ERROR', 'Knex instance not set in ExerciseRepo', 400)
@@ -65,8 +65,7 @@ export async function loadAllExercises(): Promise<void> {
     // انتخاب از جدول plan_exercises
     const rows = await knexInstance<ExerciseEntity>('plan_exercises').select('*')
     inMemoryExercises = rows
-  }
-  catch (error) {
+  } catch (error) {
     throw new AppError('PLAN_EXERCISE_ERROR', 'Database loadAllExercises query error', 400, error)
   }
 }
@@ -84,8 +83,7 @@ export function getAllExercisesArray(): ExerciseEntity[] {
 export async function getExerciseByNumber(exerciseNumber: number): Promise<exerciseOutputType | undefined> {
   try {
     return await knexInstance('plan_exercises').where({ number: exerciseNumber }).first()
-  }
-  catch (error) {
+  } catch (error) {
     throw new AppError('PLAN_EXERCISE_ERROR', 'Database getExerciseByNumber query error', 400, error)
   }
 }
@@ -95,11 +93,9 @@ export async function getExerciseByNumber(exerciseNumber: number): Promise<exerc
  */
 export async function getExercisesByNumberList(numberList: number[]): Promise<exerciseRawOutputType[]> {
   try {
-
-    return await knexInstance('plan_exercises').whereIn('number', numberList);
-
+    return await knexInstance('plan_exercises').whereIn('number', numberList)
   } catch (error) {
-    throw new AppError('PLAN_EXERCISE_ERROR', 'Database getExercisesByNumberList query error', 400, error);
+    throw new AppError('PLAN_EXERCISE_ERROR', 'Database getExercisesByNumberList query error', 400, error)
   }
 }
 
@@ -108,10 +104,8 @@ export async function getExercisesByNumberList(numberList: number[]): Promise<ex
  */
 export async function getExercisesByNumberListPrint(numberList: number[]): Promise<Pick<exerciseOutputType, 'name' | 'nameFa' | 'number'>[]> {
   try {
-
-    return await knexInstance('plan_exercises').whereIn('number', numberList);
-
+    return await knexInstance('plan_exercises').whereIn('number', numberList)
   } catch (error) {
-    throw new AppError('PLAN_EXERCISE_ERROR', 'Database getExercisesByNumberListPrint query error', 400, error);
+    throw new AppError('PLAN_EXERCISE_ERROR', 'Database getExercisesByNumberListPrint query error', 400, error)
   }
 }

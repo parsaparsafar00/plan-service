@@ -11,7 +11,8 @@ import { closeKnexConnection, createKnexInstance } from '@amard/postgresql-conne
 import { loadAllExercises, setKnexInstanceForExerciseRepo } from './data-access/exercise-repository.js'
 import { initExerciseTable } from './data-access/migrations/exercise-data/create_exercise_table.js'
 import { setKnexInstanceForPlanRepo } from './data-access/plan-repository.js'
-import { setKnexInstanceForSystemRepo } from './data-access/system-repository.js'
+import { loadAllSystems, setKnexInstanceForSystemRepo } from './data-access/system-repository.js'
+import { setKnexInstanceForSystemMethodRepo } from './data-access/system-method-repository.js'
 import { setKnexInstanceForTrainHelperRepo } from './data-access/plan-helper-repository.js'
 import { setKnexInstanceForTechniqueRepo } from './data-access/technique-repository.js'
 import { setKnexInstanceForTemplateRepo } from './data-access/template-repository.js'
@@ -39,12 +40,9 @@ async function shutDownServer(reason: string, error?: Error) {
 
     logger.warn('Plan-service: Shut down gracefully.')
     process.exit(0)
-  }
-  catch (err) {
-    if (err instanceof Error)
-      errorHandler.handleError(new AppError('PLAN_SERVICE_SHUTDOWN_FAILURE', `Failed to shut down Plan-service: ${err.message}`, 500, err))
-    else
-      errorHandler.handleError(new AppError('PLAN_SERVICE_SHUTDOWN_FAILURE', 'Failed to shut down Plan-service: Unknown error', 500))
+  } catch (err) {
+    if (err instanceof Error) errorHandler.handleError(new AppError('PLAN_SERVICE_SHUTDOWN_FAILURE', `Failed to shut down Plan-service: ${err.message}`, 500, err))
+    else errorHandler.handleError(new AppError('PLAN_SERVICE_SHUTDOWN_FAILURE', 'Failed to shut down Plan-service: Unknown error', 500))
 
     process.exit(1)
   }
@@ -76,13 +74,15 @@ export async function startServer(): Promise<RawServerBase> {
     setKnexInstanceForExerciseRepo(knexInstance)
     setKnexInstanceForPlanRepo(knexInstance)
     setKnexInstanceForSystemRepo(knexInstance)
+    setKnexInstanceForSystemMethodRepo(knexInstance)
     setKnexInstanceForTemplateRepo(knexInstance)
     setKnexInstanceForTechniqueRepo(knexInstance)
     setKnexInstanceForTrainHelperRepo(knexInstance)
     setKnexInstanceForCategoryRepo(knexInstance)
 
-    // لود کردن تمام حرکات درون یک متغیر آرایه ای سراسری
+    // لود کردن تمام حرکات و سیستم ها درون متغیر آرایه ای سراسریشون
     await loadAllExercises()
+    await loadAllSystems()
 
     // شروع وب سرور
     const app = await startWebServer(knexInstance)
@@ -92,12 +92,9 @@ export async function startServer(): Promise<RawServerBase> {
     logger.info(`plan-service: Started on port ${addressInfo.port}`)
 
     return app.server
-  }
-  catch (error) {
-    if (error instanceof Error)
-      errorHandler.handleError(new AppError('PLAN_SERVICE_STARTUP_FAILURE', `Failed to start Plan-service: ${error.message}`, 500, error))
-    else
-      errorHandler.handleError(new AppError('PLAN_SERVICE_STARTUP_FAILURE', 'Failed to start Plan-service: Unknown error', 500))
+  } catch (error) {
+    if (error instanceof Error) errorHandler.handleError(new AppError('PLAN_SERVICE_STARTUP_FAILURE', `Failed to start Plan-service: ${error.message}`, 500, error))
+    else errorHandler.handleError(new AppError('PLAN_SERVICE_STARTUP_FAILURE', 'Failed to start Plan-service: Unknown error', 500))
 
     process.exit(1)
   }

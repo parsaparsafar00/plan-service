@@ -13,6 +13,7 @@ import { OpenAPIOptions, OpenAPIUIOptions } from './open-api-helper.js'
 import { exerciseRoutes } from './routes/exercise-routes.js'
 import { planRoutes } from './routes/plan-routes.js'
 import { systemRoutes } from './routes/system-routes.js'
+import { systemMethodRoutes } from './routes/system-method-routes.js'
 import { techniqueRoutes } from './routes/technique-routes.js'
 import { templateRoutes } from './routes/template-routes.js'
 import { categoryRoutes } from './routes/category-routes.js'
@@ -45,7 +46,15 @@ export async function startWebServer(knexInstance: Knex): Promise<FastifyInstanc
 
   // فیلدهای مجاز برای فیلترینگ و سورت
   const tableNames = ['plan_records']
-  const allColumns = (await Promise.all(tableNames.map(table => knexInstance(table).columnInfo().then(info => Object.keys(info))))).flat()
+  const allColumns = (
+    await Promise.all(
+      tableNames.map(table =>
+        knexInstance(table)
+          .columnInfo()
+          .then(info => Object.keys(info)),
+      ),
+    )
+  ).flat()
   app.register(fastifyAutoQueryPlugin, { allowedFilterFields: allColumns, allowedSortFields: allColumns })
 
   // Health Check
@@ -60,6 +69,7 @@ export async function startWebServer(knexInstance: Knex): Promise<FastifyInstanc
   // ثبت روت ها
   app.register(planRoutes, { prefix: '/v1/plan' })
   app.register(systemRoutes, { prefix: '/v1/plan' })
+  app.register(systemMethodRoutes, { prefix: '/v1/plan' })
   app.register(exerciseRoutes, { prefix: '/v1/plan' })
   app.register(techniqueRoutes, { prefix: '/v1/plan' })
   app.register(templateRoutes, { prefix: '/v1/plan' })
@@ -75,8 +85,7 @@ export async function stopWebServer() {
   if (app) {
     try {
       await app.close()
-    }
-    finally {
+    } finally {
       app = undefined
     }
   }

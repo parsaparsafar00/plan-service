@@ -1,5 +1,6 @@
 import type { FastifyRequest } from 'fastify'
 import type * as exerciseSchema from '../schemas/exercise-schema.js'
+import type * as generalSchema from '../schemas/plan-general-schema.js'
 import { AppError } from '@amard/error-handling'
 import { getAllExercisesArray } from '../../data-access/exercise-repository.js'
 import * as exerciseRepo from '../../data-access/exercise-repository.js'
@@ -7,9 +8,9 @@ import * as exerciseRepo from '../../data-access/exercise-repository.js'
 /**
  * گرفتن اطلاعات حرکت با استفاده از شماره حرکت
  */
-export async function getExerciseByNumber(request: FastifyRequest<{ Params: exerciseSchema.GetExerciseByNumberRequestType }>) {
+export async function getExerciseByNumber(request: FastifyRequest<{ Params: generalSchema.numberParamType }>) {
   const exercise = await exerciseRepo.getExerciseByNumber(request.params.number)
-  if (!exercise) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 404)
+  if (!exercise) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 400)
   return exercise
 }
 
@@ -18,7 +19,7 @@ export async function getExerciseByNumber(request: FastifyRequest<{ Params: exer
  */
 export async function getExercisesByNumberList(request: FastifyRequest<{ Params: number[] }>) {
   const exercise = await exerciseRepo.getExercisesByNumberList(request.params)
-  if (!exercise) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 404)
+  if (!exercise) throw new AppError('EXERCISE_NOT_FOUND', 'Exercise not found', 400)
   return exercise
 }
 
@@ -31,13 +32,12 @@ export async function getExercisesByMuscles(request: FastifyRequest<{ Params: ex
   if (!allExercises || allExercises.length === 0) throw new AppError('PLAN_NO_EXERCISES_FOUND', 'No exercises loaded in memory', 400)
 
   // منطق فیلترینگ
-  const filteredExercises = allExercises.filter((ex) => {
-
+  const filteredExercises = allExercises.filter(ex => {
     // فیلتر حرکاتی ک فیلم آموزشی دارند
     if (!ex.videoDemonstration || ex.videoDemonstration == '' || ex.videoDemonstration == null) return false
 
     // فیلتر بر اساس عضلات هدف
-    if (muscleValues.length > 0 && muscleValues.indexOf("full body") === -1) {
+    if (muscleValues.length > 0 && muscleValues.indexOf('full body') === -1) {
       for (let i = 0; i <= muscleValues.length - 1; i++) {
         if (muscleValues[i] !== ex.targetMuscleGroup && ex.targetMuscleGroup) {
           if (i === muscleValues.length - 1) {

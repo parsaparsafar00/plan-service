@@ -114,7 +114,7 @@ export async function templateRoutes(app: FastifyInstance) {
         500: generalSchema.InternalServerError,
       },
     },
-    handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType, Body: templateSchema.UpdateTemplateRequestType }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType; Body: templateSchema.UpdateTemplateRequestType }>, reply: FastifyReply) => {
       const template = await templateUseCase.updateTemplate(request)
       reply.send({ data: { template }, msgCode: '', msgType: 'success' })
     },

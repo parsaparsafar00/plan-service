@@ -69,9 +69,12 @@ export const ErrorResponse = Type.Object({
 export const SuccessResponseDes = `### عملیات موفق با کد 200 گزارش میشود. مدل خروجی در اسکیما.`
 
 export const BadRequestError = {
-  description: generateDescriptionForStatus(`
+  description: generateDescriptionForStatus(
+    `
 ### هرگونه مشکلی در ورودی اطلاعات با خطای 400 گزارش میشود
-  `, 400),
+  `,
+    400,
+  ),
   content: {
     'application/json': {
       schema: ErrorResponse,
@@ -79,9 +82,12 @@ export const BadRequestError = {
   },
 }
 export const ForbiddenError = {
-  description: generateDescriptionForStatus(`
+  description: generateDescriptionForStatus(
+    `
 ### خطاهای سطح دسترسی با کد 403 گزارش میشوند
-`, 403),
+`,
+    403,
+  ),
   content: {
     'application/json': {
       schema: ErrorResponse,
@@ -90,11 +96,14 @@ export const ForbiddenError = {
 }
 
 export const InternalServerError = {
-  description: generateDescriptionForStatus(`
+  description: generateDescriptionForStatus(
+    `
 ### خطاهای داخلی با کد 500 گزارش میشوند
 ---
 ### این خطاها خطرناک هستن و بهتر است در صورت مشاهده خطای 500 آنرا به برنامه نویس بکاند گزارش دهید
-`, 500),
+`,
+    500,
+  ),
   content: {
     'application/json': {
       schema: ErrorResponse,

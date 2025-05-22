@@ -26,7 +26,7 @@ export async function techniqueRoutes(app: FastifyInstance) {
         500: generalSchema.InternalServerError,
       },
     },
-    handler: async (request: FastifyRequest<{ Body: techniqueSchema.CreateTechniqueRequestType, Querystring: generalSchema.IdQueryTeacherType }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Body: techniqueSchema.CreateTechniqueRequestType; Querystring: generalSchema.IdQueryTeacherType }>, reply: FastifyReply) => {
       const technique = await techniqueUseCase.createTechnique(request)
       reply.send({ data: { technique }, msgCode: '', msgType: 'success' })
     },
@@ -98,7 +98,7 @@ export async function techniqueRoutes(app: FastifyInstance) {
         500: generalSchema.InternalServerError,
       },
     },
-    handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType, Body: techniqueSchema.UpdateTechniqueRequestType }>, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType; Body: techniqueSchema.UpdateTechniqueRequestType }>, reply: FastifyReply) => {
       const updatedTechnique = await techniqueUseCase.updateTechnique(request)
       reply.send({ data: { technique: updatedTechnique }, msgCode: '', msgType: 'success' })
     },

@@ -50,18 +50,19 @@ export async function createTemplateByAI(request: FastifyRequest<{ Body: templat
     },
   }
 
-  const workout_session = AISessionGenerator(generateSessionByAIInput) // تولید جلسه تمرینی توسط هوش مصنوعی
+  const sessionOutput : planSchema.sessionOutputType = await AISessionGenerator(generateSessionByAIInput) // تولید جلسه تمرینی توسط هوش مصنوعی
 
-  const exercisesInPlanFormat: exerciseSchema.exerciseOutputInPlanType[] = Object.values(workout_session.exercises).map(exercise => ({
+  const exercisesInPlanFormat: exerciseSchema.exerciseOutputInPlanType[] = 
+  Object.values(sessionOutput.exercises).map(exercise => ({
     number: exercise.number,
     restBetweenSets: exercise.restBetweenSets,
     weightPercentage: exercise.weightPercentage,
-    systemId: exercise.systemId || '',
+    systemNumber: exercise.systemNumber,
     techniqueId: exercise.techniqueId || ''
   }));
 
-  const transformedSession = {...workout_session, exercises: exercisesInPlanFormat};
-
+  // آماده سازی ورودی تابع ذخیره کننده قالب در دیتابیس
+  const adaptedSession = {...sessionOutput, exercises: exercisesInPlanFormat};
   const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss') // useTz=false در migration
   const newTemplate: templateSchema.TemplateType = {
     id: uuidv4(),
@@ -72,7 +73,7 @@ export async function createTemplateByAI(request: FastifyRequest<{ Body: templat
     target: request.body.target,
     muscles: JSON.stringify(request.body.muscles),
     gender: request.body.gender,
-    session: transformedSession,
+    session: adaptedSession,
     categoryId: null,
     createdAt: nowStr,
     updatedAt: nowStr,
