@@ -194,18 +194,17 @@ export async function updateSystem(request: FastifyRequest<{ Params: generalSche
 
   const currentRepeatPattern = [currentSystem.repeat1, currentSystem.repeat2, currentSystem.repeat3, currentSystem.repeat4, currentSystem.repeat5, currentSystem.repeat6, currentSystem.repeat7, currentSystem.repeat8].filter(value => value !== 0) // نال بیخود نمیزنیم که در نام اختصاری دچار مشکل نشیم
 
-  const correctedRepeats: number[] = []
+  let correctedRepeats: number[] = currentRepeatPattern
 
-  if (request.body.repeatPattern) {
+  if (updates.repeatPattern) {
     // اگر سیستم تکرار تعریف شده بود، بایستی روی دیتای آن یکسری پراسس ها انجام بدیم
 
     // تکرارها را در یک آرایه ذخیره میکنیم
-    const inputRepeats = [request.body.repeatPattern.repeat1, request.body.repeatPattern.repeat2, request.body.repeatPattern.repeat3, request.body.repeatPattern.repeat4, request.body.repeatPattern.repeat5, request.body.repeatPattern.repeat6, request.body.repeatPattern.repeat7, request.body.repeatPattern.repeat8]
-
+    const inputRepeats = [updates.repeatPattern.repeat1, updates.repeatPattern.repeat2, updates.repeatPattern.repeat3, updates.repeatPattern.repeat4, updates.repeatPattern.repeat5, updates.repeatPattern.repeat6, updates.repeatPattern.repeat7, updates.repeatPattern.repeat8]
     // ترتیب را تغییر میدیم تا تمام صفرها در انتها قرار گیرند و ترتیب عناصر غیر صفر حفظ شود
     const nonZeroRepeats = inputRepeats.filter(x => x !== 0)
     const zeroCount = inputRepeats.length - nonZeroRepeats.length
-    const correctedRepeats = nonZeroRepeats.concat(Array(zeroCount).fill(0))
+    correctedRepeats = nonZeroRepeats.concat(Array(zeroCount).fill(0))
 
     // حال که کاربر سیستم جدیدی را وارد کرده است، بایستی در جدول سیستم ها، سیستمش رو اپدیت کنیم
     updateInput.repeat1 = correctedRepeats[0]
@@ -221,20 +220,19 @@ export async function updateSystem(request: FastifyRequest<{ Params: generalSche
     correctedRepeats.filter(value => value !== 0) // صفر بیخود نمیزنیم که در نام اختصاری دچار مشکل نشیم
   }
 
-  // تکراری که برای تولید نام اختصاری نیاز هست رو پیدا میکنیم (یا کاربر سیستم تکرار جدید رو وارد نکرده و باید از دیتابیس بگیریم، یا تکراری هست که الان کاربر وارد کرده)
-  const repeatPattern = correctedRepeats ? correctedRepeats : currentRepeatPattern
-
   // بررسی اینکه آیا متدی که کاربر برای سیستم تکرارش انتخاب کرده با متد واقعی سیستم تکرارش تطابق داره یا ن
   const realMethodName = await systemMethodUseCase.detectSystemMethodName(correctedRepeats)
   const newMethod = await systemMethodRepo.getSystemMethodByMethodNumber(methodNumber)
   if (!newMethod) throw new AppError('PLAN_SYSTEM_METHOD_NOT_FOUND', 'System method not found', 404)
   if (realMethodName !== newMethod.name) throw new AppError('PLAN_SYSTEM_METHOD_INVALID', 'System method specified is not correct', 400)
 
-  updateInput.abbrName = `سیستم ${methodNumber} ${repeatPattern}` // نام اختصاری بایستی آپدیت بشه چون ممکنه سیستم تکرار و یا نام متد سیستم آپدیت شده باشند
+  updateInput.abbrName = `سیستم ${realMethodName} ${correctedRepeats}` // نام اختصاری بایستی آپدیت بشه چون ممکنه سیستم تکرار و یا نام متد سیستم آپدیت شده باشند
   updateInput.methodNumber = methodNumber
   updateInput.updatedAt = DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-LL-dd HH:mm:ss')
 
-  const updated = await systemRepo.updateSystem(currentSystem.id, updateInput)
+  const updateInputWithoutRepeatPattern = Object.fromEntries(Object.entries(updateInput).filter(([key]) => key !== 'repeatPattern')) // حذف پارامتر repeatPattern از ورودی های تابع آپدیت سیستم
+
+  const updated = await systemRepo.updateSystem(currentSystem.id, updateInputWithoutRepeatPattern)
   auditLogger.update('', { request: setAuditRequest(request), oldData: currentSystem ?? null, newData: updated ?? null })
 
   const systemOutput: systemSchema.SystemOutputType = {
@@ -267,7 +265,7 @@ export async function deleteSystem(request: FastifyRequest<{ Params: generalSche
   plans.forEach(plan => {
     plan.workoutPlan.sessions.forEach((session: planSchema.sessionInplanType) => {
       Object.values(session.exercises).forEach((exercise: exerciseSchema.exerciseOutputInPlanType) => {
-        if (exercise.systemNumber === existingSystem.number) throw new AppError('PLAN_SYSTEM_ACTION_IS_FORBIDDEN', 'This system has been used by this teacher in plans previously', 403)
+        if (exercise.systemNumber === existingSystem.number) throw new AppError('PLAN_SYSTEM_ACTION_IS_FORBIDDEN', 'This system has been previously used by this teacher in plans', 403)
       })
     })
   })

@@ -146,7 +146,7 @@ export async function AISessionGenerator(sessionInput: PlanSchemas.GenerateSessi
 
       const systemRepeatPattern = [closestSystem.repeat1, closestSystem.repeat2, closestSystem.repeat3, closestSystem.repeat4, closestSystem.repeat5, closestSystem.repeat6, closestSystem.repeat7, closestSystem.repeat8]
       const sysmteMethod = await systemMethodRepo.getSystemMethodByMethodNumber(closestSystem.methodNumber)
-      if (!sysmteMethod) throw new AppError('PLAN_SYSTEM_METHOD_NOT_FOUND', 'System method not found', 400)
+      if (!sysmteMethod) throw new AppError('PLAN_SYSTEM_METHOD_NOT_FOUND', 'System method not found', 404)
 
       const exerciseData: exerciseSchema.exerciseOutputType = {
         number: exercise.number, // صرفا شماره حرکت رو در جدول برنامه ها ذخیره میکنیم و زمانی که نیاز به نشان دادن برنامه بود، حرکت رو بر حسب شمارش پیدا میکنیم

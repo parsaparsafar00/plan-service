@@ -533,7 +533,7 @@ async function generateRandomSystemsInCode(methodsInserted: Array<{ number: numb
   const systems: SystemRecord[] = Object.entries(repeatPatternsByMethod).flatMap(([methodName, repeatPatterns]) => {
     return repeatPatterns.map(repeatPattern => {
       const methodNumber = methodsInserted.find(record => record.name === methodName)?.number
-      if (!methodNumber) throw new AppError('PLAN_SYSTEM_DB_ERROR', `Method number not found for ${methodName}`, 500)
+      if (!methodNumber) throw new AppError('PLAN_SYSTEM_DB_ERROR', `Method number not found for ${methodName}`, 404)
 
       const repeats = Array(8)
         .fill(null)
