@@ -274,15 +274,16 @@ export async function getPlanById(request: FastifyRequest<{ Params: generalSchem
 
         console.log(outputExercisesInSession)
         // ساخت آرایه‌ی جلسات برای یک برنامه
-        const { exercises, ...sessionWithoutExercises } = session
-        outputSessions.push({ ...sessionWithoutExercises, exercises: outputExercisesInSession })
+        outputSessions.push({ ...session, exercises: outputExercisesInSession })
       }),
     )
 
     // ساخت آبجکت برنامه با استفاده از جلسات
 
-    const { workoutPlan, ...planWithoutSessions } = plan
-    outputPlan = { ...planWithoutSessions, workoutPlan: { sessions: outputSessions } }
+    outputPlan = {
+      ...plan,
+      workoutPlan: { sessions: outputSessions },
+    }
   } catch (error) {
     console.error(error)
     if (error instanceof AppError) throw error
