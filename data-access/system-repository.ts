@@ -24,6 +24,7 @@ export interface SystemEntity {
   repeat6: number
   repeat7: number
   repeat8: number
+  description: string
 }
 
 /**
@@ -92,11 +93,11 @@ export async function getAllSystemsByTeacherId(teacherId: string, autoQueryData:
 /**
  * دریافت اطلاعات کامل سیستم های تمرینی با لیستی از آیدی سیستم ها
  */
-export async function getSystemsByNumberList(idList: number[]): Promise<Pick<SystemType, 'id' | 'number' | 'description' | 'descIsVisible' | 'methodNumber' | 'repeat1' | 'repeat2' | 'repeat3' | 'repeat4' | 'repeat5' | 'repeat6' | 'repeat7' | 'repeat8' | 'abbrName'>[]> {
+export async function getSystemsByNumberList(numberList: number[]): Promise<Pick<SystemType, 'id' | 'number' | 'description' | 'descIsVisible' | 'methodNumber' | 'repeat1' | 'repeat2' | 'repeat3' | 'repeat4' | 'repeat5' | 'repeat6' | 'repeat7' | 'repeat8' | 'abbrName'>[]> {
   try {
-    return await knexInstance('plan_systems').whereIn('id', idList)
+    return await knexInstance('plan_systems').whereIn('number', numberList)
   } catch (error) {
-    throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Database getSystemsByIdList query error', 400, error)
+    throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Database getSystemsByNumberList query error', 400, error)
   }
 }
 

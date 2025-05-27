@@ -4,6 +4,8 @@ import { AppError } from '@amard/error-handling'
 import { SystemsAndUsageTimesType } from '../domain/schemas/system-schema.js'
 import { ExercisesAndUsageTimesType } from '../domain/schemas/exercise-schema.js'
 import type { SystemMethodsAndUsageTimesType } from '../domain/schemas/system-method-schema.js'
+import type { TechniquesAndUsageTimesType } from '../domain/schemas/technique-schema.js'
+import type { TechniqueMethodsAndUsageTimesType } from '../domain/schemas/technique-method-schema.js'
 // import type { AutoQueryData } from '@amard/auto-query'
 // import { attachAutoQuery } from '@amard/auto-query'
 
@@ -89,6 +91,34 @@ export async function getSystemsAndTheirUsageTimes(teacherId: string): Promise<S
     return result as { systemNumber: number; usageCount: number }[]
   } catch (error) {
     throw new AppError('PLAN_PLAN_TRAIN_HELPER_DB_ERROR', 'Database getSystemsAndTheirUsageTimes query error', 400, error)
+  }
+}
+
+/**
+ * دریافت اطلاعات متد تکنیکی به همراه تعداد استفادشون
+ */
+export async function getTechniqueMethodsAndTheirUsageTimes(teacherId: string): Promise<TechniqueMethodsAndUsageTimesType[]> {
+  try {
+    const result = await knexInstance('plan_train_helper').select('techniqueMethodNumber').count('* as usageCount').where({ teacherId }).groupBy('techniqueMethodNumber').orderBy('usageCount', 'desc')
+
+    // تبدیل خروجی به تایپی که می‌خواهیم
+    return result as TechniqueMethodsAndUsageTimesType[]
+  } catch (error) {
+    throw new AppError('PLAN_PLAN_TRAIN_HELPER_DB_ERROR', 'خطا در کوئری دریافت متدهای تکنیکی و تعداد استفاده در دیتابیس', 400, error)
+  }
+}
+
+/**
+ * دریافت اطلاعات تکنیک‌ها به همراه تعداد استفادشون
+ */
+export async function getTechniquesAndTheirUsageTimes(teacherId: string): Promise<TechniquesAndUsageTimesType[]> {
+  try {
+    const result = await knexInstance('plan_train_helper').select('techniqueNumber').count('* as usageCount').where({ teacherId }).groupBy('techniqueNumber').orderBy('usageCount', 'desc')
+
+    // تبدیل خروجی به تایپی که می‌خواهیم
+    return result as TechniquesAndUsageTimesType[]
+  } catch (error) {
+    throw new AppError('PLAN_PLAN_TRAIN_HELPER_DB_ERROR', 'خطا در کوئری دریافت تکنیک‌ها و تعداد استفاده در دیتابیس', 400, error)
   }
 }
 

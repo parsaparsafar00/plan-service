@@ -15,6 +15,7 @@ import { loadAllSystems, setKnexInstanceForSystemRepo } from './data-access/syst
 import { setKnexInstanceForSystemMethodRepo } from './data-access/system-method-repository.js'
 import { setKnexInstanceForTrainHelperRepo } from './data-access/plan-helper-repository.js'
 import { setKnexInstanceForTechniqueRepo } from './data-access/technique-repository.js'
+import { setKnexInstanceForTechniqueMethodRepo } from './data-access/technique-method-repository.js'
 import { setKnexInstanceForTemplateRepo } from './data-access/template-repository.js'
 import { setKnexInstanceForCategoryRepo } from './data-access/category-repository.js'
 import { startWebServer, stopWebServer } from './entry-points/api/server.js'
@@ -77,6 +78,7 @@ export async function startServer(): Promise<RawServerBase> {
     setKnexInstanceForSystemMethodRepo(knexInstance)
     setKnexInstanceForTemplateRepo(knexInstance)
     setKnexInstanceForTechniqueRepo(knexInstance)
+    setKnexInstanceForTechniqueMethodRepo(knexInstance)
     setKnexInstanceForTrainHelperRepo(knexInstance)
     setKnexInstanceForCategoryRepo(knexInstance)
 

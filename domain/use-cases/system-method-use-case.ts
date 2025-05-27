@@ -37,7 +37,7 @@ export async function createPlanSystemMethod(request: FastifyRequest<{ Body: sys
 
   // ========== اضافه کردن رکورد به فایل اکسل ==========
   try {
-    const excelFilePath = path.join(process.cwd(), '/data-access/migrations/exercise-data/methods-data.xlsx')
+    const excelFilePath = path.join(process.cwd(), '/data-access/migrations/exercise-data/system-methods-data.xlsx')
     const workbook = new ExcelJS.Workbook()
 
     // سعی در خواندن فایل موجود

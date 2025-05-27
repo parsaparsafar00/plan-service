@@ -185,10 +185,7 @@ export const CreatePlanRequest = Type.Object({
   description: Type.String(),
   studentId: Type.String({ format: 'uuid' }),
   teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
-  status: Type.Enum({
-    published: 'published',
-    draft: 'draft',
-  }),
+  status: Type.Enum({ published: 'published', draft: 'draft' }),
   studentGender: Type.Union([Type.Literal('m'), Type.Literal('f')]),
   studentLevel: generalSchema.levelEnum,
   target: generalSchema.targetEnum,

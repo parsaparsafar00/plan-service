@@ -1,20 +1,20 @@
 import type { Static } from '@sinclair/typebox'
 import { isoWithoutTimezonePattern } from '@amard/validation'
 import { Type } from '@sinclair/typebox'
-import * as generalSchema from '../schemas/plan-general-schema.js'
 
 /**
  * اسکیم یک تکنیک در برنامه تمرینی
  */
 export const TechniqueSchema = Type.Object({
   id: Type.String({ format: 'uuid' }),
+  number: Type.Number(),
+  methodNumber: Type.Number(),
   abbrName: Type.String({ maxLength: 511 }),
   name: Type.String({ maxLength: 255 }),
   teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   description: Type.String(),
-  descIsVisible: Type.Boolean(),
   isGlobal: Type.Boolean(),
-  method: generalSchema.techniqueMethodEnum,
+  descIsVisible: Type.Boolean(),
   status: Type.Enum({
     published: 'published',
     draft: 'draft',
@@ -28,12 +28,20 @@ export type TechniqueType = Static<typeof TechniqueSchema>
  * ساختار ورودی تولید تکنیک برنامه تمرینی
  */
 export const CreateTechniqueRequest = Type.Object({
+  number: Type.Number(),
+  methodNumber: Type.Number(),
+  abbrName: Type.String({ maxLength: 511 }),
+  name: Type.String({ maxLength: 255 }),
   teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   description: Type.String(),
-  name: Type.String({ maxLength: 255 }),
-  method: generalSchema.techniqueMethodEnum,
-  descIsVisible: Type.Boolean(),
   isGlobal: Type.Boolean(),
+  descIsVisible: Type.Boolean(),
+  status: Type.Optional(
+    Type.Enum({
+      published: 'published',
+      draft: 'draft',
+    }),
+  ),
 })
 export type CreateTechniqueRequestType = Static<typeof CreateTechniqueRequest>
 
@@ -44,13 +52,34 @@ export const UpdateTechniqueRequest = Type.Partial(TechniqueSchema)
 export type UpdateTechniqueRequestType = Static<typeof UpdateTechniqueRequest>
 
 /**
- * اسکیم ورودی آپدیت کردن تعداد دفعات استفاده از تکنیک ها
+ * اسکیم تکنیک‌ها در لیستی که مربی می‌خواهد تکنیک مورد نظرش را بر اساس تعداد دفعات استفاده خودش به راحتی پیدا کند
+ */
+export const TechniquesAndUsageTimesSchema = Type.Object({
+  techniqueNumber: Type.Number(),
+  usageCount: Type.Number(),
+})
+
+export type TechniquesAndUsageTimesType = Static<typeof TechniquesAndUsageTimesSchema>
+
+/**
+ * اسکیم ورودی آپدیت کردن تعداد دفعات استفاده از تکنیک‌ها
  */
 export const UpdateTechniquesByIdListSchema = Type.Object({
-  idList: Type.Array(Type.String({ format: 'uuid' }), { minItems: 0 }), // ممکنه لیست آیدی ها خالی باشه، یعنی هیچ تکنیکی استفاده نشده باشه
+  idList: Type.Array(Type.String({ format: 'uuid' }), { minItems: 0 }),
   countList: Type.Array(Type.Number(), { minItems: 0 }),
 })
 export type UpdateTechniquesByIdListType = Static<typeof UpdateTechniquesByIdListSchema>
+
+/**
+ * پاسخ موفق به یک درخواست دریافت تکنیک‌ها و تعداد استفاده‌شان
+ */
+export const TechniquesAndUsageTimesResponseSchema = Type.Object({
+  data: Type.Object({
+    techniques: Type.Array(TechniquesAndUsageTimesSchema),
+  }),
+  msgCode: Type.String(),
+  msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),
+})
 
 /**
  * پاسخ موفق با برگرداندن یک تکنیک
@@ -63,7 +92,9 @@ export const SingleTechniqueResponse = Type.Object({
   msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),
 })
 
-// پاسخ موفق چند تکنیک
+/**
+ * پاسخ موفق چند تکنیک
+ */
 export const MultipleTechniqueResponse = Type.Object({
   data: Type.Object({
     techniques: Type.Array(TechniqueSchema),

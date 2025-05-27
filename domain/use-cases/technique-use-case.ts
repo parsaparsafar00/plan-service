@@ -1,9 +1,6 @@
 import type { FastifyRequest } from 'fastify'
 import type { AutoQueryData } from '@amard/auto-query'
-import type * as generalSchema from '../schemas/plan-general-schema.js'
-import type * as planSchema from '../schemas/plan-schema.js'
 import type * as techniqueSchema from '../schemas/technique-schema.js'
-import type * as exerciseSchema from '../schemas/exercise-schema.js'
 import { AppError } from '@amard/error-handling'
 import { auditLogger, setAuditRequest } from '@amard/logger'
 import { checkWithACL } from '@amard/access-control'
@@ -26,7 +23,7 @@ function extractSenderData(request: FastifyRequest) {
 /**
  * تولید تکنیک
  */
-export async function createTechnique(request: FastifyRequest<{ Body: techniqueSchema.CreateTechniqueRequestType, Querystring: generalSchema.IdQueryTeacherType }>) {
+export async function createTechnique(request: FastifyRequest<{ Body: techniqueSchema.CreateTechniqueRequestType; Querystring: { id?: string } }>) {
   const { userId: creatorId, role: creatorRole } = extractSenderData(request)
 
   let isGlobal = false
@@ -35,32 +32,35 @@ export async function createTechnique(request: FastifyRequest<{ Body: techniqueS
     isGlobal = request.body.isGlobal || false
 
     if (!isGlobal) {
-      if (!isValidUuid(teacherId))
-        throw new AppError('PLAN_TECHNIQUE_TEACHER_ID_INVALID', 'Teacher ID is invalid', 400)
+      if (!isValidUuid(teacherId)) throw new AppError('PLAN_TECHNIQUE_TEACHER_ID_INVALID', 'شناسه مربی نامعتبر است', 400)
     }
   }
 
   // بررسی تکراری بودن
-  const abbrName = `تکنیک ${request.body.method} ${request.body.name}`
-  const existing = await techniqueRepo.getTechniqueByAbbrName(request.query.id, abbrName) // آیدی مربی از داخل کوئری گرفته میشه
-  if (existing)
-    throw new AppError('PLAN_TECHNIQUE_ALREADY_EXISTS', 'Technique already exists', 400)
+  const existing = await techniqueRepo.getTechniqueByName(request.body.name)
+  if (existing) throw new AppError('PLAN_TECHNIQUE_ALREADY_EXISTS', 'تکنیک قبلاً وجود دارد', 400)
 
-  const nowStr = DateTime.now().toFormat('yyyy-LL-dd HH:mm:ss') // useTz=false در migration
+  // گرفتن شماره تکنیک جدید
+  const nextTechniqueNumber = await techniqueRepo.getNextTechniqueNumber()
+
+  const nowStr = DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss')
   const newTechnique: techniqueSchema.TechniqueType = {
     id: uuidv4(),
-    abbrName: abbrName,
+    number: nextTechniqueNumber,
+    methodNumber: request.body.methodNumber,
+    abbrName: request.body.abbrName,
     name: request.body.name,
-    isGlobal: isGlobal,  // اگر مربی، این پارامتر رو روی صحیح هم تنظیم بکنه، تکنیک بصورت عمومی ذخیره نخواهد شد چون ما همیشه براش فالس میزنیم
-    teacherId: creatorId,
+    teacherId: creatorRole === 'admin' ? request.query.id || '-' : creatorId,
     description: request.body.description,
+    isGlobal,
     descIsVisible: request.body.descIsVisible,
-    method: request.body.method,
-    status: 'published',
+    status: request.body.status || 'published',
     createdAt: nowStr,
     updatedAt: nowStr,
   }
+
   const inserted = await techniqueRepo.insertTechnique(newTechnique)
+
   auditLogger.create('', { request: setAuditRequest(request), oldData: null, newData: inserted })
   return inserted
 }
@@ -68,62 +68,56 @@ export async function createTechnique(request: FastifyRequest<{ Body: techniqueS
 /**
  * گرفتن اطلاعات یک تکنیک
  */
-export async function getTechniqueById(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
+export async function getTechniqueById(request: FastifyRequest<{ Params: { id: string } }>) {
   const existing = await techniqueRepo.getTechniqueById(request.params.id)
-  if (!existing)  throw new AppError('PLAN_TECHNIQUE_NOT_FOUND', 'Technique not found', 404)
+  if (!existing) throw new AppError('PLAN_TECHNIQUE_NOT_FOUND', 'تکنیک پیدا نشد', 404)
+
   const { userId: receiverId, role: getterRole } = extractSenderData(request)
   let aclResult = { isOkay: false, reason: '' }
 
-  if (getterRole === 'teacher') {
-    aclResult = await checkWithACL(request, { own: (existing.teacherId === receiverId), isGlobal: (existing.isGlobal) })
-    if (!aclResult.isOkay) throw new AppError('PLAN_TECHNIQUE_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
+  if (getterRole === 'admin') {
+    aclResult = await checkWithACL(request, { own: existing.teacherId === receiverId, isGlobal: existing.isGlobal })
+    if (!aclResult.isOkay) throw new AppError('PLAN_TECHNIQUE_ACTION_FORBIDDEN', aclResult.reason, 403)
   }
   return existing
 }
 
 /**
- * گرفتن همه سیستم های برنامه تمرینی
+ * گرفتن همه تکنیک‌های یک مربی
  */
-export async function getAllTechniquesByTeacherId(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
+export async function getAllTechniquesByTeacherId(request: FastifyRequest<{ Params: { id: string } }>) {
   const { userId: tokenUserId, role: tokenUserRole } = extractSenderData(request)
   let teacherId = tokenUserId
   if (tokenUserRole === 'admin') {
-    teacherId = request.params.id // اگر ادمین خواسته که تکنیک های یک مربی رو بگیره، قطعا باید در پارامتر ورودی، یک آیدی مربی معتبر را وارد کرده باشه
-    if (!isValidUuid(teacherId))
-      throw new AppError('PLAN_TECHNIQUE_TEACHER_ID_INVALID', 'Teacher ID is invalid', 400)
+    teacherId = request.params.id
+    if (!isValidUuid(teacherId)) throw new AppError('PLAN_TECHNIQUE_TEACHER_ID_INVALID', 'شناسه مربی نامعتبر است', 400)
   }
 
-  return await techniqueRepo.getTechniquesByTeacherId(request.params.id, request.autoQueryData as AutoQueryData)
+  return await techniqueRepo.getTechniquesByTeacherId(teacherId, request.autoQueryData as AutoQueryData)
 }
 
 /**
  * ویرایش تکنیک تمرینی
  */
-export async function updateTechnique(request: FastifyRequest<{ Params: generalSchema.IdParamType, Body: techniqueSchema.UpdateTechniqueRequestType }>) {
+export async function updateTechnique(request: FastifyRequest<{ Params: { id: string }; Body: techniqueSchema.UpdateTechniqueRequestType }>) {
   const { userId: updaterId, role: updaterRole } = extractSenderData(request)
 
   const currentTechnique = await techniqueRepo.getTechniqueById(request.params.id)
-  if (!currentTechnique) throw new AppError('PLAN_TECHNIQUE_ACTION_IS_FORBIDDEN', 'Technique not found', 404)
-    
-  const updates = request.body //  (به این شرط که در ACL ذکر شده باشه) هر چیزی که به عنوان ورودی وارد شده است، بایستی در جدول تکنیک ها آپدیت شود
+  if (!currentTechnique) throw new AppError('PLAN_TECHNIQUE_NOT_FOUND', 'تکنیک پیدا نشد', 404)
 
-  let aclResult = { isOkay: false, reason: ''}
+  const updates = request.body
+
+  let aclResult = { isOkay: false, reason: '' }
   if (updaterRole === 'teacher') {
-    aclResult = await checkWithACL(request, { own: (updaterId === currentTechnique.teacherId), isGlobal: (currentTechnique.isGlobal), ...request.body })
-    if (!aclResult.isOkay) throw new AppError('PLAN_TECHNIQUE_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
+    aclResult = await checkWithACL(request, { own: updaterId === currentTechnique.teacherId, isGlobal: currentTechnique.isGlobal, ...request.body })
+    if (!aclResult.isOkay) throw new AppError('PLAN_TECHNIQUE_ACTION_FORBIDDEN', aclResult.reason, 403)
   }
 
-  updates.updatedAt = DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-LL-dd HH:mm:ss')
+  updates.updatedAt = DateTime.now().setZone('Asia/Tehran').toFormat('yyyy-MM-dd HH:mm:ss')
 
-  let techniqueName: string;
-  if (updates.name) techniqueName = updates.name
-  else techniqueName = currentTechnique.name
-
-  let techniqueMethod: string;
-  if (updates.method) techniqueMethod = updates.method
-  else techniqueMethod = currentTechnique.method
-
-  updates.abbrName = `تکنیک ${techniqueMethod} ${techniqueName}` // نام اختصاری بایستی آپدیت بشه چون ممکنه تکنیک تکرار آپدیت شده باشه
+  const techniqueName = updates.name || currentTechnique.name
+  const techniqueMethodNumber = updates.methodNumber || currentTechnique.methodNumber
+  updates.abbrName = `تکنیک ${techniqueMethodNumber} ${techniqueName}`
 
   const updated = await techniqueRepo.updateTechnique(currentTechnique.id, updates)
 
@@ -134,30 +128,30 @@ export async function updateTechnique(request: FastifyRequest<{ Params: generalS
 /**
  * حذف تکنیک
  */
-export async function deleteTechnique(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
+export async function deleteTechnique(request: FastifyRequest<{ Params: { id: string } }>) {
   const existing = await techniqueRepo.getTechniqueById(request.params.id)
-  if (!existing)
-    throw new AppError('PLAN_TECHNIQUE_NOT_FOUND', 'Technique not found', 404)
+  if (!existing) throw new AppError('PLAN_TECHNIQUE_NOT_FOUND', 'تکنیک پیدا نشد', 404)
 
   const { userId: removerId, role: removerRole } = extractSenderData(request)
-  let aclResult = {isOkay: false, reason: ''}
+  let aclResult = { isOkay: false, reason: '' }
   if (removerRole === 'teacher') {
-    aclResult = await checkWithACL(request, { own: (removerId === existing.teacherId), isGlobal: existing.isGlobal })
-    if (!aclResult.isOkay) throw new AppError('PLAN_TECHNIQUE_ACTION_IS_FORBIDDEN', aclResult.reason, 403)
+    aclResult = await checkWithACL(request, { own: removerId === existing.teacherId, isGlobal: existing.isGlobal })
+    if (!aclResult.isOkay) throw new AppError('PLAN_TECHNIQUE_ACTION_FORBIDDEN', aclResult.reason, 403)
   }
-  // ابتدا باید چک کنیم که آیا تکنیک در هیچ برنامه ای از مربی فعلی تا بحال استفاده شده است یا خیر
-  const autoQueryData: AutoQueryData  = {sorting: { createdAt: 'desc' },paging: {}} // مقدار دهی الکی اتوکوئری برای اینکه بتونیم از تابع زیر استفاده کنیم
-  const plans = await planRepo.getPlansByTeacherId(existing.teacherId, autoQueryData); 
-  
-  plans.forEach((plan: planSchema.PlanType) => {
-    plan.workoutPlan.sessions.forEach((session: planSchema.sessionInplanType) => {
-      Object.values(session.exercises).forEach((exercise: exerciseSchema.exerciseOutputInPlanType) => {
-        if (exercise.techniqueId && exercise.techniqueId === request.params.id) {
-          throw new AppError('PLAN_TECHNIQUE_ACTION_IS_FORBIDDEN', 'This technique has been used by this teacher in plans previously', 403);
+
+  // بررسی استفاده از تکنیک در برنامه‌های مربی
+  const autoQueryData: AutoQueryData = { sorting: { createdAt: 'desc' }, paging: {} }
+  const plans = await planRepo.getPlansByTeacherId(existing.teacherId, autoQueryData)
+
+  for (const plan of plans) {
+    for (const session of plan.workoutPlan.sessions) {
+      for (const exercise of Object.values(session.exercises)) {
+        if (exercise.techniqueNumber === existing.number) {
+          throw new AppError('PLAN_TECHNIQUE_ACTION_FORBIDDEN', 'این تکنیک قبلاً در برنامه‌های این مربی استفاده شده است', 403)
         }
-      });
-    });
-  });
+      }
+    }
+  }
 
   await techniqueRepo.deleteTechnique(existing.id)
   auditLogger.delete('', { request: setAuditRequest(request), oldData: existing, newData: null })

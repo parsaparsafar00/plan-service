@@ -64,7 +64,6 @@ export async function getSystemMethodById(id: string): Promise<SystemMethodType 
   try {
     return await knexInstance('plan_system_methods').where({ id }).first()
   } catch (error) {
-    if (error instanceof AppError) throw error
     throw new AppError('PLAN_SYSTEM_METHODS_DB_ERROR', 'Database getSystemMethodById query error', 400, error)
   }
 }
@@ -76,7 +75,6 @@ export async function getSystemMethodByNumber(number: number): Promise<SystemMet
   try {
     return await knexInstance('plan_system_methods').where({ number }).first()
   } catch (error) {
-    if (error instanceof AppError) throw error
     throw new AppError('PLAN_SYSTEM_METHODS_DB_ERROR', 'Database getSystemMethodByNumber query error', 400, error)
   }
 }

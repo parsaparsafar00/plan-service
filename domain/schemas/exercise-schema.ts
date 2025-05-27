@@ -17,14 +17,14 @@ export const exerciseAugmentedOuputSchema = Type.Object({
   restBetweenSets: Type.Number(),
   weightPercentage: Type.String(),
   systemNumber: Type.Union([Type.Null(), Type.Number()]), // ممکنه وقتی داریم یک حرکت رو به عنوان خروجی نشون میدیم هنوز سیستمی براش در نظر گرفته نشده باشه که شماره داشته باشه
-  systemDescription: Type.String(),
   repeatPattern: Type.Array(Type.Number()),
   systemMethodName: Type.String(),
   systemMethodNumber: Type.Number(),
+  systemDescription: Type.Union([Type.Null(), Type.String()]),
   systemDescIsVisible: Type.Boolean(),
-  techniqueId: Type.Union([Type.String({ format: 'uuid' }), Type.String({ minLength: 0, maxLength: 0 })]),
   techniqueName: Type.Optional(Type.String()),
-  techniqueMethod: Type.Optional(generalSchema.techniqueMethodEnum),
+  techniqueMethodName: Type.Optional(Type.String()),
+  techniqueMethodNumber: Type.Optional(Type.Number()),
   techniqueDescription: Type.Optional(Type.String()),
   techniqueDescIsVisible: Type.Optional(Type.Boolean()),
 })
@@ -60,6 +60,7 @@ export const printingExerciseOutputSchema = Type.Object({
   weightPercentage: Type.String(),
   repeatPattern: Type.Array(Type.Number()),
   techniqueName: Type.Optional(Type.String()),
+  techniqueDescription: Type.Optional(Type.String()),
 })
 export type printingExerciseOutputType = Static<typeof printingExerciseOutputSchema>
 
@@ -70,8 +71,8 @@ export const exerciseOutputInPlanSchema = Type.Object({
   number: Type.Number(),
   restBetweenSets: Type.Number(),
   weightPercentage: Type.String(),
-  systemNumber: Type.Union([Type.Number(), Type.Null()]), // این اسکیم در حرکات هر قالب هم استفاده میشه و چون توی قالب ها، ما شماره سیستم رو ذخیره نمیکنیم، اونجا نال میزنیمش تا یسره بعدا همه سیستم ها رو ذخیره کنیم
-  techniqueId: Type.Union([Type.String({ format: 'uuid' }), Type.String({ minLength: 0, maxLength: 0 })]),
+  systemNumber: Type.Union([Type.Null(), Type.Number()]),
+  techniqueNumber: Type.Optional(Type.Number()), // ممکنه اصلا تکنیک برای اون حرکت وجود نداشته باشه
 })
 export type exerciseOutputInPlanType = Static<typeof exerciseOutputInPlanSchema>
 
@@ -82,15 +83,10 @@ export const exerciseInputSchema = Type.Object({
   number: Type.Number(),
   restBetweenSets: Type.Number(),
   weightPercentage: Type.String(),
-  repeatPattern: Type.Array(Type.Number()),
-  systemMethodNumber: Type.Number(), // نام متد بایستی حتما تعریف شده باشه
+  systemMethodNumber: Type.Number(),
   systemNumber: Type.Number(),
-  systemIsGlobal: Type.Optional(Type.Boolean()),
-  techniqueName: Type.Optional(Type.String()),
-  techniqueDescription: Type.Optional(Type.String()),
-  techniqueMethod: Type.Optional(generalSchema.techniqueMethodEnum),
-  techniqueId: Type.Union([Type.String({ format: 'uuid' }), Type.String({ minLength: 0, maxLength: 0 })]),
-  techniqueIsGlobal: Type.Optional(Type.Boolean()),
+  techniqueNumber: Type.Optional(Type.Number()),
+  techniqueMethodNumber: Type.Optional(Type.Number()),
 })
 export type exerciseInputType = Static<typeof exerciseInputSchema>
 

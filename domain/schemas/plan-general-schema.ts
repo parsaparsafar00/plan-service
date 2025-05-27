@@ -39,27 +39,27 @@ export const levelEnum = Type.Enum({
   expert: 'expert',
 })
 
-// روش های سیستم های تکرار
-export const systemMethodEnum = Type.Enum({
-  descending: 'descending',
-  ascending: 'ascending',
-  custom: 'custom',
-  sinusoidal: 'sinusoidal',
-  pyramidUp: 'pyramidUp',
-  pyramidDown: 'pyramidDown',
-  fullPyramidDown: 'fullPyramidDown',
-  fullPyramidUp: 'fullPyramidUp',
-  singleSet: 'singleSet',
-  constant: 'constant',
-})
+// // روش های سیستم های تکرار
+// export const systemMethodEnum = Type.Enum({
+//   descending: 'descending',
+//   ascending: 'ascending',
+//   custom: 'custom',
+//   sinusoidal: 'sinusoidal',
+//   pyramidUp: 'pyramidUp',
+//   pyramidDown: 'pyramidDown',
+//   fullPyramidDown: 'fullPyramidDown',
+//   fullPyramidUp: 'fullPyramidUp',
+//   singleSet: 'singleSet',
+//   constant: 'constant',
+// })
 
-// روش های تکنیک ها
-export const techniqueMethodEnum = Type.Enum({
-  superset: 'superset',
-  giantset: 'giantset',
-  dropset: 'dropset',
-  custom: 'custom',
-})
+// // روش های تکنیک ها
+// export const techniqueMethodEnum = Type.Enum({
+//   superset: 'superset',
+//   giantset: 'giantset',
+//   dropset: 'dropset',
+//   custom: 'custom',
+// })
 
 // -------------------------------------- ساختار ورودی ها --------------------------------------
 

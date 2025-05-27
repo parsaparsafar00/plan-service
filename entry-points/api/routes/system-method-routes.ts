@@ -96,7 +96,6 @@ export async function systemMethodRoutes(app: FastifyInstance) {
     },
     handler: async (request: FastifyRequest<{ Params: generalSchema.IdQueryTeacherType }>, reply: FastifyReply) => {
       const systemMethods = await planHelperUseCase.getSystemMethodsAndTheirUsageTimes(request)
-      console.log(systemMethods)
       reply.send({ data: { systemMethods }, msgCode: '', msgType: 'success' })
     },
   })

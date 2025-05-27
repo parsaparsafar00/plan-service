@@ -163,8 +163,7 @@ export async function AISessionGenerator(sessionInput: PlanSchemas.GenerateSessi
         systemMethodNumber: closestSystem.methodNumber,
         systemMethodName: sysmteMethod.name,
         systemDescIsVisible: true,
-        systemDescription: '',
-        techniqueId: '',
+        systemDescription: closestSystem.description,
       }
 
       return exerciseData

@@ -24,23 +24,23 @@ export interface ExerciseEntity {
   secondaryMuscle: string | null
   tertiaryMuscle: string | null
   primaryEquipment: string | null
-  secondaryEquipment: string | null
+  // secondaryEquipment: string | null
   numberOfItems: number | null
   posture: string | null
   singleOrDoubleArm: string | null
-  grip: string | null
-  loadPositionAtTheEnd: string | null
-  footElevation: string | null
+  // grip: string | null
+  // loadPositionAtTheEnd: string | null
+  // footElevation: string | null
   comboExercises: string | null
-  movementPattern: string | null
-  movementPattern2: string | null
-  movementPattern3: string | null
+  // movementPattern: string | null
+  // movementPattern2: string | null
+  // movementPattern3: string | null
   bodyRegion: string | null
   // forceType: string | null
   // laterality: string | null
   // exerciseClassification: string | null
   // muscleJointTypes: string | null
-  priority: number | null
+  // priority: number | null
   gender: 'm' | 'f' | null
   ageGround: number | null
   ageCeiling: number | null
