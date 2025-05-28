@@ -102,7 +102,7 @@ export async function createPlanSystem(request: FastifyRequest<{ Body: systemSch
 /**
  * گرفتن همه سیستم های برنامه تمرینی یک مربی
  */
-export async function getAllSystemsByTeacherId(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {
+export async function getAllSystemsByTeacherId(request: FastifyRequest<{ Params: generalSchema.IdParamType }>): Promise<systemSchema.SystemOutputType[]> {
   const { userId: tokenUserId, role: tokenUserRole } = extractSenderData(request)
   let teacherId = tokenUserId
   if (tokenUserRole === 'admin') {
@@ -111,7 +111,48 @@ export async function getAllSystemsByTeacherId(request: FastifyRequest<{ Params:
   }
 
   const systems = await systemRepo.getAllSystemsByTeacherId(request.params.id, request.autoQueryData as AutoQueryData)
-  return systems
+  // گرفتن اطلاعات متد سیستم - به این دلیل که هر سیستم در خروجی اش، اطلاعات متدش رو هم شامل میشه
+  const systemsOutput = await Promise.all(
+    systems.map(async system => {
+      const systemMethod = await systemMethodRepo.getSystemMethodByMethodNumber(system.methodNumber)
+      if (!systemMethod) {
+        throw new AppError('PLAN_SYSTEM_METHOD_NOT_FOUND', `System method not found for system ${system.methodNumber}`, 404)
+      }
+
+      return {
+        ...system,
+        methodDescription: systemMethod.description,
+        methodName: systemMethod.name,
+      }
+    }),
+  )
+  return systemsOutput
+}
+
+/**
+ * گرفتن همه سیستم های برنامه تمرینی مخصوص ادمین
+ */
+export async function getAllSystems(request: FastifyRequest): Promise<systemSchema.SystemOutputType[]> {
+  const systems = await systemRepo.getAllSystems(request.autoQueryData as AutoQueryData)
+  if (!systems?.length) throw new AppError('PLAN_SYSTEM_NOT_FOUND', 'No systems were found', 404)
+
+  // گرفتن اطلاعات متد - به این دلیل که هر سیستم در خروجی اش، اطلاعات متدش رو هم شامل میشه
+  const systemsOutput = await Promise.all(
+    systems.map(async system => {
+      const systemMethod = await systemMethodRepo.getSystemMethodByMethodNumber(system.methodNumber)
+      if (!systemMethod) {
+        throw new AppError('PLAN_SYSTEM_METHOD_NOT_FOUND', `System method not found for system ${system.methodNumber}`, 404)
+      }
+
+      return {
+        ...system,
+        methodDescription: systemMethod.description,
+        methodName: systemMethod.name,
+      }
+    }),
+  )
+
+  return systemsOutput
 }
 
 /**

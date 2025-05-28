@@ -131,21 +131,21 @@ export const SingleSystemResponse = Type.Object({
   msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),
 })
 
-// پاسخ موفق به یک درخواست دریافت سیستم تکرار و تعداد استفادشون
-export const ExercisesAndUsageTimesResponseSchema = Type.Object({
-  data: Type.Object({
-    systems: Type.Array(SystemsAndUsageTimesSchema),
-  }),
-  msgCode: Type.String(),
-  msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),
-})
-
 /**
  * پاسخ موفق چند سیستم
  */
 export const MultipleSystemResponse = Type.Object({
   data: Type.Object({
     systems: Type.Array(SystemOutputSchema),
+  }),
+  msgCode: Type.String(),
+  msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),
+})
+
+// پاسخ موفق به یک درخواست دریافت سیستم تکرار و تعداد استفادشون
+export const ExercisesAndUsageTimesResponseSchema = Type.Object({
+  data: Type.Object({
+    systems: Type.Array(SystemsAndUsageTimesSchema),
   }),
   msgCode: Type.String(),
   msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),

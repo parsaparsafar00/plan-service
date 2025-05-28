@@ -271,8 +271,6 @@ export async function getPlanById(request: FastifyRequest<{ Params: generalSchem
 
           outputExercisesInSession.push(outputExercise)
         }
-
-        console.log(outputExercisesInSession)
         // ساخت آرایه‌ی جلسات برای یک برنامه
         outputSessions.push({ ...session, exercises: outputExercisesInSession })
       }),

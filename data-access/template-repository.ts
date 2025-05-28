@@ -49,14 +49,13 @@ export async function getAllTemplatesByTeacherId(teacherId: string, autoQueryDat
 }
 
 // برای ادمین در موارد خاص که میخواد کل قالب ها رو ببینه
-export async function getAllTechniques(autoQueryData: AutoQueryData): Promise<TemplateType[]> {
+export async function getAllTemplates(autoQueryData: AutoQueryData): Promise<TemplateType[]> {
   try {
-    const plans = await knexInstance('plan_templates').modify(qb => {
+    return await knexInstance('plan_templates').modify(qb => {
       attachAutoQuery(qb, autoQueryData)
     })
-    return plans
   } catch (error) {
-    throw new AppError('PLAN_TEMPLATE_DB_ERROR', 'Database getAllTechniques error', 500, error)
+    throw new AppError('PLAN_TEMPLATE_DB_ERROR', 'Database getAllTemplates error', 500, error)
   }
 }
 

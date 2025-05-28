@@ -104,6 +104,28 @@ export async function systemRoutes(app: FastifyInstance) {
   })
 
   /**
+   * گرفتن اطلاعات تمام سیستم های تکرار موجود مخصوص ادمین
+   * GET /v1/plan/all-systems
+   */
+  app.get('/all-systems', {
+    schema: {
+      tags: ['Plan'],
+      summary: 'دریافت تمام سیتم های تکرار ',
+      description: `ادمین قادر به گرفتن تمام سیستم های تکرار است`,
+      response: {
+        200: { content: { 'application/json': { schema: systemSchema.MultipleSystemResponse } }, description: generalSchema.SuccessResponseDes },
+        400: generalSchema.BadRequestError,
+        403: generalSchema.ForbiddenError,
+        500: generalSchema.InternalServerError,
+      },
+    },
+    handler: async (request, reply: FastifyReply) => {
+      const systems = await systemUseCase.getAllSystems(request)
+      reply.send({ data: { systems }, msgCode: '', msgType: 'success' })
+    },
+  })
+
+  /**
    * گرفتن همه های سیستم های موجود و تعداد استفادشون
    * GET /v1/plan/all-systems-and-usage-times/:id
    */

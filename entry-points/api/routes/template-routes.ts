@@ -97,6 +97,29 @@ export async function templateRoutes(app: FastifyInstance) {
   })
 
   /**
+   * گرفتن همه قالب های موجود مخصوص ادمین ها
+   * GET /v1/plan/all-templates
+   */
+  app.get('/all-templates', {
+    schema: {
+      tags: ['Plan'],
+      summary: 'گرفتن همه قالب های موجود مخصوص ادمین ها',
+      description: 'ادمین قادر به گرفتن تمام قالب ها است',
+      response: {
+        200: { content: { 'application/json': { schema: templateSchema.MultipleTemplateResponse } }, description: generalSchema.SuccessResponseDes },
+        400: generalSchema.BadRequestError,
+        403: generalSchema.ForbiddenError,
+        500: generalSchema.InternalServerError,
+      },
+    },
+    handler: async (request, reply: FastifyReply) => {
+      const templates = await templateUseCase.getAllTemplates(request)
+      console.log(templates)
+      reply.send({ data: { templates }, msgCode: '', msgType: 'success' })
+    },
+  })
+
+  /**
    * ویرایش قالب تمرینی
    * PATCH /v1/plan/edit/template-by-id/:id
    */

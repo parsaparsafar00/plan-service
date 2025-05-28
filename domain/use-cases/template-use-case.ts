@@ -129,6 +129,13 @@ export async function getAllTemplatesByTeacherId(request: FastifyRequest<{ Param
 }
 
 /**
+ * گرفتن همه قالب های موجود توسط ادمین
+ */
+export async function getAllTemplates(request: FastifyRequest): Promise<templateSchema.TemplateType[]> {
+  return await templateRepo.getAllTemplates(request.autoQueryData as AutoQueryData)
+}
+
+/**
  * گرفتن اطلاعات یک قالب بر اساس آیدی قالب
  */
 export async function getTemplateById(request: FastifyRequest<{ Params: generalSchema.IdParamType }>) {

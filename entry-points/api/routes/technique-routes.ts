@@ -58,6 +58,30 @@ export async function techniqueRoutes(app: FastifyInstance) {
   })
 
   /**
+   * گرفتن اطلاعات یک تکنیک تولید شده توسط مربی با شماره
+   * GET /v1/plan/technique-by-number/:number
+   */
+  app.get('/technique-by-number/:number', {
+    schema: {
+      tags: ['Plan'],
+      summary: 'دریافت تکنیک مربی با استفاده از شماره ',
+      description: `## ادمین با قرار دادن شماره معتبر یک معلم در کوئری میتواند تکنیک های آن مربی را مشاهده بکند 
+      ##  معلم میتواند تکنیک های خودش را دریافت کند، شناسه معلم از توکن گرفته می شود ولی  در کوئری هم بایستی علامت تیره قرار بگیرد `,
+      params: generalSchema.numberParam,
+      response: {
+        200: { content: { 'application/json': { schema: techniqueSchema.SingleTechniqueResponse } }, description: generalSchema.SuccessResponseDes },
+        400: generalSchema.BadRequestError,
+        403: generalSchema.ForbiddenError,
+        500: generalSchema.InternalServerError,
+      },
+    },
+    handler: async (request: FastifyRequest<{ Params: generalSchema.numberParamType }>, reply: FastifyReply) => {
+      const technique = await techniqueUseCase.getTechniqueByNumber(request)
+      reply.send({ data: { technique }, msgCode: '', msgType: 'success' })
+    },
+  })
+
+  /**
    * گرفتن همه تکنیک های تولیدی مربی
    * GET /v1/plan/all-techniques-by-id/:teacherid
    */
@@ -76,6 +100,28 @@ export async function techniqueRoutes(app: FastifyInstance) {
     },
     handler: async (request: FastifyRequest<{ Params: generalSchema.IdParamType }>, reply: FastifyReply) => {
       const techniques = await techniqueUseCase.getAllTechniquesByTeacherId(request)
+      reply.send({ data: { techniques }, msgCode: '', msgType: 'success' })
+    },
+  })
+
+  /**
+   * گرفتن همه تکنیک های موجود توسط ادمین
+   * GET /v1/plan/all-techniques
+   */
+  app.get('/all-techniques', {
+    schema: {
+      tags: ['Plan'],
+      summary: 'دریافت تمام تکنیک های برنامه تمرینی مخصوص ادمین ها',
+      description: `ادمین میتونه تمام تکنیک ها رو بگیره`,
+      response: {
+        200: { content: { 'application/json': { schema: techniqueSchema.MultipleTechniqueResponse } }, description: generalSchema.SuccessResponseDes },
+        400: generalSchema.BadRequestError,
+        403: generalSchema.ForbiddenError,
+        500: generalSchema.InternalServerError,
+      },
+    },
+    handler: async (request, reply: FastifyReply) => {
+      const techniques = await techniqueUseCase.getAllTechniques(request)
       reply.send({ data: { techniques }, msgCode: '', msgType: 'success' })
     },
   })

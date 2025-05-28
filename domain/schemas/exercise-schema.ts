@@ -28,7 +28,6 @@ export const exerciseAugmentedOuputSchema = Type.Object({
   techniqueDescription: Type.Optional(Type.String()),
   techniqueDescIsVisible: Type.Optional(Type.Boolean()),
 })
-export type exerciseAugmentedOutputSchemaType = Static<typeof exerciseAugmentedOuputSchema>
 
 /**
  * ساختار خروجی اطلاعات اولیه یک حرکت تولید شده توسط سرویس

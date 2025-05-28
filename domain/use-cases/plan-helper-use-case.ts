@@ -57,7 +57,7 @@ export async function getTechniquesAndTheirUsageTimes(request: FastifyRequest<{ 
   let teacherId = creatorId
   if (creatorRole === 'admin') {
     teacherId = request.params.id
-    if (!isValidUuid(teacherId)) throw new AppError('PLAN_TECHNIQUE_TEACHER_ID_INVALID', 'شناسه مربی نامعتبر است', 400)
+    if (!isValidUuid(teacherId)) throw new AppError('PLAN_TECHNIQUE_TEACHER_ID_INVALID', 'Teacher Id is invalid', 400)
   }
 
   return await helperRepo.getTechniquesAndTheirUsageTimes(teacherId)

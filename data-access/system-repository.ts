@@ -53,7 +53,6 @@ export async function insertPlanSystem(systemData: SystemType, trx?: Knex.Transa
 
     return inserted
   } catch (error) {
-    // فقط خطاهای غیرمنتظره دیتابیس را کچ می‌کنیم
     throw new AppError('PLAN_SYSTEMS_DB_ERROR', 'Database insertPlanSystem query error', 400, error)
   }
 }

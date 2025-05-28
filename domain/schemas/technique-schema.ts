@@ -25,12 +25,22 @@ export const TechniqueSchema = Type.Object({
 export type TechniqueType = Static<typeof TechniqueSchema>
 
 /**
+ * اسکیم خروجی یک تکنیک که علاوه بر پارامتر های اصلی یک تکنیک، نام و توضیحات متد تکنیک رو هم داره
+ */
+export const TechniqueOutputSchema = Type.Intersect([
+  TechniqueSchema,
+  Type.Object({
+    methodName: Type.String(),
+    methodDescription: Type.String(),
+  }),
+])
+export type TechniqueOutputType = Static<typeof TechniqueOutputSchema>
+
+/**
  * ساختار ورودی تولید تکنیک برنامه تمرینی
  */
 export const CreateTechniqueRequest = Type.Object({
-  number: Type.Number(),
   methodNumber: Type.Number(),
-  abbrName: Type.String({ maxLength: 511 }),
   name: Type.String({ maxLength: 255 }),
   teacherId: Type.Union([Type.Literal('-'), Type.String({ format: 'uuid' })]),
   description: Type.String(),
@@ -86,7 +96,7 @@ export const TechniquesAndUsageTimesResponseSchema = Type.Object({
  */
 export const SingleTechniqueResponse = Type.Object({
   data: Type.Object({
-    technique: TechniqueSchema,
+    technique: TechniqueOutputSchema,
   }),
   msgCode: Type.String(),
   msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),
@@ -97,7 +107,7 @@ export const SingleTechniqueResponse = Type.Object({
  */
 export const MultipleTechniqueResponse = Type.Object({
   data: Type.Object({
-    techniques: Type.Array(TechniqueSchema),
+    techniques: Type.Array(TechniqueOutputSchema),
   }),
   msgCode: Type.String(),
   msgType: Type.Union([Type.Literal('error'), Type.Literal('success')]),

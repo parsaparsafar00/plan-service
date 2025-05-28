@@ -44,13 +44,18 @@ export async function insertTechnique(techniqueData: TechniqueType, trx?: Knex.T
 }
 
 /**
- * دریافت تکنیک با استفاده از نام
+ * دریافت تکنیک با استفاده از نام اختصاری
  */
-export async function getTechniqueByName(name: string): Promise<TechniqueType | undefined> {
+export async function getTechniqueByAbbrName(abbrName: string, teacherId: string): Promise<TechniqueType | undefined> {
   try {
-    return await knexInstance('plan_techniques').where({ name }).first()
+    return await knexInstance('plan_techniques')
+      .where(function () {
+        this.where('isGlobal', true).orWhere('teacherId', teacherId)
+      })
+      .andWhere('abbrName', abbrName)
+      .first()
   } catch (error) {
-    throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database getTechniqueByName error', 500, error)
+    throw new AppError('PLAN_TECHNIQUE_DB_ERROR', 'Database getTechniqueByAbbrName error', 500, error)
   }
 }
 
